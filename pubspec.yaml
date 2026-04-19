@@ -56,7 +56,11 @@ flutter:
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
-  # --- DECLARACIÓN DE FUENTES ROBOTO ---
+  # --- DECLARACIÓN DE Imagenes ---
+  assets:
+    - assets/image/
+
+  # --- DECLARACIÓN DE FUENTE ---
   fonts:
     - family: Roboto
       fonts:

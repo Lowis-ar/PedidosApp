@@ -4,6 +4,7 @@ import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
 
 import '../utils/colors.dart';
+import 'food_page_body.dart';
 
 class MainFoodPage extends StatefulWidget {
   const MainFoodPage({super.key});
@@ -51,7 +52,8 @@ class _MainFoodPageState extends State<MainFoodPage> {
                   ],
                 )
             ),
-          )
+          ),
+          FoodPageBody(),
         ],
       ),
     );
