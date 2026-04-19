@@ -107,7 +107,7 @@ class _FoodPageBodyState extends State<FoodPageBody> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: 120,
+              height: 140,
               margin: const EdgeInsets.only(left: 30, right: 30, bottom: 30),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
