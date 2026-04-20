@@ -111,7 +111,6 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                       //contenedor de texto
                       Expanded(
                         child: Container(
-                          height: Dimensions.listViewTextContSize,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.only(
                               topRight: Radius.circular(Dimensions.radius20),
@@ -129,21 +128,23 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                                   SizedBox(height: Dimensions.height10,),
                                   SmallText(text: "With chinese characteristics"),
                                   SizedBox(height: Dimensions.height10,),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      IconAndTextWidget(icon: Icons.circle_sharp,
-                                          text: "Normal",
-                                          iconColor: AppColors.iconColor1),
-
-                                      IconAndTextWidget(icon: Icons.location_on,
-                                          text: "1.7km",
-                                          iconColor: AppColors.mainColor),
-
-                                      IconAndTextWidget(icon: Icons.access_time_rounded,
-                                          text: "32min",
-                                          iconColor: AppColors.iconColor2)
-                                    ],
+                                  FittedBox(
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        IconAndTextWidget(icon: Icons.circle_sharp,
+                                            text: "Normal",
+                                            iconColor: AppColors.iconColor1),
+                                        SizedBox(width: 10),
+                                        IconAndTextWidget(icon: Icons.location_on,
+                                            text: "1.7km",
+                                            iconColor: AppColors.mainColor),
+                                        SizedBox(width: 10),
+                                        IconAndTextWidget(icon: Icons.access_time_rounded,
+                                            text: "32min",
+                                            iconColor: AppColors.iconColor2)
+                                      ],
+                                    ),
                                   )
                                 ],
                               ),
@@ -202,7 +203,6 @@ class _FoodPageBodyState extends State<FoodPageBody> {
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: Dimensions.pageViewTextContainer,
               margin: EdgeInsets.only(left: Dimensions.width30, right: Dimensions.width30, bottom: Dimensions.height30),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(Dimensions.radius20),
@@ -225,8 +225,9 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                 ]
               ),
               child: Container(
-                padding: EdgeInsets.only(top: Dimensions.height15, left: 15, right: 15),
+                padding: EdgeInsets.only(top: Dimensions.height15, left: 15, right: 15, bottom: 10),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     BigText(text: "Nutritious fruit meal in China"),
@@ -245,21 +246,23 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                       ],
                     ),
                     SizedBox(height: Dimensions.height20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        IconAndTextWidget(icon: Icons.circle_sharp,
-                            text: "Normal",
-                            iconColor: AppColors.iconColor1),
-
-                        IconAndTextWidget(icon: Icons.location_on,
-                            text: "1.7km",
-                            iconColor: AppColors.mainColor),
-
-                        IconAndTextWidget(icon: Icons.access_time_rounded,
-                            text: "32min",
-                            iconColor: AppColors.iconColor2)
-                      ],
+                    FittedBox(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconAndTextWidget(icon: Icons.circle_sharp,
+                              text: "Normal",
+                              iconColor: AppColors.iconColor1),
+                          SizedBox(width: 10),
+                          IconAndTextWidget(icon: Icons.location_on,
+                              text: "1.7km",
+                              iconColor: AppColors.mainColor),
+                          SizedBox(width: 10),
+                          IconAndTextWidget(icon: Icons.access_time_rounded,
+                              text: "32min",
+                              iconColor: AppColors.iconColor2)
+                        ],
+                      ),
                     )
                   ],
                 ),
