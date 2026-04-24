@@ -4,6 +4,7 @@ import 'package:pedidosapp/widgets/big_text.dart';
 
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../widgets/app_column.dart';
 import '../../widgets/icon_and_text_widget.dart';
 import '../../widgets/small_text.dart';
 
@@ -226,46 +227,7 @@ class _FoodPageBodyState extends State<FoodPageBody> {
               ),
               child: Container(
                 padding: EdgeInsets.only(top: Dimensions.height15, left: 15, right: 15, bottom: 10),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    BigText(text: "Nutritious fruit meal in China"),
-                    SizedBox(height: Dimensions.height10),
-                    Row(
-                      children: [
-                        Wrap(
-                          children: List.generate(5, (index) => Icon(Icons.star, color:AppColors.mainColor, size: 15,)),
-                        ),
-                        SizedBox(width: 10,),
-                        SmallText(text: "4.5"),
-                        SizedBox(width: 10,),
-                        SmallText(text: "1287"),
-                        SizedBox(width: 10,),
-                        SmallText(text: "comments"),
-                      ],
-                    ),
-                    SizedBox(height: Dimensions.height20),
-                    FittedBox(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconAndTextWidget(icon: Icons.circle_sharp,
-                              text: "Normal",
-                              iconColor: AppColors.iconColor1),
-                          SizedBox(width: 10),
-                          IconAndTextWidget(icon: Icons.location_on,
-                              text: "1.7km",
-                              iconColor: AppColors.mainColor),
-                          SizedBox(width: 10),
-                          IconAndTextWidget(icon: Icons.access_time_rounded,
-                              text: "32min",
-                              iconColor: AppColors.iconColor2)
-                        ],
-                      ),
-                    )
-                  ],
-                ),
+                child: AppColumn(text: "chinese Side"),
               ),
 
             ),
