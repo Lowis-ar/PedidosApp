@@ -27,7 +27,7 @@ class Product {
 
 class ProductModel {
   int? id;
-  int? name;
+  String? name;
   String? description;
   int? price;
   int? stars;

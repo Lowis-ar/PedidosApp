@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:pedidosapp/pages/food/popular_food_detail.dart';
-import 'package:pedidosapp/pages/food/recommended_food_detail.dart';
+import 'package:pedidosapp/controllers/popular_product_controller.dart';
+import 'package:pedidosapp/controllers/recommended_product_controller.dart';
+import 'package:pedidosapp/pages/cart/cart_page.dart';
 import 'package:pedidosapp/pages/home/main_food_page.dart';
-import 'controllers/popular_product_controller.dart';
+import 'package:pedidosapp/routes/route_helper.dart';
 import 'helper/dependencies.dart' as dep;
 
 Future<void> main() async {
@@ -15,18 +16,19 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // Cargamos los datos cuando se construye la aplicación
     Get.find<PopularProductController>().getPopularProductList();
+    Get.find<RecommendedProductController>().getRecommendedProductList();
+    
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: RecommendedFoodDetail(),
+
+      home: MainFoodPage(),
+      initialRoute: RouteHelper.initial,
+      getPages: RouteHelper.routes,
     );
   }
 }
-

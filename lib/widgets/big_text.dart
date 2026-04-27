@@ -2,12 +2,18 @@ import 'package:flutter/cupertino.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 
 class BigText extends StatelessWidget {
-  Color? color;
+  final Color? color;
   final String text;
-  double size;
-  TextOverflow overFlow;
-  BigText({Key? key, this.color = const Color(0xFF332d2b), required this.text, this.size = 0,
-          this.overFlow = TextOverflow.ellipsis}) : super(key: key);
+  final double size;
+  final TextOverflow overFlow;
+
+  const BigText({
+    super.key,
+    this.color = const Color(0xFF332d2b),
+    required this.text,
+    this.size = 0,
+    this.overFlow = TextOverflow.ellipsis,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +25,8 @@ class BigText extends StatelessWidget {
         fontFamily: 'Roboto',
         color: color,
         fontSize: size == 0 ? Dimensions.font20 : size,
-        fontWeight: FontWeight.w400
+        fontWeight: FontWeight.w400,
       ),
     );
   }
 }
-

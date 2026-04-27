@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/app_icon.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/expandable_text_widget.dart';
 
+import '../../controllers/cart_controller.dart';
+import '../../controllers/popular_product_controller.dart';
+import '../../controllers/recommended_product_controller.dart';
+import '../../routes/route_helper.dart';
+import '../../utils/app_constants.dart';
+import '../cart/cart_page.dart';
+
 class RecommendedFoodDetail extends StatelessWidget {
-  const RecommendedFoodDetail({super.key});
+  final int pageId;
+
+  const RecommendedFoodDetail({super.key, required this.pageId});
 
   @override
   Widget build(BuildContext context) {
+    var product = Get.find<RecommendedProductController>().recommendedProductList[pageId];
+    Get.find<PopularProductController>().initProduct(product, Get.find<CartController>());
     return Scaffold(
       backgroundColor: Colors.white,
       body: CustomScrollView(
@@ -20,8 +32,47 @@ class RecommendedFoodDetail extends StatelessWidget {
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                AppIcon(icon: Icons.clear),
-                AppIcon(icon: Icons.shopping_cart_outlined),
+                GestureDetector(
+                  onTap: () {
+                    Get.toNamed(RouteHelper.getInitial());
+                  },
+                  child: const AppIcon(icon: Icons.clear),
+                ),
+                GetBuilder<PopularProductController>(builder: (controller) {
+                  return Stack(
+                    children: [
+                      const AppIcon(icon: Icons.shopping_cart_outlined),
+                      controller.totalItems >= 1
+                          ? Positioned(
+                              right: 0,
+                              top: 0,
+                              child: GestureDetector(
+                                onTap: () {
+                                  Get.to(() => const CartPage());
+                                },
+                                child: AppIcon(
+                                  icon: Icons.circle,
+                                  size: 20,
+                                  iconColor: Colors.transparent,
+                                  backgroundColor: AppColors.mainColor,
+                                ),
+                              ),
+                            )
+                          : Container(),
+                      controller.totalItems >= 1
+                          ? Positioned(
+                              right: 3,
+                              top: 3,
+                              child: BigText(
+                                text: controller.totalItems.toString(),
+                                size: 12,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Container(),
+                    ],
+                  );
+                })
               ],
             ),
             bottom: PreferredSize(
@@ -39,7 +90,7 @@ class RecommendedFoodDetail extends StatelessWidget {
                 child: Center(
                   child: BigText(
                     size: Dimensions.font26,
-                    text: "Chinese Side",
+                    text: product.name!,
                   ),
                 ),
               ),
@@ -48,8 +99,8 @@ class RecommendedFoodDetail extends StatelessWidget {
             backgroundColor: AppColors.yellowColor,
             expandedHeight: 300,
             flexibleSpace: FlexibleSpaceBar(
-              background: Image.asset(
-                "assets/image/alitas_con_papas.jpg",
+              background: Image.network(
+                AppConstants.BASE_URL + AppConstants.UPLOAD_URL + product.img!,
                 width: double.maxFinite,
                 fit: BoxFit.cover,
               ),
@@ -63,9 +114,8 @@ class RecommendedFoodDetail extends StatelessWidget {
                     left: Dimensions.width20,
                     right: Dimensions.width20,
                   ),
-                  child: const ExpandableTextWidget(
-                    text:
-                        "Este es un plato tradicional de la cocina china, preparado con ingredientes frescos y especias auténticas. Disfruta del sabor equilibrado entre lo dulce y lo salado, con una textura crujiente por fuera y tierna por dentro. Perfecto para compartir con amigos y familia en cualquier ocasión especial. Las alitas con papas son un acompañamiento ideal que realza la experiencia culinaria de este plato. La cocina china se caracteriza por su gran variedad de sabores y técnicas de cocción, y este plato es un excelente ejemplo de ello. Cada bocado te transportará a los sabores tradicionales de Oriente.",
+                  child: ExpandableTextWidget(
+                    text: product.description!,
                   ),
                 ),
               ],
@@ -73,86 +123,103 @@ class RecommendedFoodDetail extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: EdgeInsets.only(
-              left: Dimensions.width20 * 2.5,
-              right: Dimensions.width20 * 2.5,
-              top: Dimensions.height10,
-              bottom: Dimensions.height10,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                AppIcon(
-                  iconSize: Dimensions.iconSize24,
-                  icon: Icons.remove,
-                  backgroundColor: AppColors.mainColor,
-                  iconColor: Colors.white,
-                  size: Dimensions.iconSize24 * 1.5,
-                ),
-                BigText(
-                  text: "\$12.88  X  0",
-                  color: AppColors.mainBlackColor,
-                  size: Dimensions.font26,
-                ),
-                AppIcon(
-                  iconSize: Dimensions.iconSize24,
-                  icon: Icons.add,
-                  backgroundColor: AppColors.mainColor,
-                  iconColor: Colors.white,
-                  size: Dimensions.iconSize24 * 1.5,
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: Dimensions.bottomHeightBar,
-            padding: EdgeInsets.only(
-              top: Dimensions.height30,
-              bottom: Dimensions.height30,
-              left: Dimensions.width20,
-              right: Dimensions.width20,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.buttonBackgroundColor,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(Dimensions.radius20 * 2),
-                topRight: Radius.circular(Dimensions.radius20 * 2),
+      bottomNavigationBar: GetBuilder<PopularProductController>(builder: (controller) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: EdgeInsets.only(
+                left: Dimensions.width20 * 2.5,
+                right: Dimensions.width20 * 2.5,
+                top: Dimensions.height10,
+                bottom: Dimensions.height10,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      controller.setQuantity(false);
+                    },
+                    child: AppIcon(
+                      iconSize: Dimensions.iconSize24,
+                      icon: Icons.remove,
+                      backgroundColor: AppColors.mainColor,
+                      iconColor: Colors.white,
+                      size: Dimensions.iconSize24 * 1.5,
+                    ),
+                  ),
+                  BigText(
+                    text: "\$ ${product.price!} X ${controller.inCartItems} ",
+                    color: AppColors.mainBlackColor,
+                    size: Dimensions.font26,
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      controller.setQuantity(true);
+                    },
+                    child: AppIcon(
+                      iconSize: Dimensions.iconSize24,
+                      icon: Icons.add,
+                      backgroundColor: AppColors.mainColor,
+                      iconColor: Colors.white,
+                      size: Dimensions.iconSize24 * 1.5,
+                    ),
+                  )
+                ],
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(Dimensions.height15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Dimensions.radius20),
-                    color: Colors.white,
-                  ),
-                  child: Icon(
-                    Icons.favorite,
-                    color: AppColors.mainColor,
-                  ),
+            Container(
+              height: Dimensions.bottomHeightBar,
+              padding: EdgeInsets.only(
+                top: Dimensions.height30,
+                bottom: Dimensions.height30,
+                left: Dimensions.width20,
+                right: Dimensions.width20,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.buttonBackgroundColor,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(Dimensions.radius20 * 2),
+                  topRight: Radius.circular(Dimensions.radius20 * 2),
                 ),
-                Container(
-                  padding: EdgeInsets.all(Dimensions.height15),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Dimensions.radius20),
-                    color: AppColors.mainColor,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(Dimensions.height15),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(Dimensions.radius20),
+                      color: Colors.white,
+                    ),
+                    child: Icon(
+                      Icons.favorite,
+                      color: AppColors.mainColor,
+                    ),
                   ),
-                  child: BigText(
-                    text: "\$10 | Add to cart",
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: () {
+                      controller.addItem(product);
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(Dimensions.height15),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(Dimensions.radius20),
+                        color: AppColors.mainColor,
+                      ),
+                      child: BigText(
+                        text: "\$ ${product.price!} | Add to cart",
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      }),
     );
   }
 }
