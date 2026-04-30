@@ -151,13 +151,18 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                                       SizedBox(height: Dimensions.height10),
                                       SmallText(text: "With chinese characteristics"),
                                       SizedBox(height: Dimensions.height10),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          IconAndTextWidget(icon: Icons.circle_sharp, text: "Normal", iconColor: AppColors.iconColor1),
-                                          IconAndTextWidget(icon: Icons.location_on, text: "1.7km", iconColor: AppColors.mainColor),
-                                          IconAndTextWidget(icon: Icons.access_time_rounded, text: "32min", iconColor: AppColors.iconColor2)
-                                        ],
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            IconAndTextWidget(icon: Icons.circle_sharp, text: "Normal", iconColor: AppColors.iconColor1),
+                                            SizedBox(width: 5),
+                                            IconAndTextWidget(icon: Icons.location_on, text: "1.7km", iconColor: AppColors.mainColor),
+                                            SizedBox(width: 5),
+                                            IconAndTextWidget(icon: Icons.access_time_rounded, text: "32min", iconColor: AppColors.iconColor2)
+                                          ],
+                                        ),
                                       )
                                     ],
                                   ),

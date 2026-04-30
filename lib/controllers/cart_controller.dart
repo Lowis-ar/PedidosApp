@@ -26,6 +26,7 @@ class CartController extends GetxController{
           quantity: value.quantity! + quantity,
           isExist: true,
           time: DateTime.now().toString(),
+          product: product,
         );
       });
 
@@ -43,6 +44,7 @@ class CartController extends GetxController{
             quantity: quantity,
             isExist: true,
             time: DateTime.now().toString(),
+            product: product,
           );
         });
       }else{
@@ -82,7 +84,7 @@ class CartController extends GetxController{
 
 
   List<CartModel> get getItems{
-   return  _items.entries.map((e){
+   return _items.entries.map((e){
       return e.value;
     }).toList();
   }

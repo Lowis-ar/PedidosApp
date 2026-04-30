@@ -39,23 +39,26 @@ class RecommendedFoodDetail extends StatelessWidget {
                   child: const AppIcon(icon: Icons.clear),
                 ),
                 GetBuilder<PopularProductController>(builder: (controller) {
-                  return Stack(
+                  return GestureDetector(
+                    onTap: () {
+                      if (controller.totalItems >= 1) {
+                        Get.toNamed(RouteHelper.getCartPage());
+                      }
+                    },
+                    child: Stack(
                     children: [
                       const AppIcon(icon: Icons.shopping_cart_outlined),
                       controller.totalItems >= 1
                           ? Positioned(
                               right: 0,
                               top: 0,
-                              child: GestureDetector(
-                                onTap: () {
-                                  Get.to(() => const CartPage());
-                                },
+
                                 child: AppIcon(
                                   icon: Icons.circle,
                                   size: 20,
                                   iconColor: Colors.transparent,
                                   backgroundColor: AppColors.mainColor,
-                                ),
+
                               ),
                             )
                           : Container(),
@@ -71,6 +74,7 @@ class RecommendedFoodDetail extends StatelessWidget {
                             )
                           : Container(),
                     ],
+                    )
                   );
                 })
               ],
@@ -149,10 +153,14 @@ class RecommendedFoodDetail extends StatelessWidget {
                       size: Dimensions.iconSize24 * 1.5,
                     ),
                   ),
-                  BigText(
-                    text: "\$ ${product.price!} X ${controller.inCartItems} ",
-                    color: AppColors.mainBlackColor,
-                    size: Dimensions.font26,
+                  Flexible(
+                    child: FittedBox(
+                      child: BigText(
+                        text: "\$ ${product.price!} X ${controller.inCartItems} ",
+                        color: AppColors.mainBlackColor,
+                        size: Dimensions.font26,
+                      ),
+                    ),
                   ),
                   GestureDetector(
                     onTap: () {
@@ -198,19 +206,23 @@ class RecommendedFoodDetail extends StatelessWidget {
                       color: AppColors.mainColor,
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      controller.addItem(product);
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(Dimensions.height15),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(Dimensions.radius20),
-                        color: AppColors.mainColor,
-                      ),
-                      child: BigText(
-                        text: "\$ ${product.price!} | Add to cart",
-                        color: Colors.white,
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: () {
+                        controller.addItem(product);
+                      },
+                      child: Container(
+                        padding: EdgeInsets.all(Dimensions.height15),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(Dimensions.radius20),
+                          color: AppColors.mainColor,
+                        ),
+                        child: FittedBox(
+                          child: BigText(
+                            text: "\$ ${product.price!} | Add to cart",
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   )

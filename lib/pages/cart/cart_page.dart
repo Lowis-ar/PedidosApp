@@ -5,6 +5,7 @@ import 'package:pedidosapp/utils/app_constants.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/app_icon.dart';
 
+import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../widgets/big_text.dart';
 import '../../widgets/small_text.dart';
@@ -36,7 +37,7 @@ class CartPage extends StatelessWidget {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Get.to(() => const MainFoodPage());
+                    Get.toNamed(RouteHelper.getInitial());
                   },
                   child: AppIcon(
                     icon: Icons.home_outlined,
@@ -68,14 +69,13 @@ class CartPage extends StatelessWidget {
                 context: context,
                 removeTop: true,
                 child: GetBuilder<CartController>(builder: (cartController) {
-                  var cartList = cartController.getItems;
+                  var _cartList = cartController.getItems;
                   return ListView.builder(
-                      itemCount: cartList.length,
+                      itemCount: _cartList.length,
                       itemBuilder: (_, index) {
                         return Container(
-                          height: 100,
-                          width: double.maxFinite,
-                          margin: EdgeInsets.only(bottom: Dimensions.height10),
+                          height: double.maxFinite,
+                          width: Dimensions.height20*5,
                           child: Row(
                             children: [
                               Container(
@@ -87,7 +87,7 @@ class CartPage extends StatelessWidget {
                                     image: NetworkImage(
                                       AppConstants.BASE_URL +
                                           AppConstants.UPLOAD_URL +
-                                          cartList[index].img!,
+                                          _cartList[index].img!,
                                     ),
                                   ),
                                   borderRadius:
@@ -106,7 +106,7 @@ class CartPage extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     BigText(
-                                      text: cartList[index].name!,
+                                      text: _cartList[index].name!,
                                       color: Colors.black54,
                                     ),
                                      SmallText(text: "With chinese characteristics"),
@@ -115,7 +115,7 @@ class CartPage extends StatelessWidget {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         BigText(
-                                            text: "\$ ${cartList[index].price!}",
+                                            text: "\$ ${_cartList[index].price!}",
                                             color: Colors.redAccent),
                                         Container(
                                           padding: EdgeInsets.symmetric(
@@ -131,7 +131,8 @@ class CartPage extends StatelessWidget {
                                             children: [
                                               GestureDetector(
                                                 onTap: () {
-                                                  //cartController.addItem(cartList[index].product!, -1);
+                                                  cartController.addItem(_cartList[index].product!, -1);
+                                                  print("Tap");
                                                 },
                                                 child:  Icon(
                                                   Icons.remove,
@@ -142,7 +143,7 @@ class CartPage extends StatelessWidget {
                                               SizedBox(
                                                   width: Dimensions.width10 / 2),
                                               BigText(
-                                                  text: cartList[index].quantity.toString(),
+                                                  text: _cartList[index].quantity.toString(),
                                                   size: Dimensions.font18),
                                               SizedBox(
                                                   width: Dimensions.width10 / 2),
