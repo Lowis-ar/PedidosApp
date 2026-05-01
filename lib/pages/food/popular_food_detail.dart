@@ -55,7 +55,7 @@ class PopularFoodDetail extends StatelessWidget {
               children: [
                 GestureDetector(
                   onTap: () {
-                    Get.to(() => const MainFoodPage());
+                    Get.back();
                   },
                   child: const AppIcon(icon: Icons.arrow_back_ios),
                 ),

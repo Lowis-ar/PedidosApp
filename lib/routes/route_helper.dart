@@ -12,8 +12,8 @@ class RouteHelper {
   static const String cartPage = "/cart-page";
 
   static String getInitial() => '$initial';
-  static String getPopularFood(int pageId) => '$popularFood ? pageId = $pageId';
-  static String getRecommendedFood(int pageid) => '$recommendedFood ? pageid = $pageid';
+  static String getPopularFood(int pageId) => '$popularFood?pageId=$pageId';
+  static String getRecommendedFood(int pageid) => '$recommendedFood?pageid=$pageid';
   static String getCartPage() => '$cartPage';
 
   static List<GetPage> routes = [

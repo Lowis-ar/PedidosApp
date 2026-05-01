@@ -10,6 +10,9 @@ import 'helper/dependencies.dart' as dep;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dep.init();
+  // Cargamos los datos después de inicializar las dependencias
+  Get.find<PopularProductController>().getPopularProductList();
+  Get.find<RecommendedProductController>().getRecommendedProductList();
   runApp(const MyApp());
 }
 
@@ -18,17 +21,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Cargamos los datos cuando se construye la aplicación
-    Get.find<PopularProductController>().getPopularProductList();
-    Get.find<RecommendedProductController>().getRecommendedProductList();
-    
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-
-      home: MainFoodPage(),
       initialRoute: RouteHelper.initial,
-
       getPages: RouteHelper.routes,
     );
   }

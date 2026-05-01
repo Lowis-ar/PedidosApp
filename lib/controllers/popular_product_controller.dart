@@ -74,7 +74,6 @@ class PopularProductController extends GetxController{
     if(exist){
       _inCartItems = _cart.getQuantity(product);
     }
-    update();
   }
 
   void addItem(ProductModel product, ){
