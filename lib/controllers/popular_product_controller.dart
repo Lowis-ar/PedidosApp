@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
@@ -9,7 +7,7 @@ import '../models/cart_model.dart';
 import '../models/product_model.dart';
 import '../utils/colors.dart';
 
-class PopularProductController extends GetxController{
+class PopularProductController extends GetxController {
   final PopularProductRepo popularProductRepo;
   PopularProductController({required this.popularProductRepo});
   List<ProductModel> _popularProductList = [];
@@ -24,74 +22,65 @@ class PopularProductController extends GetxController{
   int _inCartItems = 0;
   int get inCartItems => _inCartItems + _quantity;
 
-
   Future<void> getPopularProductList() async {
     Response response = await popularProductRepo.getPopularProductList();
-    if(response.statusCode == 200){
+    if (response.statusCode == 200) {
       _popularProductList = [];
       _popularProductList.addAll(Product.fromJson(response.body).products);
       _isLoaded = true;
       update();
-    }else{
-
     }
   }
 
-  void setQuantity(bool isIncrement){
-    if(isIncrement){
+  void setQuantity(bool isIncrement) {
+    if (isIncrement) {
       _quantity = checkQuantity(_quantity + 1);
-    }else{
+    } else {
       _quantity = checkQuantity(_quantity - 1);
     }
     update();
   }
-  int checkQuantity(int quantity){
-    if((_inCartItems + quantity) < 0){
-      Get.snackbar("Item count", "You can't reduce more",
-          backgroundColor: AppColors.mainColor,
-          colorText: Colors.white);
-      if(_inCartItems > 0){
-        _quantity = -_inCartItems;
-        return _quantity;
+
+  int checkQuantity(int quantity) {
+    if ((_inCartItems + quantity) < 0) {
+      Get.snackbar("Item count", "No puedes reducir más",
+          backgroundColor: AppColors.mainColor, colorText: Colors.white);
+      if (_inCartItems > 0) {
+        return -_inCartItems;
       }
       return 0;
-    }else if((_inCartItems + quantity) > 20){
-      Get.snackbar("Item count", "You can't add more",
-          backgroundColor: AppColors.mainColor,
-          colorText: Colors.white);
-      return 20;
-    }else{
+    } else if ((_inCartItems + quantity) > 20) {
+      Get.snackbar("Item count", "No puedes agregar más de 20 unidades",
+          backgroundColor: AppColors.mainColor, colorText: Colors.white);
+      return 20 - _inCartItems;
+    } else {
       return quantity;
     }
   }
 
-  void initProduct(ProductModel product, CartController cart){
+  void initProduct(ProductModel product, CartController cart) {
     _quantity = 0;
     _inCartItems = 0;
     _cart = cart;
     var exist = false;
     exist = _cart.existInCart(product);
-    if(exist){
+    if (exist) {
       _inCartItems = _cart.getQuantity(product);
     }
   }
 
-  void addItem(ProductModel product, ){
-      _cart.addItem(product, _quantity);
-      _quantity = 0;
-      _inCartItems = _cart.getQuantity(product);
-      _cart.items.forEach((key, value) {
-        print("The id is ${value.id} the quantity is ${value.quantity}");
-      });
-      update();
+  void addItem(ProductModel product) {
+    _cart.addItem(product, _quantity);
+    _quantity = 0;
+    _inCartItems = _cart.getQuantity(product);
+    update();
   }
 
-  int get totalItems{
+  int get totalItems {
     return _cart.totalItems;
   }
 
-  List<CartModel> get getItems{
+  List<CartModel> get getItems {
     return _cart.getItems;
   }
-
 }
