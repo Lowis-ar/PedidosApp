@@ -11,7 +11,8 @@ import '../../widgets/big_text.dart';
 import '../../widgets/small_text.dart';
 
 class CartPage extends StatelessWidget {
-  const CartPage({super.key});
+  final bool showHeader;
+  const CartPage({super.key, this.showHeader = true});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +21,7 @@ class CartPage extends StatelessWidget {
       body: Stack(
         children: [
           // Header
-          Positioned(
+          showHeader ? Positioned(
             left: Dimensions.width20,
             right: Dimensions.width20,
             top: Dimensions.height20 * 3,
@@ -36,7 +37,7 @@ class CartPage extends StatelessWidget {
                     iconSize: Dimensions.iconSize24,
                   ),
                 ),
-                SizedBox(width: Dimensions.width20 * 5),
+                BigText(text: "Carrito", color: AppColors.mainColor),
                 GestureDetector(
                   onTap: () => Get.toNamed(RouteHelper.getInitial()),
                   child: AppIcon(
@@ -46,22 +47,15 @@ class CartPage extends StatelessWidget {
                     iconSize: Dimensions.iconSize24,
                   ),
                 ),
-                SizedBox(width: Dimensions.width20),
-                AppIcon(
-                  icon: Icons.shopping_cart_outlined,
-                  iconColor: Colors.white,
-                  backgroundColor: AppColors.mainColor,
-                  iconSize: Dimensions.iconSize24,
-                ),
               ],
             ),
-          ),
+          ) : Container(),
           // List
           Positioned(
             left: Dimensions.width20,
             right: Dimensions.width20,
-            top: Dimensions.height20 * 5,
-            bottom: 0,
+            top: showHeader ? Dimensions.height20 * 5 : Dimensions.height20,
+            bottom: Dimensions.height20 * 5,
             child: Container(
               margin: EdgeInsets.only(top: Dimensions.height15),
               color: Colors.white,
@@ -94,7 +88,7 @@ class CartPage extends StatelessWidget {
                     itemCount: cartList.length,
                     itemBuilder: (_, index) {
                       return Container(
-                        height: Dimensions.height20 * 5,
+                        // Eliminada altura fija para evitar overflow
                         margin: EdgeInsets.only(bottom: Dimensions.height10),
                         child: Row(
                           children: [
@@ -112,9 +106,7 @@ class CartPage extends StatelessWidget {
                             ),
                             SizedBox(width: Dimensions.width10),
                             Expanded(
-                              child: SizedBox(
-                                height: Dimensions.height20 * 5,
-                                child: Column(
+                              child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
@@ -173,7 +165,6 @@ class CartPage extends StatelessWidget {
                                       ],
                                     ),
                                   ],
-                                ),
                               ),
                             ),
                           ],
@@ -197,10 +188,9 @@ class CartPage extends StatelessWidget {
         }
 
         return Container(
-          height: Dimensions.bottomHeightBar,
           padding: EdgeInsets.only(
-            top: Dimensions.height30,
-            bottom: Dimensions.height30,
+            top: Dimensions.height20,
+            bottom: Dimensions.height20,
             left: Dimensions.width20,
             right: Dimensions.width20,
           ),
@@ -256,7 +246,7 @@ class CartPage extends StatelessWidget {
                     color: AppColors.mainColor,
                   ),
                   child: BigText(
-                    text: "Check out",
+                    text: "Pagar",
                     color: Colors.white,
                     size: Dimensions.font18,
                   ),

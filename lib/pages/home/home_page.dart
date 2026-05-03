@@ -17,7 +17,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = const [
     MainFoodPage(),
     Center(child: Text('Historial', style: TextStyle(fontFamily: 'Roboto', fontSize: 20))),
-    CartPage(),
+    const CartPage(showHeader: false),
     ProfilePage(),
   ];
 

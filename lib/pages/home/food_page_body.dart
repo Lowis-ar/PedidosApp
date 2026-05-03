@@ -140,7 +140,7 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                             // Text section
                             Expanded(
                               child: Container(
-                                height: Dimensions.listViewTextContSize,
+                                // Eliminada altura fija para evitar overflow
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.only(
                                     topRight: Radius.circular(Dimensions.radius20),

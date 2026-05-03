@@ -13,9 +13,9 @@ class CartController extends GetxController{
   Map<int, CartModel> get items => _items;
 
 
-  void addItem(ProductModel product, int quantity){
+  void addItem(ProductModel product, int quantity) {
     var totalQuantity = 0;
-    if(_items.containsKey(product.id!)){
+    if (_items.containsKey(product.id!)) {
       _items.update(product.id!, (value) {
         totalQuantity = value.quantity! + quantity;
         return CartModel(
@@ -30,12 +30,12 @@ class CartController extends GetxController{
         );
       });
 
-      if(totalQuantity <= 0){
+      if (totalQuantity <= 0) {
         _items.remove(product.id);
       }
-    }else{
-      if(quantity > 0){
-        _items.putIfAbsent(product.id!, (){
+    } else {
+      if (quantity > 0) {
+        _items.putIfAbsent(product.id!, () {
           return CartModel(
             id: product.id,
             name: product.name,
@@ -47,12 +47,16 @@ class CartController extends GetxController{
             product: product,
           );
         });
-      }else{
-        Get.snackbar("Item count", "You should at least add an item in the cart",
-            backgroundColor: AppColors.mainColor,
-            colorText: Colors.white);
+      } else {
+        Get.snackbar(
+          "Cantidad",
+          "Debes agregar al menos un producto",
+          backgroundColor: AppColors.mainColor,
+          colorText: Colors.white,
+        );
       }
     }
+    update();
   }
 
   bool existInCart(ProductModel product){

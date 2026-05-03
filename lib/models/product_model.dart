@@ -55,7 +55,7 @@ class ProductModel {
   ProductModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
-    description = json['description'];
+    description = json['description']?.replaceAll(RegExp(r'<[^>]*>|&nbsp;'), '');
     // Handle price as int, double, or string from API
     if (json['price'] != null) {
       if (json['price'] is int) {
