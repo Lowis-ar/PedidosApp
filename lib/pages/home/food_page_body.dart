@@ -15,7 +15,7 @@ import '../../widgets/icon_and_text_widget.dart';
 import '../../widgets/small_text.dart';
 
 class FoodPageBody extends StatefulWidget {
-  const FoodPageBody({Key? key}) : super(key: key);
+  const FoodPageBody({super.key});
 
   @override
   State<FoodPageBody> createState() => _FoodPageBodyState();
@@ -24,8 +24,8 @@ class FoodPageBody extends StatefulWidget {
 class _FoodPageBodyState extends State<FoodPageBody> {
   PageController pageController = PageController(viewportFraction: 0.85);
   var _currPageValue = 0.0;
-  double _scaleFacto = 0.8;
-  double _height = Dimensions.pageViewContainer;
+  final double _scaleFacto = 0.8;
+  final double _height = Dimensions.pageViewContainer;
 
   @override
   void initState() {
@@ -50,7 +50,7 @@ class _FoodPageBodyState extends State<FoodPageBody> {
         // Slider section
         GetBuilder<PopularProductController>(builder: (popularProducts) {
           return popularProducts.isLoaded
-              ? Container(
+              ? SizedBox(
                   height: Dimensions.pageView,
                   child: PageView.builder(
                     controller: pageController,

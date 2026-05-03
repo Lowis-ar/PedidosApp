@@ -9,7 +9,6 @@ import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../widgets/big_text.dart';
 import '../../widgets/small_text.dart';
-import '../home/main_food_page.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -69,11 +68,11 @@ class CartPage extends StatelessWidget {
                 context: context,
                 removeTop: true,
                 child: GetBuilder<CartController>(builder: (cartController) {
-                  var _cartList = cartController.getItems;
+                  var cartList = cartController.getItems;
                   return ListView.builder(
-                      itemCount: _cartList.length,
+                      itemCount: cartList.length,
                       itemBuilder: (_, index) {
-                        return Container(
+                        return SizedBox(
                           height: double.maxFinite,
                           width: Dimensions.height20*5,
                           child: Row(
@@ -87,7 +86,7 @@ class CartPage extends StatelessWidget {
                                     image: NetworkImage(
                                       AppConstants.BASE_URL +
                                           AppConstants.UPLOAD_URL +
-                                          _cartList[index].img!,
+                                          cartList[index].img!,
                                     ),
                                   ),
                                   borderRadius:
@@ -99,14 +98,14 @@ class CartPage extends StatelessWidget {
                                 width: Dimensions.width10,
                               ),
                               Expanded(
-                                  child: Container(
+                                  child: SizedBox(
                                 height: Dimensions.height20 * 5,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     BigText(
-                                      text: _cartList[index].name!,
+                                      text: cartList[index].name!,
                                       color: Colors.black54,
                                     ),
                                      SmallText(text: "With chinese characteristics"),
@@ -115,7 +114,7 @@ class CartPage extends StatelessWidget {
                                           MainAxisAlignment.spaceBetween,
                                       children: [
                                         BigText(
-                                            text: "\$ ${_cartList[index].price!}",
+                                            text: "\$ ${cartList[index].price!}",
                                             color: Colors.redAccent),
                                         Container(
                                           padding: EdgeInsets.symmetric(
@@ -131,7 +130,7 @@ class CartPage extends StatelessWidget {
                                             children: [
                                               GestureDetector(
                                                 onTap: () {
-                                                  cartController.addItem(_cartList[index].product!, -1);
+                                                  cartController.addItem(cartList[index].product!, -1);
                                                   print("Tap");
                                                 },
                                                 child:  Icon(
@@ -143,7 +142,7 @@ class CartPage extends StatelessWidget {
                                               SizedBox(
                                                   width: Dimensions.width10 / 2),
                                               BigText(
-                                                  text: _cartList[index].quantity.toString(),
+                                                  text: cartList[index].quantity.toString(),
                                                   size: Dimensions.font18),
                                               SizedBox(
                                                   width: Dimensions.width10 / 2),

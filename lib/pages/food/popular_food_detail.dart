@@ -11,8 +11,6 @@ import '../../utils/app_constants.dart';
 import '../../utils/colors.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/big_text.dart';
-import '../cart/cart_page.dart';
-import '../home/main_food_page.dart';
 
 class PopularFoodDetail extends StatelessWidget {
   final int pageId;
@@ -62,8 +60,9 @@ class PopularFoodDetail extends StatelessWidget {
                 GetBuilder<PopularProductController>(builder: (controller) {
                   return GestureDetector(
                     onTap: () {
-                      if(controller.totalItems >= 1)
-                      Get.toNamed(RouteHelper.getCartPage());
+                      if(controller.totalItems >= 1) {
+                        Get.toNamed(RouteHelper.getCartPage());
+                      }
                     },
                     child: Stack(
                       children: [
