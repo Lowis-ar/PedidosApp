@@ -36,6 +36,7 @@ class ProductModel {
   String? createdAt;
   String? updatedAt;
   int? typeId;
+  String? typeName;
 
   ProductModel({
     this.id,
@@ -48,19 +49,45 @@ class ProductModel {
     this.createdAt,
     this.updatedAt,
     this.typeId,
-});
+    this.typeName,
+  });
 
   ProductModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     name = json['name'];
     description = json['description'];
-    price = json['price'];
+    // Handle price as int, double, or string from API
+    if (json['price'] != null) {
+      if (json['price'] is int) {
+        price = json['price'];
+      } else if (json['price'] is double) {
+        price = (json['price'] as double).toInt();
+      } else if (json['price'] is String) {
+        price = double.tryParse(json['price'])?.toInt();
+      }
+    }
     stars = json['stars'];
     img = json['img'];
     location = json['location'];
     createdAt = json['created_at'];
     updatedAt = json['updated_at'];
     typeId = json['type_id'];
+    typeName = json['type_name'];
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'price': price,
+      'stars': stars,
+      'img': img,
+      'location': location,
+      'created_at': createdAt,
+      'updated_at': updatedAt,
+      'type_id': typeId,
+      'type_name': typeName,
+    };
+  }
 }
