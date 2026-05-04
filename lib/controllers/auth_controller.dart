@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import '../data/api/api_client.dart';
 import '../data/repository/auth_repo.dart';
 import '../models/user_model.dart';
+import 'cart_controller.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
@@ -59,6 +60,7 @@ class AuthController extends GetxController {
       final token = body['token'];
       final user = UserModel.fromJson(body['user']);
       _saveSession(token, user);
+      Get.find<CartController>().getCartData();
     } else {
       String message = 'Error al iniciar sesion';
       if (response.body != null && response.body['errors'] != null) {
@@ -89,6 +91,7 @@ class AuthController extends GetxController {
       final token = body['token'];
       final user = UserModel.fromJson(body['user']);
       _saveSession(token, user);
+      Get.find<CartController>().getCartData();
     } else {
       String message = 'Error al registrarse';
       if (response.body != null && response.body['errors'] != null) {
@@ -114,6 +117,8 @@ class AuthController extends GetxController {
     _storage.remove('token');
     _storage.remove('user');
     Get.find<ApiClient>().updateToken('');
+    Get.find<CartController>().clear();
+    Get.find<CartController>().getCartData();
     update();
   }
 }

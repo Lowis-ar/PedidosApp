@@ -12,6 +12,24 @@ class CartController extends GetxController{
   final Map<int, CartModel> _items = {};
   Map<int, CartModel> get items => _items;
 
+  @override
+  void onInit() {
+    super.onInit();
+    getCartData();
+  }
+
+  void getCartData() {
+    setCart = cartRepo.getCartList();
+  }
+
+  set setCart(List<CartModel> items) {
+    _items.clear();
+    for (int i = 0; i < items.length; i++) {
+      _items.putIfAbsent(items[i].product!.id!, () => items[i]);
+    }
+    update();
+  }
+
 
   void addItem(ProductModel product, int quantity) {
     var totalQuantity = 0;
@@ -56,6 +74,7 @@ class CartController extends GetxController{
         );
       }
     }
+    cartRepo.addToCartList(getItems);
     update();
   }
 
@@ -93,4 +112,13 @@ class CartController extends GetxController{
     }).toList();
   }
 
+  void clear() {
+    _items.clear();
+    update();
+  }
+
+  void clearCartHistory() {
+    cartRepo.clearCartHistory();
+    clear();
+  }
 }

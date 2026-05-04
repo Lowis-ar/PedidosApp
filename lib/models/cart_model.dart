@@ -29,6 +29,19 @@ class CartModel {
     quantity = json['quantity'];
     isExist = json['isExist'];
     time = json['time'];
-    product = ProductModel.fromJson(json['product']);
+    product = json['product'] != null ? ProductModel.fromJson(json['product']) : null;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'img': img,
+      'quantity': quantity,
+      'isExist': isExist,
+      'time': time,
+      'product': product?.toJson(),
+    };
   }
 }
