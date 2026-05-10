@@ -49,7 +49,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      (user.fName ?? 'U').substring(0, 1).toUpperCase(),
+                      (user.name ?? 'U').substring(0, 1).toUpperCase(),
                       style: TextStyle(
                         fontFamily: 'Roboto',
                         fontSize: Dimensions.font26 * 2,
@@ -62,7 +62,7 @@ class ProfilePage extends StatelessWidget {
               ),
               SizedBox(height: Dimensions.height15),
               Text(
-                user.fName ?? '',
+                user.name ?? '',
                 style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: Dimensions.font26,
@@ -72,7 +72,7 @@ class ProfilePage extends StatelessWidget {
               ),
               SizedBox(height: Dimensions.height30 * 1.5),
               // Info rows
-              _profileRow(Icons.person_outline, user.fName ?? 'Sin nombre'),
+              _profileRow(Icons.person_outline, user.name ?? 'Sin nombre'),
               _profileRow(Icons.email_outlined, user.email ?? 'Sin correo'),
               _profileRow(Icons.phone_outlined, user.phone ?? 'Sin telefono'),
               _profileRow(Icons.shopping_bag_outlined, '${user.orderCount ?? 0} pedidos realizados'),

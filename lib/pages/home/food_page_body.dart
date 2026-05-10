@@ -88,11 +88,11 @@ class _FoodPageBodyState extends State<FoodPageBody> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              BigText(text: "Recomendados"),
+              const BigText(text: "Recomendados"),
               SizedBox(width: Dimensions.width10),
               Container(
                 margin: const EdgeInsets.only(bottom: 3),
-                child: BigText(text: ".", color: Colors.black26),
+                child: const BigText(text: ".", color: Colors.black26),
               ),
               SizedBox(width: Dimensions.width10),
               Container(
@@ -111,12 +111,27 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                   itemCount: recommendedProducts.recommendedProductList.length,
                   itemBuilder: (context, index) {
                     var product = recommendedProducts.recommendedProductList[index];
+
+                    // Lógica dinámica para la velocidad (Rápido, Normal, Tardado)
+                    int time = int.tryParse(product.timePreparation ?? "32") ?? 32;
+                    String speedText;
+                    Color speedColor;
+                    if (time >= 10 && time <= 20) {
+                      speedText = "Rápido";
+                      speedColor = Colors.green;
+                    } else if (time >= 21 && time <= 40) {
+                      speedText = "Normal";
+                      speedColor = AppColors.iconColor1;
+                    } else {
+                      speedText = "Tardado";
+                      speedColor = Colors.redAccent;
+                    }
+
                     return GestureDetector(
                       onTap: () {
                         Get.toNamed(RouteHelper.getRecommendedFood(index));
                       },
-                      child: AnimatedContainer(
-                        duration: Duration(milliseconds: 300 + (index * 50)),
+                      child: Container(
                         margin: EdgeInsets.only(
                           left: Dimensions.width20,
                           right: Dimensions.width20,
@@ -133,14 +148,13 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                                 color: Colors.white38,
                                 image: DecorationImage(
                                   fit: BoxFit.cover,
-                                  image: NetworkImage(product.img!),
+                                  image: NetworkImage(product.img ?? ""),
                                 ),
                               ),
                             ),
                             // Text section
                             Expanded(
                               child: Container(
-                                // Eliminada altura fija para evitar overflow
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.only(
                                     topRight: Radius.circular(Dimensions.radius20),
@@ -156,32 +170,27 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                                     children: [
                                       BigText(text: product.name!),
                                       SizedBox(height: Dimensions.height10),
-                                      SmallText(text: product.location ?? "Local"),
+                                      SmallText(text: product.category?.name ?? "General"),
                                       SizedBox(height: Dimensions.height10),
-                                      FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            IconAndTextWidget(
-                                              icon: Icons.circle_sharp,
-                                              text: "Normal",
-                                              iconColor: AppColors.iconColor1,
-                                            ),
-                                            const SizedBox(width: 5),
-                                            IconAndTextWidget(
-                                              icon: Icons.location_on,
-                                              text: "1.7km",
-                                              iconColor: AppColors.mainColor,
-                                            ),
-                                            const SizedBox(width: 5),
-                                            IconAndTextWidget(
-                                              icon: Icons.access_time_rounded,
-                                              text: "32min",
-                                              iconColor: AppColors.iconColor2,
-                                            ),
-                                          ],
-                                        ),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          IconAndTextWidget(
+                                            icon: Icons.circle_sharp,
+                                            text: speedText,
+                                            iconColor: speedColor,
+                                          ),
+                                           IconAndTextWidget(
+                                            icon: Icons.location_on,
+                                            text: "1.7km",
+                                            iconColor: AppColors.mainColor,
+                                          ),
+                                          IconAndTextWidget(
+                                            icon: Icons.access_time_rounded,
+                                            text: "${product.timePreparation ?? "32"} min",
+                                            iconColor: AppColors.iconColor2,
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
@@ -194,8 +203,8 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                     );
                   },
                 )
-              : SizedBox(
-                  height: Dimensions.pageView,
+              :  SizedBox(
+                  height: 100,
                   child: Center(
                     child: CircularProgressIndicator(
                       color: AppColors.mainColor,
@@ -243,7 +252,7 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                 color: index.isEven ? const Color(0xFF69c5df) : const Color(0xFF9294cc),
                 image: DecorationImage(
                   fit: BoxFit.cover,
-                  image: NetworkImage(popularProduct.img!),
+                  image: NetworkImage(popularProduct.img ?? ""),
                 ),
               ),
             ),
@@ -276,7 +285,12 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                   right: 15,
                   bottom: 10,
                 ),
-                child: AppColumn(text: popularProduct.name!),
+                child: AppColumn(
+                  text: popularProduct.name!,
+                  stars: popularProduct.stars!,
+                  category: popularProduct.category?.name ?? "General",
+                  timePreparation: popularProduct.timePreparation,
+                ),
               ),
             ),
           ),

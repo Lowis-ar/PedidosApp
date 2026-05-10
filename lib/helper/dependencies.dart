@@ -2,8 +2,12 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:pedidosapp/controllers/auth_controller.dart';
 import 'package:pedidosapp/controllers/popular_product_controller.dart';
+import 'package:pedidosapp/controllers/branch_controller.dart';
+import 'package:pedidosapp/controllers/search_product_controller.dart';
 import 'package:pedidosapp/data/api/api_client.dart';
 import 'package:pedidosapp/data/repository/auth_repo.dart';
+import 'package:pedidosapp/data/repository/branch_repo.dart';
+import 'package:pedidosapp/data/repository/product_repo.dart';
 
 import '../controllers/cart_controller.dart';
 import '../controllers/recommended_product_controller.dart';
@@ -20,13 +24,17 @@ Future<void> init() async {
 
   // Repos
   Get.lazyPut(() => AuthRepo(apiClient: Get.find()));
+  Get.lazyPut(() => BranchRepo(apiClient: Get.find()));
   Get.lazyPut(() => PopularProductRepo(apiClient: Get.find()));
   Get.lazyPut(() => RecommendedProductRepo(apiClient: Get.find()));
+  Get.lazyPut(() => ProductRepo(apiClient: Get.find())); 
   Get.lazyPut(() => CartRepo());
 
   // Controllers
   Get.lazyPut(() => AuthController(authRepo: Get.find()));
+  Get.lazyPut(() => BranchController(branchRepo: Get.find()), fenix: true);
   Get.lazyPut(() => PopularProductController(popularProductRepo: Get.find()));
   Get.lazyPut(() => RecommendedProductController(recommendedProductRepo: Get.find()));
+  Get.lazyPut(() => SearchProductController(productRepo: Get.find()), fenix: true);
   Get.lazyPut(() => CartController(cartRepo: Get.find()), fenix: true);
 }

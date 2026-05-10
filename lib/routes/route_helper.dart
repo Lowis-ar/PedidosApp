@@ -6,6 +6,7 @@ import '../pages/food/popular_food_detail.dart';
 import '../pages/food/recommended_food_detail.dart';
 import '../pages/home/home_page.dart';
 import '../pages/profile/profile_page.dart';
+import '../pages/search/search_page.dart';
 
 class RouteHelper {
   static const String initial = "/";
@@ -15,6 +16,7 @@ class RouteHelper {
   static const String recommendedFood = "/recommended-food";
   static const String cartPage = "/cart-page";
   static const String profilePage = "/profile";
+  static const String searchPage = "/search";
 
   static String getInitial() => initial;
   static String getLogin() => login;
@@ -23,6 +25,7 @@ class RouteHelper {
   static String getRecommendedFood(int pageid) => '$recommendedFood?pageid=$pageid';
   static String getCartPage() => cartPage;
   static String getProfilePage() => profilePage;
+  static String getSearchPage() => searchPage;
 
   static List<GetPage> routes = [
     GetPage(
@@ -65,6 +68,11 @@ class RouteHelper {
       name: profilePage,
       page: () => const ProfilePage(),
       transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: searchPage,
+      page: () => const SearchPage(),
+      transition: Transition.downToUp,
     ),
   ];
 }

@@ -6,10 +6,12 @@ import 'package:pedidosapp/widgets/expandable_text_widget.dart';
 
 import '../../controllers/cart_controller.dart';
 import '../../controllers/popular_product_controller.dart';
+import '../../models/product_model.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/big_text.dart';
+import '../home/main_food_page.dart';
 
 class PopularFoodDetail extends StatelessWidget {
   final int pageId;
@@ -18,7 +20,15 @@ class PopularFoodDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var product = Get.find<PopularProductController>().popularProductList[pageId];
+    // Intentar obtener el producto de los argumentos (viniendo de búsqueda) 
+    // o de la lista de populares (viniendo del home)
+    ProductModel product;
+    if (Get.arguments != null && Get.arguments is ProductModel) {
+      product = Get.arguments;
+    } else {
+      product = Get.find<PopularProductController>().popularProductList[pageId];
+    }
+    
     Get.find<PopularProductController>().initProduct(product, Get.find<CartController>());
 
     return Scaffold(
@@ -29,16 +39,13 @@ class PopularFoodDetail extends StatelessWidget {
           Positioned(
             left: 0,
             right: 0,
-            child: Hero(
-              tag: 'popular_${product.id}',
-              child: Container(
-                width: double.maxFinite,
-                height: Dimensions.popularFoodImgSize,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    fit: BoxFit.cover,
-                    image: NetworkImage(product.img!),
-                  ),
+            child: Container(
+              width: double.maxFinite,
+              height: Dimensions.popularFoodImgSize,
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  image: NetworkImage(product.img ?? ""),
                 ),
               ),
             ),
@@ -117,16 +124,22 @@ class PopularFoodDetail extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppColumn(text: product.name!),
+                  AppColumn(
+                    text: product.name ?? "",
+                    stars: product.stars ?? 5.0,
+                    category: product.category?.name ?? "General",
+                    timePreparation: product.timePreparation,
+                  ),
                   SizedBox(height: Dimensions.height20),
-                  BigText(text: "Descripcion"),
+                  const BigText(text: "Introduce"),
                   SizedBox(height: Dimensions.height20),
                   Expanded(
                     child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      child: ExpandableTextWidget(text: product.description!),
+                      child: ExpandableTextWidget(
+                        text: product.description ?? "",
+                      ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
@@ -135,9 +148,10 @@ class PopularFoodDetail extends StatelessWidget {
       ),
       bottomNavigationBar: GetBuilder<PopularProductController>(builder: (popularProduct) {
         return Container(
+          height: Dimensions.bottomHeightBar,
           padding: EdgeInsets.only(
-            top: Dimensions.height20,
-            bottom: Dimensions.height20,
+            top: Dimensions.height30,
+            bottom: Dimensions.height30,
             left: Dimensions.width20,
             right: Dimensions.width20,
           ),
@@ -151,55 +165,46 @@ class PopularFoodDetail extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: Dimensions.height15,
-                    horizontal: Dimensions.width20,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(Dimensions.radius20),
-                    color: Colors.white,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => popularProduct.setQuantity(false),
-                        child: Icon(Icons.remove, color: AppColors.singColor, size: Dimensions.iconSize24),
-                      ),
-                      SizedBox(width: Dimensions.width10 / 2),
-                      BigText(text: popularProduct.inCartItems.toString(), size: Dimensions.font18),
-                      SizedBox(width: Dimensions.width10 / 2),
-                      GestureDetector(
-                        onTap: () => popularProduct.setQuantity(true),
-                        child: Icon(Icons.add, color: AppColors.singColor, size: Dimensions.iconSize24),
-                      ),
-                    ],
-                  ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: Dimensions.height15,
+                  horizontal: Dimensions.width20,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Dimensions.radius20),
+                  color: Colors.white,
+                ),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => popularProduct.setQuantity(false),
+                      child: Icon(Icons.remove, color: AppColors.singColor, size: Dimensions.iconSize24),
+                    ),
+                    SizedBox(width: Dimensions.width10 / 2),
+                    BigText(text: popularProduct.inCartItems.toString(), size: Dimensions.font18),
+                    SizedBox(width: Dimensions.width10 / 2),
+                    GestureDetector(
+                      onTap: () => popularProduct.setQuantity(true),
+                      child: Icon(Icons.add, color: AppColors.singColor, size: Dimensions.iconSize24),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(width: Dimensions.width10),
-              Flexible(
+              Container(
+                padding: EdgeInsets.symmetric(
+                  vertical: Dimensions.height15,
+                  horizontal: Dimensions.width20,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(Dimensions.radius20),
+                  color: AppColors.mainColor,
+                ),
                 child: GestureDetector(
                   onTap: () => popularProduct.addItem(product),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    padding: EdgeInsets.symmetric(
-                      vertical: Dimensions.height15,
-                      horizontal: Dimensions.width20,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(Dimensions.radius20),
-                      color: AppColors.mainColor,
-                    ),
-                    child: FittedBox(
-                      child: BigText(
-                        text: "\$ ${product.price!} | Agregar",
-                        color: Colors.white,
-                        size: Dimensions.font18,
-                      ),
-                    ),
+                  child: BigText(
+                    text: "\$ ${product.price ?? "0"} | Add to cart",
+                    color: Colors.white,
+                    size: Dimensions.font18,
                   ),
                 ),
               ),

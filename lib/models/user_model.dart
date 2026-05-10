@@ -1,6 +1,6 @@
 class UserModel {
   int? id;
-  String? fName;
+  String? name;
   String? phone;
   String? email;
   int? orderCount;
@@ -8,7 +8,7 @@ class UserModel {
 
   UserModel({
     this.id,
-    this.fName,
+    this.name,
     this.phone,
     this.email,
     this.orderCount,
@@ -17,7 +17,7 @@ class UserModel {
 
   UserModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    fName = json['f_name'];
+    name = json['name'];
     phone = json['phone'];
     email = json['email'];
     orderCount = json['order_count'];
@@ -27,7 +27,7 @@ class UserModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'f_name': fName,
+      'name': name,
       'phone': phone,
       'email': email,
       'order_count': orderCount,
