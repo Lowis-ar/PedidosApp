@@ -23,19 +23,28 @@ Future<void> main() async {
 
   // Initialize controllers
   final authController = Get.find<AuthController>();
-  Get.find<CartController>();
-  Get.find<PopularProductController>().getPopularProductList();
-  Get.find<RecommendedProductController>().getRecommendedProductList();
+  
+  if (authController.isLoggedIn && !authController.isDelivery) {
+    Get.find<CartController>();
+    Get.find<PopularProductController>().getPopularProductList();
+    Get.find<RecommendedProductController>().getRecommendedProductList();
+  }
 
-  runApp(MyApp(isLoggedIn: authController.isLoggedIn));
+  runApp(MyApp(isLoggedIn: authController.isLoggedIn, isDelivery: authController.isDelivery));
 }
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
-  const MyApp({super.key, required this.isLoggedIn});
+  final bool isDelivery;
+  const MyApp({super.key, required this.isLoggedIn, required this.isDelivery});
 
   @override
   Widget build(BuildContext context) {
+    String initialRoute = RouteHelper.login;
+    if (isLoggedIn) {
+      initialRoute = isDelivery ? RouteHelper.deliveryDashboard : RouteHelper.initial;
+    }
+
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'PedidosApp',
@@ -44,7 +53,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF89dad0)),
         useMaterial3: true,
       ),
-      initialRoute: isLoggedIn ? RouteHelper.initial : RouteHelper.login,
+      initialRoute: initialRoute,
       getPages: RouteHelper.routes,
     );
   }

@@ -4,6 +4,10 @@ import 'package:get_storage/get_storage.dart';
 import '../data/api/api_client.dart';
 import '../data/repository/auth_repo.dart';
 import '../models/user_model.dart';
+import '../models/deliveryman_model.dart';
+import '../utils/app_constants.dart';
+import '../routes/route_helper.dart';
+import 'delivery_auth_controller.dart';
 import 'cart_controller.dart';
 import 'popular_product_controller.dart';
 import 'recommended_product_controller.dart';
@@ -21,9 +25,14 @@ class AuthController extends GetxController {
   UserModel? _user;
   UserModel? get user => _user;
 
+  String _userType = 'customer'; // 'customer' or 'delivery'
+  String get userType => _userType;
+
   final _storage = GetStorage();
 
   bool get isLoggedIn => _token.isNotEmpty;
+
+  bool get isDelivery => _userType == 'delivery' || _user?.role == 'delivery' || _user?.role == 'deliveryman';
 
   @override
   void onInit() {
@@ -36,6 +45,7 @@ class AuthController extends GetxController {
     if (saved != null && saved.isNotEmpty) {
       _token = saved;
       Get.find<ApiClient>().updateToken(_token);
+      _userType = _storage.read<String>('user_type') ?? 'customer';
       final userData = _storage.read('user');
       if (userData != null) {
         _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
@@ -43,21 +53,53 @@ class AuthController extends GetxController {
     }
   }
 
-  void _saveSession(String token, UserModel user) {
+  void setUserType(String type) {
+    _userType = type;
+    update();
+  }
+
+  void _saveSession(String token, UserModel user, String type) {
     _token = token;
     _user = user;
+    _userType = type;
     _storage.write('token', token);
     _storage.write('user', user.toJson());
+    _storage.write('user_type', type);
     Get.find<ApiClient>().updateToken(token);
 
-    // Sincronizar productos y carrito tras login exitoso
-    if (Get.isRegistered<PopularProductController>()) {
-      Get.find<PopularProductController>().getPopularProductList();
+    if (type == 'delivery') {
+      final deliveryAuthController = Get.find<DeliveryAuthController>();
+      
+      // Intentar extraer el objeto deliveryman del anidamiento de la API si viene en el login
+      final dynamic dmJson = user.toJson(); // O extraer del body original si fuera posible
+      // Pero como ya mapeamos a UserModel arriba, creamos el DeliverymanModel con lo que tenemos
+      final dm = DeliverymanModel(
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        vehicleType: dmJson['vehicle_type'], // Intentar mapear si venía en el JSON original
+        licensePlate: dmJson['license_plate'],
+        isAvailable: true,
+      );
+      _storage.write(AppConstants.DELIVERY_TOKEN, token);
+      _storage.write(AppConstants.DELIVERY_USER_KEY, dm.toJson());
+      deliveryAuthController.update(); 
+      
+      // Redirigir inmediatamente al dashboard de delivery y limpiar historial de navegación
+      Get.offAllNamed(RouteHelper.getDeliveryDashboard());
+    } else {
+      if (Get.isRegistered<PopularProductController>()) {
+        Get.find<PopularProductController>().getPopularProductList();
+      }
+      if (Get.isRegistered<RecommendedProductController>()) {
+        Get.find<RecommendedProductController>().getRecommendedProductList();
+      }
+      Get.find<CartController>().getCartData();
+      
+      // Redirigir al home de clientes
+      Get.offAllNamed(RouteHelper.getInitial());
     }
-    if (Get.isRegistered<RecommendedProductController>()) {
-      Get.find<RecommendedProductController>().getRecommendedProductList();
-    }
-    Get.find<CartController>().getCartData();
     update();
   }
 
@@ -66,27 +108,35 @@ class AuthController extends GetxController {
     update();
 
     try {
-      Response response = await authRepo.login(email, password);
+      Response response;
+      if (_userType == 'delivery') {
+        response = await authRepo.apiClient.postData(AppConstants.DELIVERY_LOGIN_URI, {
+          'email': email,
+          'password': password,
+        });
+      } else {
+        response = await authRepo.login(email, password);
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final body = response.body;
         if (body != null) {
-          // Búsqueda flexible de token y usuario
-          final String? token = body['token'] ?? body['access_token'] ?? body['data']?['token'];
-          final dynamic userJson = body['user'] ?? body['data']?['user'] ?? body['data'];
+          // Búsqueda flexible según la nueva estructura anidada
+          final String? token = body['data']?['token'] ?? body['token'] ?? body['access_token'];
+          final dynamic userJson = body['data']?['deliveryman'] ?? body['user'] ?? body['data']?['user'] ?? body['data'];
 
           if (token != null && userJson != null) {
-            final user = UserModel.fromJson(userJson is Map<String, dynamic> ? userJson : Map<String, dynamic>.from(userJson));
-            _saveSession(token, user);
+            final user = UserModel.fromJson(Map<String, dynamic>.from(userJson));
+            _saveSession(token, user, _userType);
           } else {
-            _showError('El servidor no envió datos de usuario o token válidos');
+            _showError('El servidor no envió datos válidos');
           }
         }
       } else {
         _handleApiError(response, 'Error al iniciar sesión');
       }
     } catch (e) {
-      _showError('Ocurrió un error inesperado. Revisa tu conexión.');
+      _showError('Error de conexión');
     } finally {
       _isLoading = false;
       update();
@@ -108,7 +158,7 @@ class AuthController extends GetxController {
 
           if (token != null && userJson != null) {
             final user = UserModel.fromJson(userJson is Map<String, dynamic> ? userJson : Map<String, dynamic>.from(userJson));
-            _saveSession(token, user);
+            _saveSession(token, user, _userType);
           } else {
             _showError('Registro exitoso, pero hubo un problema al obtener tus datos.');
           }
@@ -160,6 +210,9 @@ class AuthController extends GetxController {
     _user = null;
     _storage.remove('token');
     _storage.remove('user');
+    _storage.remove('user_type');
+    _storage.remove(AppConstants.DELIVERY_TOKEN);
+    _storage.remove(AppConstants.DELIVERY_USER_KEY);
     Get.find<ApiClient>().updateToken('');
     Get.find<CartController>().clear();
     Get.find<CartController>().getCartData();

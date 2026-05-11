@@ -91,6 +91,64 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   ),
                 ),
                 SizedBox(height: Dimensions.height30 * 1.5),
+                // Role Selector
+                GetBuilder<AuthController>(builder: (auth) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
+                    child: Container(
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(Dimensions.radius30),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => auth.setUserType('customer'),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: auth.userType == 'customer' ? AppColors.mainColor : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(Dimensions.radius30),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Cliente",
+                                    style: TextStyle(
+                                      color: auth.userType == 'customer' ? Colors.white : Colors.grey,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => auth.setUserType('delivery'),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: auth.userType == 'delivery' ? AppColors.mainColor : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(Dimensions.radius30),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Repartidor",
+                                    style: TextStyle(
+                                      color: auth.userType == 'delivery' ? Colors.white : Colors.grey,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                SizedBox(height: Dimensions.height20),
                 // Email field
                 _buildTextField(
                   controller: _emailController,
@@ -147,9 +205,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                               return;
                             }
                             await authController.login(email, pass);
-                            if (authController.isLoggedIn) {
-                              Get.offAllNamed(RouteHelper.getInitial());
-                            }
+                            // La redirección ahora la maneja internamente _saveSession
                           },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),

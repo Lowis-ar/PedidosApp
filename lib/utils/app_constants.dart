@@ -37,9 +37,24 @@ class AppConstants {
   static const String ORDER_LIST_URI = "/api/v1/orders";
   static const String CANCEL_ORDER_URI = "/api/v1/orders/";
 
+  // Delivery endpoints
+  static const String DELIVERY_LOGIN_URI = "/api/v1/delivery/auth/login";
+  static const String DELIVERY_LOGOUT_URI = "/api/v1/delivery/auth/logout";
+  static const String DELIVERY_PROFILE_URI = "/api/v1/delivery/auth/me";
+  static const String DELIVERY_UPDATE_PROFILE_URI = "/api/v1/delivery/auth/update-profile";
+  
+  static const String DELIVERY_AVAILABLE_ORDERS_URI = "/api/v1/delivery/orders/available";
+  static const String DELIVERY_ACCEPT_ORDER_URI = "/api/v1/delivery/orders/"; // {order_id}/accept
+  static const String DELIVERY_ORDER_STATUS_UPDATE_URI = "/api/v1/delivery/orders/"; // {order_id}/status
+  static const String DELIVERY_VERIFY_OTP_URI = "/api/v1/delivery/orders/"; // {order_id}/verify-otp
+  static const String DELIVERY_HISTORY_ORDERS_URI = "/api/v1/delivery/orders/history";
+  static const String DELIVERY_ORDER_LIST_URI = "/api/v1/delivery/orders";
+
   // Storage keys
   static const String TOKEN = "";
   static const String USER_KEY = "user_data";
+  static const String DELIVERY_USER_KEY = "delivery_user_data";
+  static const String DELIVERY_TOKEN = "delivery_token";
 
   // Storage key para guardar la sucursal seleccionada (NUEVO)
   static const String BRANCH_ID_KEY = "branch_id";

@@ -7,6 +7,11 @@ import '../pages/food/recommended_food_detail.dart';
 import '../pages/home/home_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../pages/search/search_page.dart';
+import '../pages/delivery/delivery_login_page.dart';
+import '../pages/delivery/delivery_dashboard.dart';
+import '../pages/delivery/delivery_history.dart';
+import '../pages/delivery/delivery_profile.dart';
+import '../pages/delivery/delivery_order_detail.dart';
 
 class RouteHelper {
   static const String initial = "/";
@@ -18,6 +23,13 @@ class RouteHelper {
   static const String profilePage = "/profile";
   static const String searchPage = "/search";
 
+  // Delivery routes
+  static const String deliveryLogin = "/delivery-login";
+  static const String deliveryDashboard = "/delivery-dashboard";
+  static const String deliveryHistory = "/delivery-history";
+  static const String deliveryProfile = "/delivery-profile";
+  static const String deliveryOrderDetail = "/delivery-order-detail";
+
   static String getInitial() => initial;
   static String getLogin() => login;
   static String getRegister() => register;
@@ -26,6 +38,12 @@ class RouteHelper {
   static String getCartPage() => cartPage;
   static String getProfilePage() => profilePage;
   static String getSearchPage() => searchPage;
+
+  static String getDeliveryLogin() => deliveryLogin;
+  static String getDeliveryDashboard() => deliveryDashboard;
+  static String getDeliveryHistory() => deliveryHistory;
+  static String getDeliveryProfile() => deliveryProfile;
+  static String getDeliveryOrderDetail() => deliveryOrderDetail;
 
   static List<GetPage> routes = [
     GetPage(
@@ -47,7 +65,7 @@ class RouteHelper {
       name: popularFood,
       page: () {
         var pageId = Get.parameters['pageId'];
-        return PopularFoodDetail(pageId: int.parse(pageId!));
+        return PopularFoodDetail(pageId: int.parse(pageId ?? "0"));
       },
       transition: Transition.fadeIn,
     ),
@@ -55,7 +73,7 @@ class RouteHelper {
       name: recommendedFood,
       page: () {
         var pageId = Get.parameters['pageid'];
-        return RecommendedFoodDetail(pageId: int.parse(pageId!));
+        return RecommendedFoodDetail(pageId: int.parse(pageId ?? "0"));
       },
       transition: Transition.fadeIn,
     ),
@@ -73,6 +91,32 @@ class RouteHelper {
       name: searchPage,
       page: () => const SearchPage(),
       transition: Transition.downToUp,
+    ),
+    // Delivery Pages
+    GetPage(
+      name: deliveryLogin,
+      page: () => const DeliveryLoginPage(),
+      transition: Transition.fade,
+    ),
+    GetPage(
+      name: deliveryDashboard,
+      page: () => const DeliveryDashboard(),
+      transition: Transition.fade,
+    ),
+    GetPage(
+      name: deliveryHistory,
+      page: () => const DeliveryHistoryPage(),
+      transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: deliveryProfile,
+      page: () => const DeliveryProfilePage(),
+      transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: deliveryOrderDetail,
+      page: () => const DeliveryOrderDetailPage(),
+      transition: Transition.fadeIn,
     ),
   ];
 }

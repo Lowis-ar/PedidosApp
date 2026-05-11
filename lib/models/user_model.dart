@@ -3,6 +3,7 @@ class UserModel {
   String? name;
   String? phone;
   String? email;
+  String? role;
   int? orderCount;
   String? createdAt;
 
@@ -11,6 +12,7 @@ class UserModel {
     this.name,
     this.phone,
     this.email,
+    this.role,
     this.orderCount,
     this.createdAt,
   });
@@ -20,6 +22,7 @@ class UserModel {
     name = json['name'];
     phone = json['phone'];
     email = json['email'];
+    role = json['role']; // Puede ser 'delivery', 'customer', etc.
     orderCount = json['order_count'];
     createdAt = json['created_at'];
   }
@@ -30,6 +33,7 @@ class UserModel {
       'name': name,
       'phone': phone,
       'email': email,
+      'role': role,
       'order_count': orderCount,
       'created_at': createdAt,
     };
