@@ -58,7 +58,7 @@ class AuthController extends GetxController {
     update();
   }
 
-  void _saveSession(String token, UserModel user, String type) {
+  void _saveSession(String token, UserModel user, String type, {Map<String, dynamic>? rawJson}) {
     _token = token;
     _user = user;
     _userType = type;
@@ -70,16 +70,17 @@ class AuthController extends GetxController {
     if (type == 'delivery') {
       final deliveryAuthController = Get.find<DeliveryAuthController>();
       
-      final dynamic dmJson = user.toJson();
-      final dm = DeliverymanModel(
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        vehicleType: dmJson['vehicle_type'],
-        licensePlate: dmJson['license_plate'],
-        isAvailable: true,
-      );
+      // Usar rawJson si está disponible para no perder campos específicos de deliveryman
+      final dm = rawJson != null 
+          ? DeliverymanModel.fromJson(rawJson)
+          : DeliverymanModel(
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              phone: user.phone,
+              isAvailable: true,
+            );
+
       _storage.write(AppConstants.DELIVERY_TOKEN, token);
       _storage.write(AppConstants.DELIVERY_USER_KEY, dm.toJson());
       deliveryAuthController.update(); 
@@ -121,8 +122,9 @@ class AuthController extends GetxController {
           final dynamic userJson = body['data']?['deliveryman'] ?? body['user'] ?? body['data']?['user'] ?? body['data'];
 
           if (token != null && userJson != null) {
-            final user = UserModel.fromJson(Map<String, dynamic>.from(userJson));
-            _saveSession(token, user, _userType);
+            final userMap = Map<String, dynamic>.from(userJson);
+            final user = UserModel.fromJson(userMap);
+            _saveSession(token, user, _userType, rawJson: userMap);
           } else {
             _showError('El servidor no envió datos válidos');
           }

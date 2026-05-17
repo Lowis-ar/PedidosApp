@@ -12,15 +12,15 @@ class DeliverymanModel {
 
   DeliverymanModel({
     this.id,
-    this.name,
-    this.email,
-    this.phone,
-    this.vehicleType,
-    this.licensePlate,
-    this.averageRating,
-    this.totalReviews,
-    this.isAvailable,
-    this.isActive,
+    this.name = "",
+    this.email = "",
+    this.phone = "",
+    this.vehicleType = "N/A",
+    this.licensePlate = "N/A",
+    this.averageRating = 0.0,
+    this.totalReviews = 0,
+    this.isAvailable = false,
+    this.isActive = false,
   });
 
   DeliverymanModel.fromJson(Map<String, dynamic> json) {

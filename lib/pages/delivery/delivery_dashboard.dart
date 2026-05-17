@@ -188,7 +188,7 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              BigText(text: "Nueva Orden #${order.id}", size: 16),
+              Expanded(child: BigText(text: "Nueva Orden #${order.id}", size: 16)),
               BigText(text: "\$${order.deliveryFee}", color: Colors.green),
             ],
           ),

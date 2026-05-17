@@ -97,14 +97,17 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BigText(text: "Orden #${order.id}", size: 16),
-                  SmallText(text: order.createdAt ?? "", color: Colors.grey),
-                  SmallText(text: order.deliveryAddress ?? "", color: Colors.black54),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BigText(text: "Orden #${order.id}", size: 16),
+                    SmallText(text: order.createdAt ?? "", color: Colors.grey),
+                    SmallText(text: order.deliveryAddress ?? "", color: Colors.black54),
+                  ],
+                ),
               ),
+              const SizedBox(width: 10),
               BigText(text: "\$${order.deliveryFee}", color: Colors.green),
             ],
           ),

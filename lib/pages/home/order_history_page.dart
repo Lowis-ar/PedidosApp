@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/order_controller.dart';
-import '../../models/order_model.dart';
-import '../../utils/colors.dart';
-import '../../utils/dimensions.dart';
-import '../../widgets/big_text.dart';
-import '../../widgets/small_text.dart';
+import 'package:pedidosapp/controllers/order_controller.dart';
+import 'package:pedidosapp/models/order_model.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/utils/dimensions.dart';
+import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/small_text.dart';
 
 class OrderHistoryPage extends StatefulWidget {
   const OrderHistoryPage({super.key});

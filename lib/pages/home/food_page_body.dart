@@ -70,9 +70,17 @@ class _FoodPageBodyState extends State<FoodPageBody> {
         }),
         // Dots indicator
         GetBuilder<PopularProductController>(builder: (popularProducts) {
+          int dotsCount = popularProducts.popularProductList.isEmpty ? 1 : popularProducts.popularProductList.length;
+          // Aseguramos que la posición sea menor que la cantidad de puntos para evitar el assertion failure
+          double position = _currPageValue;
+          if (position >= dotsCount) {
+            position = (dotsCount - 1).toDouble();
+          }
+          if (position < 0) position = 0;
+
           return DotsIndicator(
-            dotsCount: popularProducts.popularProductList.isEmpty ? 1 : popularProducts.popularProductList.length,
-            position: _currPageValue,
+            dotsCount: dotsCount,
+            position: position,
             decorator: DotsDecorator(
               activeColor: AppColors.mainColor,
               size: const Size.square(9.0),
@@ -155,6 +163,7 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                             // Text section
                             Expanded(
                               child: Container(
+                                height: Dimensions.listViewTextContSize,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.only(
                                     topRight: Radius.circular(Dimensions.radius20),
@@ -172,25 +181,28 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                                       SizedBox(height: Dimensions.height10),
                                       SmallText(text: product.category?.name ?? "General"),
                                       SizedBox(height: Dimensions.height10),
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          IconAndTextWidget(
-                                            icon: Icons.circle_sharp,
-                                            text: speedText,
-                                            iconColor: speedColor,
-                                          ),
-                                           IconAndTextWidget(
-                                            icon: Icons.location_on,
-                                            text: "1.7km",
-                                            iconColor: AppColors.mainColor,
-                                          ),
-                                          IconAndTextWidget(
-                                            icon: Icons.access_time_rounded,
-                                            text: "${product.timePreparation ?? "32"} min",
-                                            iconColor: AppColors.iconColor2,
-                                          ),
-                                        ],
+                                      FittedBox(
+                                        child: Row(
+                                          children: [
+                                            IconAndTextWidget(
+                                              icon: Icons.circle_sharp,
+                                              text: speedText,
+                                              iconColor: speedColor,
+                                            ),
+                                            const SizedBox(width: 10),
+                                             IconAndTextWidget(
+                                              icon: Icons.location_on,
+                                              text: "1.7km",
+                                              iconColor: AppColors.mainColor,
+                                            ),
+                                            const SizedBox(width: 10),
+                                            IconAndTextWidget(
+                                              icon: Icons.access_time_rounded,
+                                              text: "${product.timePreparation ?? "32"} min",
+                                              iconColor: AppColors.iconColor2,
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),

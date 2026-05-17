@@ -4,7 +4,9 @@ import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/cart_controller.dart';
 import '../../controllers/order_controller.dart';
+import '../../controllers/zone_controller.dart';
 import '../../models/order_model.dart';
+import '../../models/zone_model.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 import '../../widgets/big_text.dart';
@@ -38,6 +40,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     Get.find<OrderController>().getAddressList();
+    Get.find<ZoneController>().getZoneList();
     // Pre-fill contact info from user profile
     final user = Get.find<AuthController>().user;
     _contactNameController.text = user?.name ?? '';
@@ -185,85 +188,123 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Widget _buildAddressStep() {
     return GetBuilder<OrderController>(builder: (orderController) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Existing addresses
-          if (orderController.addressList.isNotEmpty) ...[
-            SmallText(text: "Direcciones guardadas", color: Colors.black54),
+      return GetBuilder<ZoneController>(builder: (zoneController) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Selector de Zona Dinámico
+            const Text("Zona de Entrega", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            ...orderController.addressList.map((addr) {
-              bool isSelected = orderController.selectedAddress?.id == addr.id;
-              return GestureDetector(
-                onTap: () {
-                  orderController.selectAddress(addr);
-                  _addressController.text = addr.address ?? '';
-                  _contactNameController.text = addr.contactPersonName ?? '';
-                  _contactPhoneController.text = addr.contactPersonNumber ?? '';
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppColors.mainColor.withValues(alpha: 0.1) : Colors.white,
-                    border: Border.all(
-                      color: isSelected ? AppColors.mainColor : Colors.grey.shade300,
-                      width: isSelected ? 2 : 1,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        addr.addressType == 'Home' ? Icons.home : Icons.work,
-                        color: isSelected ? AppColors.mainColor : Colors.grey,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: zoneController.isLoaded
+                  ? DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        isExpanded: true,
+                        value: zoneController.selectedZoneId != -1 ? zoneController.selectedZoneId : null,
+                        hint: const Text("Selecciona una zona"),
+                        items: zoneController.zoneList.map((ZoneModel zone) {
+                          return DropdownMenuItem<int>(
+                            value: zone.id,
+                            child: Text(zone.name),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            zoneController.setZoneId(val);
+                            if (orderController.selectedAddress != null) {
+                              orderController.selectedAddress!.zoneId = val;
+                            }
+                          }
+                        },
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(addr.addressType ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
-                            Text(addr.address ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-                          ],
-                        ),
-                      ),
-                      if (isSelected) Icon(Icons.check_circle, color: AppColors.mainColor),
-                    ],
-                  ),
-                ),
-              );
-            }),
-            const Divider(height: 24),
-            SmallText(text: "O agrega una nueva dirección", color: Colors.black54),
-            const SizedBox(height: 8),
-          ],
+                    )
+                  : const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())),
+            ),
+            const SizedBox(height: 20),
 
-          // Address type selector
-          Row(
-            children: ['Home', 'Work', 'Other'].map((type) {
-              bool sel = _addressType == type;
-              String label = type == 'Home' ? 'Casa' : (type == 'Work' ? 'Trabajo' : 'Otro');
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(label),
-                  selected: sel,
-                  selectedColor: AppColors.mainColor.withValues(alpha: 0.2),
-                  onSelected: (_) => setState(() => _addressType = type),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on),
-          const SizedBox(height: 10),
-          _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
-          const SizedBox(height: 10),
-          _buildCheckoutField(_contactPhoneController, 'Teléfono de contacto', Icons.phone,
-              keyboardType: TextInputType.phone),
-        ],
-      );
+            // Existing addresses
+            if (orderController.addressList.isNotEmpty) ...[
+              SmallText(text: "Direcciones guardadas", color: Colors.black54),
+              const SizedBox(height: 8),
+              ...orderController.addressList.map((addr) {
+                bool isSelected = orderController.selectedAddress?.id == addr.id;
+                return GestureDetector(
+                  onTap: () {
+                    orderController.selectAddress(addr);
+                    _addressController.text = addr.address ?? '';
+                    _contactNameController.text = addr.contactPersonName ?? '';
+                    _contactPhoneController.text = addr.contactPersonNumber ?? '';
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColors.mainColor.withValues(alpha: 0.1) : Colors.white,
+                      border: Border.all(
+                        color: isSelected ? AppColors.mainColor : Colors.grey.shade300,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          addr.addressType == 'Home' ? Icons.home : Icons.work,
+                          color: isSelected ? AppColors.mainColor : Colors.grey,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(addr.addressType ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(addr.address ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        if (isSelected) Icon(Icons.check_circle, color: AppColors.mainColor),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const Divider(height: 24),
+              SmallText(text: "O agrega una nueva dirección", color: Colors.black54),
+              const SizedBox(height: 8),
+            ],
+
+            // Address type selector
+            Row(
+              children: ['Home', 'Work', 'Other'].map((type) {
+                bool sel = _addressType == type;
+                String label = type == 'Home' ? 'Casa' : (type == 'Work' ? 'Trabajo' : 'Otro');
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(label),
+                    selected: sel,
+                    selectedColor: AppColors.mainColor.withValues(alpha: 0.2),
+                    onSelected: (_) => setState(() => _addressType = type),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on),
+            const SizedBox(height: 10),
+            _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
+            const SizedBox(height: 10),
+            _buildCheckoutField(_contactPhoneController, 'Teléfono de contacto', Icons.phone,
+                keyboardType: TextInputType.phone),
+          ],
+        );
+      });
     });
   }
 
@@ -504,40 +545,48 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final orderController = Get.find<OrderController>();
     final cartController = Get.find<CartController>();
 
-    AddressModel address;
-    if (_addressController.text.isNotEmpty) {
-      address = AddressModel(
+    int? finalAddressId;
+
+    // LÓGICA REFORZADA: Si ya hay un ID, NO intentar crear dirección
+    if (orderController.selectedAddress != null && orderController.selectedAddress!.id != null) {
+      finalAddressId = orderController.selectedAddress!.id;
+    } else if (_addressController.text.isNotEmpty) {
+      // Crear nueva dirección SOLO si no hay una seleccionada con ID
+      AddressModel newAddress = AddressModel(
         addressType: _addressType,
         address: _addressController.text,
         contactPersonName: _contactNameController.text,
         contactPersonNumber: _contactPhoneController.text,
         latitude: '0',
         longitude: '0',
+        zoneId: Get.find<ZoneController>().selectedZoneId,
       );
       
-      // Registrar la nueva dirección en el servidor para obtener un ID válido
-      bool addSuccess = await orderController.addAddress(address);
-      if (!addSuccess || orderController.selectedAddress == null) {
-        return; // El controlador ya muestra snackbar con el error
+      bool addSuccess = await orderController.addAddress(newAddress);
+      if (addSuccess && orderController.selectedAddress != null) {
+        finalAddressId = orderController.selectedAddress!.id;
+      } else {
+        return; // Detener si falla la creación de dirección
       }
-      address = orderController.selectedAddress!;
-    } else if (orderController.selectedAddress != null) {
-      address = orderController.selectedAddress!;
-    } else {
-      Get.snackbar('Error', 'Selecciona o ingresa una dirección de entrega', 
+    }
+
+    if (finalAddressId == null) {
+      Get.snackbar('Error', 'Por favor selecciona o ingresa una dirección de entrega', 
         backgroundColor: Colors.redAccent, colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
       return;
     }
 
+    // PETICIÓN DIRECTA AL PEDIDO
+    debugPrint("Enviando pedido con address_id: $finalAddressId");
+
     bool success = await orderController.placeOrder(
       cartItems: cartController.getItems,
-      address: address,
+      addressId: finalAddressId,
       orderNote: _noteController.text,
     );
 
     if (success) {
-      // Show OTP dialog
       _showOtpConfirmation(orderController.lastOtp ?? '');
     }
   }

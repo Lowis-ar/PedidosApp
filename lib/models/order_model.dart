@@ -117,6 +117,7 @@ class AddressModel {
   String? longitude;
   int? userId;
   String? contactPersonName;
+  int? zoneId;
 
   AddressModel({
     this.id,
@@ -127,27 +128,30 @@ class AddressModel {
     this.longitude,
     this.userId,
     this.contactPersonName,
+    this.zoneId = 1,
   });
 
   AddressModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    addressType = json['address_type'];
-    contactPersonNumber = json['contact_person_number'];
-    address = json['address'];
+    addressType = json['address_type'] ?? json['label'];
+    contactPersonNumber = json['contact_person_number'] ?? json['phone'];
+    address = json['address'] ?? json['street_address'];
     latitude = json['latitude']?.toString();
     longitude = json['longitude']?.toString();
     userId = json['user_id'];
-    contactPersonName = json['contact_person_name'];
+    contactPersonName = json['contact_person_name'] ?? json['name'];
+    zoneId = json['zone_id'];
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'address_type': addressType,
-      'contact_person_number': contactPersonNumber,
-      'address': address,
+      'label': addressType, 
+      'street': address,
+      'zone_id': zoneId ?? 1,
       'latitude': latitude,
       'longitude': longitude,
+      'contact_person_number': contactPersonNumber,
       'contact_person_name': contactPersonName,
     };
   }

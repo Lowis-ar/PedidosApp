@@ -118,12 +118,14 @@ class DeliveryProfilePage extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.grey, size: 22),
           const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SmallText(text: label, color: Colors.grey),
-              BigText(text: value, size: 16),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SmallText(text: label, color: Colors.grey),
+                BigText(text: value, size: 16),
+              ],
+            ),
           )
         ],
       ),

@@ -16,12 +16,13 @@ class AppConstants {
   static const String PRODUCT_DETAIL_URI = "/api/v1/products/";
 
   // Customer endpoints
-  static const String CUSTOMER_INFO_URI = "/api/v1/customer/info";
-  static const String UPDATE_PROFILE_URI = "/api/v1/customer/update-profile";
-  static const String CHANGE_PASSWORD_URI = "/api/v1/customer/change-password";
+  static const String CUSTOMER_INFO_URI = "/api/v1/auth/me";
+  static const String UPDATE_PROFILE_URI = "/api/v1/auth/update-profile";
+  static const String CHANGE_PASSWORD_URI = "/api/v1/auth/change-password";
 
   // Addresses endpoints
-  static const String ADDRESSES_URI = "/api/v1/customer/addresses";
+  static const String ADDRESSES_URI = "/api/v1/addresses";
+  static const String ZONES_URI = "/api/v1/zones";
 
   // Order endpoints
   static const String PLACE_ORDER_URI = "/api/v1/orders";

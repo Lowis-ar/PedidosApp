@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../data/repository/order_repo.dart';
-import '../models/order_model.dart';
-import '../models/cart_model.dart';
-import '../utils/colors.dart';
-import 'cart_controller.dart';
-import 'branch_controller.dart';
+import 'package:pedidosapp/data/repository/order_repo.dart';
+import 'package:pedidosapp/models/order_model.dart';
+import 'package:pedidosapp/models/cart_model.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/controllers/cart_controller.dart';
+import 'package:pedidosapp/controllers/branch_controller.dart';
 
 class OrderController extends GetxController {
   final OrderRepo orderRepo;
@@ -28,42 +28,27 @@ class OrderController extends GetxController {
 
   Future<bool> placeOrder({
     required List<CartModel> cartItems,
-    required AddressModel address,
+    required int addressId,
     String? orderNote,
   }) async {
     _isLoading = true;
     update();
 
     try {
-      int branchId = 2; // Default to 2 since it is the valid remote branch ID
-      try {
-        if (Get.isRegistered<BranchController>()) {
-          final bController = Get.find<BranchController>();
-          if (bController.branchList.isNotEmpty) {
-            if (bController.branchList.any((b) => b.id == bController.branchId)) {
-              branchId = bController.branchId;
-            } else {
-              branchId = bController.branchList[0].id;
-            }
-          } else if (bController.branchId != 1) {
-            branchId = bController.branchId;
-          }
-        }
-      } catch (_) {}
-
-      if (address.id == null) {
-        _showError('No se pudo determinar un ID de dirección válido. Registra la dirección primero.');
-        return false;
-      }
+      int branchId = 1; // Default to 1 as per backend requirement
 
       Map<String, dynamic> body = {
         'branch_id': branchId,
-        'address_id': address.id,
+        'address_id': addressId,
+        'coupon_code': null,
+        'use_loyalty_points': false,
         'notes': orderNote ?? '',
         'items': cartItems.map((item) {
           return {
             'product_id': item.product?.id ?? item.id,
+            'variant_id': null,
             'quantity': item.quantity,
+            'extras': [],
           };
         }).toList(),
       };

@@ -97,10 +97,13 @@ class DeliveryAuthController extends GetxController {
   Future<void> getProfile() async {
     try {
       Response response = await deliveryAuthRepo.getProfile();
+      debugPrint("Profile API Raw: ${response.body}");
       if (response.statusCode == 200) {
         final body = response.body;
-        if (body['success'] == true && body['data'] != null && body['data']['deliveryman'] != null) {
-          _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(body['data']['deliveryman']));
+        // La API devuelve { success: true, data: { deliveryman: { ... } } }
+        final dynamic dmJson = body['data']?['deliveryman'] ?? body['deliveryman'] ?? body['data'] ?? body;
+        if (dmJson != null) {
+          _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(dmJson));
           _storage.write(AppConstants.DELIVERY_USER_KEY, _deliveryman?.toJson());
           update();
         }
