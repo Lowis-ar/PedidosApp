@@ -1,4 +1,5 @@
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../data/repository/recommended_product_repo.dart';
@@ -16,14 +17,16 @@ class RecommendedProductController extends GetxController{
 
 
   Future<void> getRecommendedProductList() async {
+    debugPrint("Fetching recommended products...");
     Response response = await recommendedProductRepo.getRecommendedProductList();
-    if(response.statusCode == 200){
+    debugPrint("Recommended products response: ${response.statusCode} - ${response.body}");
+    if (response.statusCode == 200) {
       _recommendedProductList = [];
       _recommendedProductList.addAll(Product.fromJson(response.body).products);
       _isLoaded = true;
       update();
-    }else{
-
+    } else {
+      debugPrint("Failed to load recommended products: ${response.statusCode}");
     }
   }
 }

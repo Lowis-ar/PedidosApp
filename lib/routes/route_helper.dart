@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/register_page.dart';
 import '../pages/cart/cart_page.dart';
+import '../pages/cart/checkout_page.dart';
 import '../pages/food/popular_food_detail.dart';
 import '../pages/food/recommended_food_detail.dart';
 import '../pages/home/home_page.dart';
@@ -20,6 +21,7 @@ class RouteHelper {
   static const String popularFood = "/popular-food";
   static const String recommendedFood = "/recommended-food";
   static const String cartPage = "/cart-page";
+  static const String checkout = "/checkout";
   static const String profilePage = "/profile";
   static const String searchPage = "/search";
 
@@ -36,6 +38,7 @@ class RouteHelper {
   static String getPopularFood(int pageId) => '$popularFood?pageId=$pageId';
   static String getRecommendedFood(int pageid) => '$recommendedFood?pageid=$pageid';
   static String getCartPage() => cartPage;
+  static String getCheckout() => checkout;
   static String getProfilePage() => profilePage;
   static String getSearchPage() => searchPage;
 
@@ -80,6 +83,11 @@ class RouteHelper {
     GetPage(
       name: cartPage,
       page: () => const CartPage(),
+      transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: checkout,
+      page: () => const CheckoutPage(),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(

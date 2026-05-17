@@ -1,0 +1,676 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import '../../controllers/auth_controller.dart';
+import '../../controllers/cart_controller.dart';
+import '../../controllers/order_controller.dart';
+import '../../models/order_model.dart';
+import '../../utils/colors.dart';
+import '../../utils/dimensions.dart';
+import '../../widgets/big_text.dart';
+import '../../widgets/small_text.dart';
+
+class CheckoutPage extends StatefulWidget {
+  const CheckoutPage({super.key});
+
+  @override
+  State<CheckoutPage> createState() => _CheckoutPageState();
+}
+
+class _CheckoutPageState extends State<CheckoutPage> {
+  final _noteController = TextEditingController();
+  final _cardNumberController = TextEditingController();
+  final _expiryController = TextEditingController();
+  final _cvvController = TextEditingController();
+  final _cardHolderController = TextEditingController();
+  
+  // Address fields
+  final _addressController = TextEditingController();
+  final _contactNameController = TextEditingController();
+  final _contactPhoneController = TextEditingController();
+  String _addressType = 'Home';
+
+  int _currentStep = 0;
+  bool _cardValid = false;
+  String _cardType = '';
+
+  @override
+  void initState() {
+    super.initState();
+    Get.find<OrderController>().getAddressList();
+    // Pre-fill contact info from user profile
+    final user = Get.find<AuthController>().user;
+    _contactNameController.text = user?.name ?? '';
+    _contactPhoneController.text = user?.phone ?? '';
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    _cardNumberController.dispose();
+    _expiryController.dispose();
+    _cvvController.dispose();
+    _cardHolderController.dispose();
+    _addressController.dispose();
+    _contactNameController.dispose();
+    _contactPhoneController.dispose();
+    super.dispose();
+  }
+
+  // Luhn algorithm for card validation
+  bool _validateCardNumber(String number) {
+    String cleaned = number.replaceAll(RegExp(r'\s|-'), '');
+    if (cleaned.length < 13 || cleaned.length > 19) return false;
+    if (!RegExp(r'^[0-9]+$').hasMatch(cleaned)) return false;
+
+    int sum = 0;
+    bool alternate = false;
+    for (int i = cleaned.length - 1; i >= 0; i--) {
+      int n = int.parse(cleaned[i]);
+      if (alternate) {
+        n *= 2;
+        if (n > 9) n -= 9;
+      }
+      sum += n;
+      alternate = !alternate;
+    }
+    return sum % 10 == 0;
+  }
+
+  String _detectCardType(String number) {
+    String cleaned = number.replaceAll(RegExp(r'\s|-'), '');
+    if (cleaned.startsWith('4')) return 'Visa';
+    if (cleaned.startsWith('5') && cleaned.length >= 2) {
+      int second = int.tryParse(cleaned[1]) ?? 0;
+      if (second >= 1 && second <= 5) return 'Mastercard';
+    }
+    if (cleaned.startsWith('34') || cleaned.startsWith('37')) return 'Amex';
+    if (cleaned.startsWith('6011') || cleaned.startsWith('65')) return 'Discover';
+    return '';
+  }
+
+  void _onCardNumberChanged(String value) {
+    String cleaned = value.replaceAll(RegExp(r'\s|-'), '');
+    setState(() {
+      _cardType = _detectCardType(cleaned);
+      _cardValid = _validateCardNumber(cleaned);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () => Get.back(),
+        ),
+        title: BigText(text: "Checkout", color: AppColors.mainBlackColor, size: Dimensions.font20),
+        centerTitle: true,
+      ),
+      body: Stepper(
+        currentStep: _currentStep,
+        onStepContinue: _onStepContinue,
+        onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep--) : null,
+        type: StepperType.vertical,
+        controlsBuilder: (context, details) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: details.onStepContinue,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.mainColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(
+                      _currentStep == 2 ? 'Confirmar Pedido' : 'Continuar',
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                if (_currentStep > 0) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: details.onStepCancel,
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.mainColor),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: Text('Atrás', style: TextStyle(color: AppColors.mainColor)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+        steps: [
+          // Step 1: Address
+          Step(
+            title: const Text('Dirección de Entrega', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('¿Dónde te entregamos?'),
+            isActive: _currentStep >= 0,
+            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+            content: _buildAddressStep(),
+          ),
+          // Step 2: Payment
+          Step(
+            title: const Text('Método de Pago', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Ingresa los datos de tu tarjeta'),
+            isActive: _currentStep >= 1,
+            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+            content: _buildPaymentStep(),
+          ),
+          // Step 3: Confirm
+          Step(
+            title: const Text('Confirmar Pedido', style: TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Revisa tu pedido'),
+            isActive: _currentStep >= 2,
+            state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+            content: _buildConfirmStep(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddressStep() {
+    return GetBuilder<OrderController>(builder: (orderController) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Existing addresses
+          if (orderController.addressList.isNotEmpty) ...[
+            SmallText(text: "Direcciones guardadas", color: Colors.black54),
+            const SizedBox(height: 8),
+            ...orderController.addressList.map((addr) {
+              bool isSelected = orderController.selectedAddress?.id == addr.id;
+              return GestureDetector(
+                onTap: () {
+                  orderController.selectAddress(addr);
+                  _addressController.text = addr.address ?? '';
+                  _contactNameController.text = addr.contactPersonName ?? '';
+                  _contactPhoneController.text = addr.contactPersonNumber ?? '';
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.mainColor.withValues(alpha: 0.1) : Colors.white,
+                    border: Border.all(
+                      color: isSelected ? AppColors.mainColor : Colors.grey.shade300,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        addr.addressType == 'Home' ? Icons.home : Icons.work,
+                        color: isSelected ? AppColors.mainColor : Colors.grey,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(addr.addressType ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(addr.address ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      if (isSelected) Icon(Icons.check_circle, color: AppColors.mainColor),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            const Divider(height: 24),
+            SmallText(text: "O agrega una nueva dirección", color: Colors.black54),
+            const SizedBox(height: 8),
+          ],
+
+          // Address type selector
+          Row(
+            children: ['Home', 'Work', 'Other'].map((type) {
+              bool sel = _addressType == type;
+              String label = type == 'Home' ? 'Casa' : (type == 'Work' ? 'Trabajo' : 'Otro');
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: ChoiceChip(
+                  label: Text(label),
+                  selected: sel,
+                  selectedColor: AppColors.mainColor.withValues(alpha: 0.2),
+                  onSelected: (_) => setState(() => _addressType = type),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on),
+          const SizedBox(height: 10),
+          _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
+          const SizedBox(height: 10),
+          _buildCheckoutField(_contactPhoneController, 'Teléfono de contacto', Icons.phone,
+              keyboardType: TextInputType.phone),
+        ],
+      );
+    });
+  }
+
+  Widget _buildPaymentStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Card visual
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: _cardType == 'Visa' 
+                ? [const Color(0xFF1A1F71), const Color(0xFF2D3494)]
+                : _cardType == 'Mastercard'
+                  ? [const Color(0xFFEB001B), const Color(0xFFF79E1B)]
+                  : [Colors.grey.shade800, Colors.grey.shade600],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(_cardType.isEmpty ? 'TARJETA' : _cardType.toUpperCase(),
+                      style: const TextStyle(color: Colors.white70, fontSize: 14, letterSpacing: 2)),
+                  Icon(
+                    _cardValid ? Icons.check_circle : Icons.credit_card,
+                    color: _cardValid ? Colors.greenAccent : Colors.white54,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Text(
+                _cardNumberController.text.isEmpty ? '•••• •••• •••• ••••' : _formatCardDisplay(_cardNumberController.text),
+                style: const TextStyle(color: Colors.white, fontSize: 22, letterSpacing: 3, fontFamily: 'Roboto'),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _cardHolderController.text.isEmpty ? 'NOMBRE DEL TITULAR' : _cardHolderController.text.toUpperCase(),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 1),
+                  ),
+                  Text(
+                    _expiryController.text.isEmpty ? 'MM/YY' : _expiryController.text,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12, letterSpacing: 1),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildCheckoutField(_cardNumberController, 'Número de tarjeta', Icons.credit_card,
+            keyboardType: TextInputType.number,
+            onChanged: _onCardNumberChanged,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19)]),
+        if (_cardNumberController.text.isNotEmpty && !_cardValid)
+          Padding(
+            padding: const EdgeInsets.only(left: 12, top: 4),
+            child: Text('Número de tarjeta inválido', style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
+          ),
+        const SizedBox(height: 10),
+        _buildCheckoutField(_cardHolderController, 'Nombre del titular', Icons.person_outline),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildCheckoutField(_expiryController, 'MM/YY', Icons.calendar_today,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4), _ExpiryFormatter()]),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildCheckoutField(_cvvController, 'CVV', Icons.lock,
+                  keyboardType: TextInputType.number, obscure: true,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)]),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfirmStep() {
+    return GetBuilder<CartController>(builder: (cartController) {
+      var cartList = cartController.getItems;
+      double total = 0;
+      for (var item in cartList) {
+        total += (item.price ?? 0) * (item.quantity ?? 0);
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Order items
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Productos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Divider(),
+                ...cartList.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text('${item.quantity}x ${item.name}', style: const TextStyle(fontSize: 14))),
+                      Text('\$${((item.price ?? 0) * (item.quantity ?? 0)).toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                    ],
+                  ),
+                )),
+                const Divider(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text('\$${total.toStringAsFixed(2)}',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.mainColor)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Address summary
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.location_on, color: AppColors.mainColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _addressController.text.isNotEmpty 
+                      ? _addressController.text 
+                      : Get.find<OrderController>().selectedAddress?.address ?? 'Sin dirección',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Payment summary
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.credit_card, color: _cardValid ? Colors.green : Colors.red),
+                const SizedBox(width: 8),
+                Text(
+                  _cardType.isNotEmpty ? '$_cardType •••• ${_cardNumberController.text.substring(_cardNumberController.text.length > 4 ? _cardNumberController.text.length - 4 : 0)}' : 'Sin tarjeta',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Order note
+          _buildCheckoutField(_noteController, 'Nota del pedido (opcional)', Icons.note_alt_outlined),
+        ],
+      );
+    });
+  }
+
+  void _onStepContinue() {
+    if (_currentStep == 0) {
+      // Validate address
+      if (_addressController.text.isEmpty) {
+        final selected = Get.find<OrderController>().selectedAddress;
+        if (selected == null) {
+          Get.snackbar('Dirección requerida', 'Selecciona o ingresa una dirección de entrega',
+            backgroundColor: Colors.redAccent, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          return;
+        }
+      }
+      setState(() => _currentStep = 1);
+    } else if (_currentStep == 1) {
+      // Validate payment
+      if (!_cardValid) {
+        Get.snackbar('Tarjeta inválida', 'Ingresa un número de tarjeta válido',
+          backgroundColor: Colors.redAccent, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return;
+      }
+      if (_cardHolderController.text.isEmpty) {
+        Get.snackbar('Datos incompletos', 'Ingresa el nombre del titular',
+          backgroundColor: Colors.redAccent, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return;
+      }
+      if (_expiryController.text.length < 5) {
+        Get.snackbar('Datos incompletos', 'Ingresa la fecha de expiración',
+          backgroundColor: Colors.redAccent, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return;
+      }
+      if (_cvvController.text.length < 3) {
+        Get.snackbar('Datos incompletos', 'Ingresa el CVV',
+          backgroundColor: Colors.redAccent, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return;
+      }
+      setState(() => _currentStep = 2);
+    } else if (_currentStep == 2) {
+      _placeOrder();
+    }
+  }
+
+  Future<void> _placeOrder() async {
+    final orderController = Get.find<OrderController>();
+    final cartController = Get.find<CartController>();
+
+    AddressModel address;
+    if (_addressController.text.isNotEmpty) {
+      address = AddressModel(
+        addressType: _addressType,
+        address: _addressController.text,
+        contactPersonName: _contactNameController.text,
+        contactPersonNumber: _contactPhoneController.text,
+        latitude: '0',
+        longitude: '0',
+      );
+      
+      // Registrar la nueva dirección en el servidor para obtener un ID válido
+      bool addSuccess = await orderController.addAddress(address);
+      if (!addSuccess || orderController.selectedAddress == null) {
+        return; // El controlador ya muestra snackbar con el error
+      }
+      address = orderController.selectedAddress!;
+    } else if (orderController.selectedAddress != null) {
+      address = orderController.selectedAddress!;
+    } else {
+      Get.snackbar('Error', 'Selecciona o ingresa una dirección de entrega', 
+        backgroundColor: Colors.redAccent, colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+      return;
+    }
+
+    bool success = await orderController.placeOrder(
+      cartItems: cartController.getItems,
+      address: address,
+      orderNote: _noteController.text,
+    );
+
+    if (success) {
+      // Show OTP dialog
+      _showOtpConfirmation(orderController.lastOtp ?? '');
+    }
+  }
+
+  void _showOtpConfirmation(String otp) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+            ),
+            const SizedBox(height: 16),
+            const Text('¡Pedido Exitoso!',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text('Tu código de entrega es:', style: TextStyle(color: Colors.grey.shade600)),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.mainColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.mainColor, width: 2),
+              ),
+              child: Text(otp,
+                  style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold,
+                      color: AppColors.mainColor, letterSpacing: 8)),
+            ),
+            const SizedBox(height: 12),
+            Text('Compártelo con el repartidor al recibir tu pedido',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                textAlign: TextAlign.center),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Get.back(); // Close dialog
+                Get.back(); // Back to cart/home
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('Aceptar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+  }
+
+  String _formatCardDisplay(String number) {
+    String cleaned = number.replaceAll(RegExp(r'\s'), '');
+    StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < cleaned.length; i++) {
+      if (i > 0 && i % 4 == 0) buffer.write(' ');
+      buffer.write(cleaned[i]);
+    }
+    return buffer.toString();
+  }
+
+  Widget _buildCheckoutField(TextEditingController controller, String hint, IconData icon, {
+    TextInputType keyboardType = TextInputType.text,
+    bool obscure = false,
+    List<TextInputFormatter>? inputFormatters,
+    Function(String)? onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        obscureText: obscure,
+        inputFormatters: inputFormatters,
+        onChanged: (value) {
+          if (onChanged != null) onChanged(value);
+          setState(() {}); // Rebuild for card preview
+        },
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: AppColors.mainColor, size: 20),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpiryFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    String text = newValue.text.replaceAll('/', '');
+    if (text.length > 4) text = text.substring(0, 4);
+    
+    StringBuffer buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      if (i == 2) buffer.write('/');
+      buffer.write(text[i]);
+    }
+    
+    return TextEditingValue(
+      text: buffer.toString(),
+      selection: TextSelection.collapsed(offset: buffer.length),
+    );
+  }
+}

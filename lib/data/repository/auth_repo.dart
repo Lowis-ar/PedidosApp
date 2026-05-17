@@ -21,4 +21,19 @@ class AuthRepo extends GetxService {
       'password': password,
     });
   }
+
+  Future<Response> getProfile() async {
+    return await apiClient.getData(AppConstants.CUSTOMER_INFO_URI);
+  }
+
+  Future<Response> updateProfile(Map<String, dynamic> data) async {
+    return await apiClient.putData(AppConstants.UPDATE_PROFILE_URI, data);
+  }
+
+  Future<Response> changePassword(String currentPassword, String newPassword) async {
+    return await apiClient.putData(AppConstants.CHANGE_PASSWORD_URI, {
+      'current_password': currentPassword,
+      'new_password': newPassword,
+    });
+  }
 }

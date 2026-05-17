@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../cart/cart_page.dart';
 import 'main_food_page.dart';
+import 'order_history_page.dart';
 import '../profile/profile_page.dart';
 import '../../utils/colors.dart';
 
@@ -16,8 +17,8 @@ class _HomePageState extends State<HomePage> {
 
   final List<Widget> _pages = const [
     MainFoodPage(),
-    Center(child: Text('Historial', style: TextStyle(fontFamily: 'Roboto', fontSize: 20))),
-    const CartPage(showHeader: false),
+    OrderHistoryPage(),
+    CartPage(showHeader: false),
     ProfilePage(),
   ];
 
@@ -61,9 +62,9 @@ class _HomePageState extends State<HomePage> {
               label: 'Inicio',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.archive_outlined),
-              activeIcon: Icon(Icons.archive),
-              label: 'Historial',
+              icon: Icon(Icons.receipt_long_outlined),
+              activeIcon: Icon(Icons.receipt_long),
+              label: 'Pedidos',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.shopping_cart_outlined),

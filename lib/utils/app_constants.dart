@@ -2,39 +2,31 @@ class AppConstants {
   static const String APP_NAME = "PedidosApp";
   static const int APP_VERSION = 1;
 
-  // Cambiado para pruebas locales en Emulador de Android
-  static const String BASE_URL = "http://10.0.2.2/pedidos_app/public";
+  // Production API behind Cloudflare tunnel
+  static const String BASE_URL = "https://publication-missed-introduce-communist.trycloudflare.com";
 
   // Auth endpoints
   static const String LOGIN_URI = "/api/v1/auth/login";
   static const String REGISTER_URI = "/api/v1/auth/register";
-  static const String LOGOUT_URI = "/api/v1/auth/logout";
 
   // Product endpoints
-  static const String POPULAR_PRODUCT_URI = "/api/v1/products";
-  static const String RECOMMENDED_PRODUCT_URI = "/api/v1/products";
+  static const String POPULAR_PRODUCT_URI = "/api/v1/products?popular=true";
+  static const String RECOMMENDED_PRODUCT_URI = "/api/v1/products?recommended=true";
   static const String ALL_PRODUCTS_URI = "/api/v1/products";
   static const String PRODUCT_DETAIL_URI = "/api/v1/products/";
 
-  // Categories endpoints
-  static const String CATEGORIES_URI = "/api/v1/categories";
-
   // Customer endpoints
-  static const String CUSTOMER_INFO_URI = "/api/v1/auth/me";
-  static const String UPDATE_PROFILE_URI = "/api/v1/auth/update-profile";
+  static const String CUSTOMER_INFO_URI = "/api/v1/customer/info";
+  static const String UPDATE_PROFILE_URI = "/api/v1/customer/update-profile";
+  static const String CHANGE_PASSWORD_URI = "/api/v1/customer/change-password";
 
   // Addresses endpoints
-  static const String ADDRESSES_URI = "/api/v1/addresses";
-
-  // Zones endpoints
-  static const String ZONES_URI = "/api/v1/zones";
-
-  // Branches endpoints (NUEVO)
-  static const String BRANCHES_URI = "/api/v1/branches";
+  static const String ADDRESSES_URI = "/api/v1/customer/addresses";
 
   // Order endpoints
   static const String PLACE_ORDER_URI = "/api/v1/orders";
   static const String ORDER_LIST_URI = "/api/v1/orders";
+  static const String ORDER_DETAIL_URI = "/api/v1/orders/";
   static const String CANCEL_ORDER_URI = "/api/v1/orders/";
 
   // Delivery endpoints
@@ -56,6 +48,8 @@ class AppConstants {
   static const String DELIVERY_USER_KEY = "delivery_user_data";
   static const String DELIVERY_TOKEN = "delivery_token";
 
-  // Storage key para guardar la sucursal seleccionada (NUEVO)
+  // Branches - not in new API docs, keep for future use
+  static const String BRANCHES_URI = "/api/v1/branches";
   static const String BRANCH_ID_KEY = "branch_id";
+  static const String CATEGORIES_URI = "/api/v1/categories";
 }

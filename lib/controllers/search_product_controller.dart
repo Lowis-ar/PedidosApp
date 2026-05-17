@@ -30,7 +30,6 @@ class SearchProductController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Carga inicial al arrancar
     getCategories();
     getFilteredProducts();
   }
@@ -39,7 +38,15 @@ class SearchProductController extends GetxController {
     _isCategoriesLoaded = false;
     update();
     try {
-      int branchId = Get.find<BranchController>().branchId;
+      // Try to get branchId from BranchController, default to 1
+      int branchId = 2;
+      try {
+        if (Get.isRegistered<BranchController>()) {
+          final controller = Get.find<BranchController>();
+          branchId = controller.isLoaded ? controller.branchId : 2;
+        }
+      } catch (_) {}
+      
       Response response = await productRepo.getCategoryList(branchId);
       if (response.statusCode == 200) {
         _categoryList = [];
@@ -51,7 +58,7 @@ class SearchProductController extends GetxController {
         }
       }
     } catch (e) {
-      print("Error cargando categorías: $e");
+      // Categories are optional, don't crash if they fail
     } finally {
       _isCategoriesLoaded = true;
       update();
@@ -64,7 +71,6 @@ class SearchProductController extends GetxController {
   }
 
   void setCategory(int? categoryId) {
-    // Si toca la misma categoría, la deseleccionamos
     _selectedCategoryId = (_selectedCategoryId == categoryId) ? null : categoryId;
     getFilteredProducts();
   }
@@ -79,9 +85,7 @@ class SearchProductController extends GetxController {
     update();
 
     try {
-      int branchId = Get.find<BranchController>().branchId;
       Response response = await productRepo.getProductList(
-        branchId: branchId,
         categoryId: _selectedCategoryId,
         search: _searchQuery,
         sortBy: _sortBy,
@@ -92,7 +96,7 @@ class SearchProductController extends GetxController {
         _productList.addAll(Product.fromJson(response.body).products);
       }
     } catch (e) {
-      print("Error en búsqueda: $e");
+      // Silently handle errors
     } finally {
       _isLoaded = true;
       update();

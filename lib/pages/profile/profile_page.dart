@@ -74,9 +74,49 @@ class ProfilePage extends StatelessWidget {
               // Info rows
               _profileRow(Icons.person_outline, user.name ?? 'Sin nombre'),
               _profileRow(Icons.email_outlined, user.email ?? 'Sin correo'),
-              _profileRow(Icons.phone_outlined, user.phone ?? 'Sin telefono'),
+              _profileRowEditable(
+                Icons.phone_outlined,
+                user.phone ?? 'Sin telefono',
+                'Editar Teléfono',
+                () => _showEditPhoneDialog(context, authController),
+              ),
               _profileRow(Icons.shopping_bag_outlined, '${user.orderCount ?? 0} pedidos realizados'),
-              SizedBox(height: Dimensions.height30 * 2),
+              SizedBox(height: Dimensions.height20),
+              // Change password button
+              GestureDetector(
+                onTap: () => _showChangePasswordDialog(context, authController),
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: Dimensions.width20),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: Dimensions.width20,
+                    vertical: Dimensions.height15,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.mainColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(Dimensions.radius15),
+                    border: Border.all(color: AppColors.mainColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock_outline, color: AppColors.mainColor, size: Dimensions.iconSize24),
+                      SizedBox(width: Dimensions.width15),
+                      Expanded(
+                        child: Text(
+                          'Cambiar contraseña',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: Dimensions.font16,
+                            color: AppColors.mainColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios, color: AppColors.mainColor, size: 16),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: Dimensions.height30),
               // Logout button
               GestureDetector(
                 onTap: () {
@@ -163,6 +203,185 @@ class ProfilePage extends StatelessWidget {
                 color: AppColors.mainBlackColor,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _profileRowEditable(IconData icon, String text, String editLabel, VoidCallback onEdit) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: Dimensions.width20,
+        vertical: Dimensions.height10 * 0.6,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: Dimensions.width20,
+        vertical: Dimensions.height15,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(Dimensions.radius15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.mainColor, size: Dimensions.iconSize24),
+          SizedBox(width: Dimensions.width15),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: Dimensions.font16,
+                color: AppColors.mainBlackColor,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onEdit,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.mainColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Editar',
+                style: TextStyle(
+                  color: AppColors.mainColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditPhoneDialog(BuildContext context, AuthController authController) {
+    final phoneController = TextEditingController(text: authController.user?.phone);
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Editar Teléfono', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            labelText: 'Nuevo teléfono',
+            prefixIcon: Icon(Icons.phone, color: AppColors.mainColor),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (phoneController.text.isNotEmpty) {
+                Get.back();
+                authController.updateProfile(phoneController.text);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),
+            child: const Text('Guardar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context, AuthController authController) {
+    final currentPassController = TextEditingController();
+    final newPassController = TextEditingController();
+    final confirmPassController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cambiar Contraseña', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentPassController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Contraseña actual',
+                prefixIcon: Icon(Icons.lock_outline, color: AppColors.mainColor),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newPassController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Nueva contraseña',
+                prefixIcon: Icon(Icons.lock, color: AppColors.mainColor),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmPassController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Confirmar nueva contraseña',
+                prefixIcon: Icon(Icons.lock, color: AppColors.mainColor),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
+                Get.snackbar('Error', 'Todos los campos son obligatorios',
+                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                return;
+              }
+              if (newPassController.text != confirmPassController.text) {
+                Get.snackbar('Error', 'Las contraseñas no coinciden',
+                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                return;
+              }
+              if (newPassController.text.length < 6) {
+                Get.snackbar('Error', 'La contraseña debe tener al menos 6 caracteres',
+                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                return;
+              }
+              Get.back();
+              authController.changePassword(currentPassController.text, newPassController.text);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),
+            child: const Text('Cambiar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

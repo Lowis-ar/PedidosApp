@@ -19,10 +19,11 @@ class UserModel {
 
   UserModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    name = json['name'];
+    // Support both 'name' and 'f_name' from API
+    name = json['name'] ?? json['f_name'];
     phone = json['phone'];
     email = json['email'];
-    role = json['role']; // Puede ser 'delivery', 'customer', etc.
+    role = json['role'];
     orderCount = json['order_count'];
     createdAt = json['created_at'];
   }

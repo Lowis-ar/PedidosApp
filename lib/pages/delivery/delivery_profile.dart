@@ -49,9 +49,9 @@ class DeliveryProfilePage extends StatelessWidget {
               _infoTile(Icons.phone, "Teléfono", dm.phone ?? ""),
               _infoTile(Icons.directions_bike, "Vehículo", "${dm.vehicleType ?? 'N/A'} - ${dm.licensePlate ?? 'N/A'}"),
               
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
 
-              // Buttons
+              // Edit profile button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -61,10 +61,29 @@ class DeliveryProfilePage extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.mainColor,
                     padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 12),
+
+              // Change password button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showChangePasswordDialog(context, auth),
+                  icon: Icon(Icons.lock_outline, color: AppColors.mainColor),
+                  label: Text("CAMBIAR CONTRASEÑA", style: TextStyle(color: AppColors.mainColor)),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    side: BorderSide(color: AppColors.mainColor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Logout button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -77,6 +96,7 @@ class DeliveryProfilePage extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
@@ -116,19 +136,116 @@ class DeliveryProfilePage extends StatelessWidget {
 
     Get.dialog(
       AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const BigText(text: "Editar Perfil"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Nombre")),
-            TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Teléfono")),
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: "Nombre",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              decoration: InputDecoration(
+                labelText: "Teléfono",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () => auth.updateProfile(nameController.text, phoneController.text),
-            child: const Text("Guardar"),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),
+            child: const Text("Guardar", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context, DeliveryAuthController auth) {
+    final currentPassController = TextEditingController();
+    final newPassController = TextEditingController();
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const BigText(text: "Cambiar Contraseña"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentPassController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "Contraseña actual",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newPassController,
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: "Nueva contraseña",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text("Cancelar")),
+          ElevatedButton(
+            onPressed: () async {
+              if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
+                Get.snackbar('Error', 'Todos los campos son obligatorios',
+                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                return;
+              }
+              Get.back();
+              // Use the delivery auth repo for password change
+              try {
+                final response = await auth.deliveryAuthRepo.updateProfile({
+                  'current_password': currentPassController.text,
+                  'new_password': newPassController.text,
+                });
+                if (response.statusCode == 200) {
+                  Get.snackbar('Éxito', 'Contraseña actualizada',
+                    backgroundColor: Colors.green, colorText: Colors.white);
+                } else {
+                  Get.snackbar('Error', 'No se pudo cambiar la contraseña',
+                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                }
+              } catch (e) {
+                Get.snackbar('Error', 'Error de conexión',
+                  backgroundColor: Colors.redAccent, colorText: Colors.white);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),
+            child: const Text("Cambiar", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

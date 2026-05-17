@@ -9,7 +9,14 @@ class RecommendedProductRepo extends GetxService {
   RecommendedProductRepo({required this.apiClient});
 
   Future<Response> getRecommendedProductList() async {
-    int branchId = Get.find<BranchController>().branchId;
-    return await apiClient.getData("${AppConstants.RECOMMENDED_PRODUCT_URI}?branch_id=$branchId");
+    String uri = AppConstants.RECOMMENDED_PRODUCT_URI;
+    try {
+      if (Get.isRegistered<BranchController>()) {
+        final controller = Get.find<BranchController>();
+        final branchId = controller.isLoaded ? controller.branchId : 2;
+        uri += "&branch_id=$branchId";
+      }
+    } catch (_) {}
+    return await apiClient.getData(uri);
   }
 }

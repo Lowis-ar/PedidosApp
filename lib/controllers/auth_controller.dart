@@ -70,15 +70,13 @@ class AuthController extends GetxController {
     if (type == 'delivery') {
       final deliveryAuthController = Get.find<DeliveryAuthController>();
       
-      // Intentar extraer el objeto deliveryman del anidamiento de la API si viene en el login
-      final dynamic dmJson = user.toJson(); // O extraer del body original si fuera posible
-      // Pero como ya mapeamos a UserModel arriba, creamos el DeliverymanModel con lo que tenemos
+      final dynamic dmJson = user.toJson();
       final dm = DeliverymanModel(
         id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone,
-        vehicleType: dmJson['vehicle_type'], // Intentar mapear si venía en el JSON original
+        vehicleType: dmJson['vehicle_type'],
         licensePlate: dmJson['license_plate'],
         isAvailable: true,
       );
@@ -86,7 +84,6 @@ class AuthController extends GetxController {
       _storage.write(AppConstants.DELIVERY_USER_KEY, dm.toJson());
       deliveryAuthController.update(); 
       
-      // Redirigir inmediatamente al dashboard de delivery y limpiar historial de navegación
       Get.offAllNamed(RouteHelper.getDeliveryDashboard());
     } else {
       if (Get.isRegistered<PopularProductController>()) {
@@ -97,7 +94,6 @@ class AuthController extends GetxController {
       }
       Get.find<CartController>().getCartData();
       
-      // Redirigir al home de clientes
       Get.offAllNamed(RouteHelper.getInitial());
     }
     update();
@@ -121,7 +117,6 @@ class AuthController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final body = response.body;
         if (body != null) {
-          // Búsqueda flexible según la nueva estructura anidada
           final String? token = body['data']?['token'] ?? body['token'] ?? body['access_token'];
           final dynamic userJson = body['data']?['deliveryman'] ?? body['user'] ?? body['data']?['user'] ?? body['data'];
 
@@ -168,6 +163,69 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       _showError('No se pudo completar el registro. Verifica los datos.');
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<void> getProfile() async {
+    try {
+      Response response = await authRepo.getProfile();
+      if (response.statusCode == 200) {
+        final body = response.body;
+        final dynamic userData = body['data'] ?? body;
+        if (userData != null) {
+          _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
+          _storage.write('user', _user!.toJson());
+          update();
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching profile: $e");
+    }
+  }
+
+  Future<void> updateProfile(String phone) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await authRepo.updateProfile({
+        'f_name': _user?.name,
+        'phone': phone,
+      });
+      if (response.statusCode == 200) {
+        _user?.phone = phone;
+        _storage.write('user', _user?.toJson());
+        Get.snackbar('Éxito', 'Teléfono actualizado',
+          backgroundColor: Colors.green, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        update();
+      } else {
+        _handleApiError(response, 'No se pudo actualizar el perfil');
+      }
+    } catch (e) {
+      _showError('Error al actualizar');
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await authRepo.changePassword(currentPassword, newPassword);
+      if (response.statusCode == 200) {
+        Get.snackbar('Éxito', 'Contraseña actualizada',
+          backgroundColor: Colors.green, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+      } else {
+        _handleApiError(response, 'No se pudo cambiar la contraseña');
+      }
+    } catch (e) {
+      _showError('Error al cambiar la contraseña');
     } finally {
       _isLoading = false;
       update();

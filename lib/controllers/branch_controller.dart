@@ -5,12 +5,13 @@ import '../models/branch_model.dart';
 import '../utils/app_constants.dart';
 import 'popular_product_controller.dart';
 import 'recommended_product_controller.dart';
+import 'search_product_controller.dart';
 
 class BranchController extends GetxController {
   final BranchRepo branchRepo;
   BranchController({required this.branchRepo});
 
-  int _branchId = 1;
+  int _branchId = 2;
   String _branchName = "Cargando...";
   List<Branch> _branchList = [];
   bool _isLoaded = false;
@@ -79,6 +80,10 @@ class BranchController extends GetxController {
     }
     if (Get.isRegistered<RecommendedProductController>()) {
       Get.find<RecommendedProductController>().getRecommendedProductList();
+    }
+    if (Get.isRegistered<SearchProductController>()) {
+      Get.find<SearchProductController>().getCategories();
+      Get.find<SearchProductController>().getFilteredProducts();
     }
   }
 }

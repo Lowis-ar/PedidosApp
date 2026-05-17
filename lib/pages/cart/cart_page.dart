@@ -88,7 +88,6 @@ class CartPage extends StatelessWidget {
                     itemCount: cartList.length,
                     itemBuilder: (_, index) {
                       return Container(
-                        // Eliminada altura fija para evitar overflow
                         margin: EdgeInsets.only(bottom: Dimensions.height10),
                         child: Row(
                           children: [
@@ -217,7 +216,6 @@ class CartPage extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  // Check if user is logged in before checkout
                   final authController = Get.find<AuthController>();
                   if (!authController.isLoggedIn) {
                     Get.snackbar(
@@ -230,14 +228,7 @@ class CartPage extends StatelessWidget {
                     );
                     return;
                   }
-                  Get.snackbar(
-                    'Pedido',
-                    'Funcionalidad de checkout proximamente',
-                    backgroundColor: AppColors.mainColor,
-                    colorText: Colors.white,
-                    snackPosition: SnackPosition.BOTTOM,
-                    margin: const EdgeInsets.all(16),
-                  );
+                  Get.toNamed(RouteHelper.checkout);
                 },
                 child: Container(
                   padding: EdgeInsets.all(Dimensions.height15),

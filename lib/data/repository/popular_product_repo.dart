@@ -9,7 +9,14 @@ class PopularProductRepo extends GetxService {
   PopularProductRepo({required this.apiClient});
 
   Future<Response> getPopularProductList() async {
-    int branchId = Get.find<BranchController>().branchId;
-    return await apiClient.getData("${AppConstants.POPULAR_PRODUCT_URI}?branch_id=$branchId");
+    String uri = AppConstants.POPULAR_PRODUCT_URI;
+    try {
+      if (Get.isRegistered<BranchController>()) {
+        final controller = Get.find<BranchController>();
+        final branchId = controller.isLoaded ? controller.branchId : 2;
+        uri += "&branch_id=$branchId";
+      }
+    } catch (_) {}
+    return await apiClient.getData(uri);
   }
 }

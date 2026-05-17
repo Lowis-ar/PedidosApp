@@ -12,6 +12,7 @@ class ApiClient extends GetConnect implements GetxService {
 
   Map<String, String> get _mainHeaders => {
     'Content-Type': 'application/json; charset=UTF-8',
+    'Accept': 'application/json',
     if (token.isNotEmpty) 'Authorization': 'Bearer $token',
   };
 
@@ -40,6 +41,15 @@ class ApiClient extends GetConnect implements GetxService {
   Future<Response> putData(String uri, dynamic body) async {
     try {
       Response response = await put(uri, body, headers: _mainHeaders);
+      return response;
+    } catch (e) {
+      return Response(statusCode: 1, statusText: e.toString());
+    }
+  }
+
+  Future<Response> deleteData(String uri) async {
+    try {
+      Response response = await delete(uri, headers: _mainHeaders);
       return response;
     } catch (e) {
       return Response(statusCode: 1, statusText: e.toString());
