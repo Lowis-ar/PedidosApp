@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../data/repository/delivery_order_repo.dart';
 import '../models/delivery_order_model.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,9 @@ import 'package:flutter/material.dart';
 class DeliveryOrderController extends GetxController {
   final DeliveryOrderRepo orderRepo;
   DeliveryOrderController({required this.orderRepo});
+
+  final _storage = GetStorage();
+  static const String _activeOrderIdKey = 'delivery_active_order_id';
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -29,45 +33,77 @@ class DeliveryOrderController extends GetxController {
     _isLoading = true;
     update();
     try {
-      // 1. Obtener Pedidos Disponibles
       Response responseAvailable = await orderRepo.getAvailableOrders();
-      debugPrint("API Available Orders Raw: ${responseAvailable.body}");
+      debugPrint("=== DELIVERY getOrders ===");
+      debugPrint("StatusCode: ${responseAvailable.statusCode}");
+      debugPrint("Body type: ${responseAvailable.body.runtimeType}");
+      debugPrint("Body: ${responseAvailable.body}");
       
       if (responseAvailable.statusCode == 200) {
-        final body = responseAvailable.body;
-        // Acceder a la lista de pedidos dentro de data -> orders o similar
-        // Basado en tu estructura de Laravel, suele ser body['data']
-        var rawData = body['data'];
-        if (rawData is List) {
-          _availableOrders = rawData.map((o) => DeliveryOrderModel.fromJson(o)).toList();
-        } else if (body is List) {
-           _availableOrders = body.map((o) => DeliveryOrderModel.fromJson(o)).toList();
+        final bodyRaw = responseAvailable.body;
+        try {
+          List<dynamic>? rawOrders;
+          
+          if (bodyRaw is Map) {
+            final data = bodyRaw['data'];
+            debugPrint("data type: ${data.runtimeType}, data: $data");
+            
+            if (data is List) {
+              rawOrders = data;
+            } else if (data is Map && data['orders'] is List) {
+              rawOrders = data['orders'];
+            } else if (bodyRaw['orders'] is List) {
+              rawOrders = bodyRaw['orders'];
+            }
+          } else if (bodyRaw is List) {
+            rawOrders = bodyRaw;
+          }
+          
+          if (rawOrders != null) {
+            _availableOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(Map<String, dynamic>.from(o))).toList();
+            debugPrint("Parsed ${_availableOrders.length} available orders");
+          } else {
+            debugPrint("WARN: Could not extract orders list from response body");
+            _availableOrders = [];
+          }
+        } catch (parseErr) {
+          debugPrint("ERROR parsing available orders: $parseErr");
+          _availableOrders = [];
         }
+      } else {
+        debugPrint("WARN: Non-200 status code for available orders: ${responseAvailable.statusCode}");
+        debugPrint("Body: ${responseAvailable.body}");
       }
 
       await getHistory();
 
-      // 2. Identificar Pedido Activo
       _activeOrder = null;
-      // Buscamos en disponibles por si alguno ya tiene estado de progreso
-      for (var o in _availableOrders) {
-        if (o.orderStatus == 'accepted' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up') {
-          _activeOrder = o;
-          break;
+      final storedActiveId = _storage.read<int>(_activeOrderIdKey);
+      if (storedActiveId != null) {
+        for (var o in _availableOrders) {
+          if (o.id == storedActiveId) { _activeOrder = o; break; }
         }
       }
-      // Buscamos en el historial (donde suelen estar los que ya no están 'disponibles' para otros)
       if (_activeOrder == null) {
-        for (var o in _historyOrders) {
-          if (o.orderStatus == 'accepted' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up') {
-            _activeOrder = o;
-            break;
+        for (var o in _availableOrders) {
+          if (o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up') {
+            _activeOrder = o; break;
           }
         }
       }
+      if (_activeOrder == null) {
+        for (var o in _historyOrders) {
+          if (o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up') {
+            _activeOrder = o; break;
+          }
+        }
+      }
+      if (_activeOrder == null) {
+        _storage.remove(_activeOrderIdKey);
+      }
 
     } catch (e) {
-      debugPrint("Error en DeliveryOrderController.getOrders: $e");
+      debugPrint("ERROR en DeliveryOrderController.getOrders: $e");
     } finally {
       _isLoading = false;
       update();
@@ -112,6 +148,12 @@ class DeliveryOrderController extends GetxController {
       Response response = await orderRepo.acceptOrder(orderId);
       if (response.statusCode == 200) {
         Get.snackbar('Éxito', 'Pedido aceptado', backgroundColor: Colors.green, colorText: Colors.white);
+        // Parsear la respuesta para guardar el pedido como activo
+        final body = response.body;
+        if (body is Map && body['data'] is Map && body['data']['order'] is Map) {
+          _activeOrder = DeliveryOrderModel.fromJson(body['data']['order']);
+          _storage.write(_activeOrderIdKey, orderId);
+        }
         await getOrders();
       } else if (response.statusCode == 403) {
         Get.snackbar('Error', 'No puedes aceptar este pedido', backgroundColor: Colors.orange);
@@ -150,6 +192,7 @@ class DeliveryOrderController extends GetxController {
       if (response.statusCode == 200) {
         Get.snackbar('Éxito', 'Pedido entregado correctamente', backgroundColor: Colors.green, colorText: Colors.white);
         _activeOrder = null;
+        _storage.remove(_activeOrderIdKey);
         await getOrders();
         return true;
       } else if (response.statusCode == 422) {

@@ -50,6 +50,15 @@ class DeliveryAuthController extends GetxController {
     update();
   }
 
+  void syncSession(String token, DeliverymanModel deliveryman) {
+    _token = token;
+    _deliveryman = deliveryman;
+    _storage.write(AppConstants.DELIVERY_TOKEN, token);
+    _storage.write(AppConstants.DELIVERY_USER_KEY, deliveryman.toJson());
+    Get.find<ApiClient>().updateToken(token);
+    update();
+  }
+
   Future<void> login(String email, String password) async {
     _isLoading = true;
     update();

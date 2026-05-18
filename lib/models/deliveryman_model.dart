@@ -5,6 +5,7 @@ class DeliverymanModel {
   String? phone;
   String? vehicleType;
   String? licensePlate;
+  int? branchId;
   double? averageRating;
   int? totalReviews;
   bool? isAvailable;
@@ -17,6 +18,7 @@ class DeliverymanModel {
     this.phone = "",
     this.vehicleType = "N/A",
     this.licensePlate = "N/A",
+    this.branchId,
     this.averageRating = 0.0,
     this.totalReviews = 0,
     this.isAvailable = false,
@@ -30,6 +32,7 @@ class DeliverymanModel {
     phone = json['phone'];
     vehicleType = json['vehicle_type'];
     licensePlate = json['license_plate'];
+    branchId = json['branch_id'];
     averageRating = json['average_rating'] != null ? double.parse(json['average_rating'].toString()) : 0.0;
     totalReviews = json['total_reviews'] != null ? int.parse(json['total_reviews'].toString()) : 0;
     isAvailable = json['is_available'] == 1 || json['is_available'] == true;
@@ -44,6 +47,7 @@ class DeliverymanModel {
       'phone': phone,
       'vehicle_type': vehicleType,
       'license_plate': licensePlate,
+      'branch_id': branchId,
       'average_rating': averageRating,
       'total_reviews': totalReviews,
       'is_available': isAvailable,

@@ -70,7 +70,6 @@ class AuthController extends GetxController {
     if (type == 'delivery') {
       final deliveryAuthController = Get.find<DeliveryAuthController>();
       
-      // Usar rawJson si está disponible para no perder campos específicos de deliveryman
       final dm = rawJson != null 
           ? DeliverymanModel.fromJson(rawJson)
           : DeliverymanModel(
@@ -81,10 +80,7 @@ class AuthController extends GetxController {
               isAvailable: true,
             );
 
-      _storage.write(AppConstants.DELIVERY_TOKEN, token);
-      _storage.write(AppConstants.DELIVERY_USER_KEY, dm.toJson());
-      deliveryAuthController.update(); 
-      
+      deliveryAuthController.syncSession(token, dm);
       Get.offAllNamed(RouteHelper.getDeliveryDashboard());
     } else {
       if (Get.isRegistered<PopularProductController>()) {

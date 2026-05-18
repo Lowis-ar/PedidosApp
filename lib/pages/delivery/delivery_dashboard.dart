@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../../controllers/branch_controller.dart';
 import '../../controllers/delivery_auth_controller.dart';
 import '../../controllers/delivery_order_controller.dart';
 import '../../models/delivery_order_model.dart';
@@ -22,10 +23,24 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
   @override
   void initState() {
     super.initState();
-    // Asegurar que el perfil esté cargado si venimos de un login unificado
-    Get.find<DeliveryAuthController>().getProfile();
-    Get.find<DeliveryOrderController>().getOrders();
     _setupFCM();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final authController = Get.find<DeliveryAuthController>();
+    debugPrint("=== DASHBOARD _loadData START ===");
+    debugPrint("DeliveryAuthController._token: ${authController.token.isNotEmpty ? 'SET' : 'EMPTY'}");
+    debugPrint("DeliveryAuthController._deliveryman: ${authController.deliveryman != null ? 'SET' : 'NULL'}");
+    
+    await authController.getProfile();
+    
+    final dm = authController.deliveryman;
+    debugPrint("After getProfile: dm=${dm?.name}, isAvailable=${dm?.isAvailable}, branchId=${dm?.branchId}");
+    
+    debugPrint("Calling getOrders()...");
+    Get.find<DeliveryOrderController>().getOrders();
+    debugPrint("=== DASHBOARD _loadData END ===");
   }
 
   void _setupFCM() {
@@ -46,7 +61,27 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const BigText(text: "Dashboard Repartidor", size: 20),
+        title: GetBuilder<DeliveryAuthController>(builder: (auth) {
+          final dm = auth.deliveryman;
+          final branchId = dm?.branchId;
+          String branchName = "Cargando...";
+          try {
+            final bc = Get.find<BranchController>();
+            if (bc.isLoaded && branchId != null) {
+              final match = bc.branchList.where((b) => b.id == branchId);
+              branchName = match.isNotEmpty ? match.first.name : "Sucursal #$branchId";
+            } else if (branchId != null) {
+              branchName = "Sucursal #$branchId";
+            }
+          } catch (_) {}
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              BigText(text: dm?.name ?? "Repartidor", size: 18),
+              SmallText(text: branchName, size: 12, color: Colors.grey),
+            ],
+          );
+        }),
         backgroundColor: Colors.white,
         elevation: 1,
         actions: [
@@ -54,8 +89,11 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
             return Switch(
               value: auth.deliveryman?.isAvailable ?? false,
               activeTrackColor: AppColors.mainColor,
-              onChanged: (val) {
-                auth.updateAvailability(val);
+              onChanged: (val) async {
+                await auth.updateAvailability(val);
+                if (val) {
+                  Get.find<DeliveryOrderController>().getOrders();
+                }
               },
             );
           }),
