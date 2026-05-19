@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/delivery_auth_controller.dart';
-import '../../routes/route_helper.dart';
-import '../../utils/colors.dart';
-import '../../widgets/big_text.dart';
-import '../../widgets/small_text.dart';
+import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
+import 'package:pedidosapp/routes/route_helper.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/small_text.dart';
 
 class DeliveryProfilePage extends StatelessWidget {
   const DeliveryProfilePage({super.key});

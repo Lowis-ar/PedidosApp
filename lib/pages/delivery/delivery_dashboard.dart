@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import '../../controllers/branch_controller.dart';
-import '../../controllers/delivery_auth_controller.dart';
-import '../../controllers/delivery_order_controller.dart';
-import '../../models/delivery_order_model.dart';
-import '../../routes/route_helper.dart';
-import '../../utils/colors.dart';
-import '../../utils/dimensions.dart';
-import '../../widgets/big_text.dart';
-import '../../widgets/small_text.dart';
+import 'package:pedidosapp/controllers/branch_controller.dart';
+import 'package:pedidosapp/pages/delivery/active_orders_view.dart';
+import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
+import 'package:pedidosapp/controllers/delivery_order_controller.dart';
+import 'package:pedidosapp/models/delivery_order_model.dart';
+import 'package:pedidosapp/routes/route_helper.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/utils/dimensions.dart';
+import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/small_text.dart';
 
 class DeliveryDashboard extends StatefulWidget {
   const DeliveryDashboard({super.key});
@@ -116,41 +117,32 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           );
         }
 
-        return RefreshIndicator(
-          onRefresh: () => Get.find<DeliveryOrderController>().getOrders(),
-          child: GetBuilder<DeliveryOrderController>(builder: (orderController) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Active Order Section
-                  if (orderController.activeOrder != null) ...[
-                    const BigText(text: "Pedido Activo", size: 18),
-                    const SizedBox(height: 10),
-                    _buildActiveOrderCard(orderController.activeOrder!),
-                    const SizedBox(height: 30),
+        return DefaultTabController(
+          length: 2,
+          child: Column(
+            children: [
+              Container(
+                color: Colors.white,
+                child: TabBar(
+                  indicatorColor: AppColors.mainColor,
+                  labelColor: AppColors.mainColor,
+                  unselectedLabelColor: Colors.grey,
+                  tabs: const [
+                    Tab(text: "DISPONIBLES"),
+                    Tab(text: "EN CURSO"),
                   ],
-
-                  // Available Orders Section
-                  const BigText(text: "Pedidos Disponibles", size: 18),
-                  const SizedBox(height: 10),
-                  if (orderController.availableOrders.isEmpty)
-                    Center(child: SmallText(text: "No hay pedidos nuevos por ahora", size: 14))
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: orderController.availableOrders.length,
-                      itemBuilder: (context, index) {
-                        return _buildAvailableOrderCard(orderController.availableOrders[index]);
-                      },
-                    ),
-                ],
+                ),
               ),
-            );
-          }),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _buildAvailableOrdersList(),
+                    const ActiveOrdersView(),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       }),
       bottomNavigationBar: BottomNavigationBar(
@@ -166,6 +158,43 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvailableOrdersList() {
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (Get.isRegistered<DeliveryOrderController>()) {
+          await Get.find<DeliveryOrderController>().getOrders();
+        }
+      },
+      child: GetBuilder<DeliveryOrderController>(builder: (orderController) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const BigText(text: "Pedidos Disponibles", size: 18),
+              const SizedBox(height: 10),
+              if (orderController.availableOrders.isEmpty)
+                SizedBox(
+                  height: 200,
+                  child: Center(child: SmallText(text: "No hay pedidos nuevos por ahora", size: 14)),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: orderController.availableOrders.length,
+                  itemBuilder: (context, index) {
+                    return _buildAvailableOrderCard(orderController.availableOrders[index]);
+                  },
+                ),
+            ],
+          ),
+        );
+      }),
     );
   }
 

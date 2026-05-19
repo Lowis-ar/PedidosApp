@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../controllers/delivery_order_controller.dart';
-import '../../models/delivery_order_model.dart';
-import '../../utils/colors.dart';
-import '../../widgets/big_text.dart';
-import '../../widgets/small_text.dart';
+import 'package:pedidosapp/controllers/delivery_order_controller.dart';
+import 'package:pedidosapp/models/delivery_order_model.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/small_text.dart';
 
 class DeliveryOrderDetailPage extends StatefulWidget {
   const DeliveryOrderDetailPage({super.key});

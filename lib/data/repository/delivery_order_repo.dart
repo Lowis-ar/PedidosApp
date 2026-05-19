@@ -14,6 +14,14 @@ class DeliveryOrderRepo {
     return await apiClient.getData(AppConstants.DELIVERY_HISTORY_ORDERS_URI);
   }
 
+  Future<Response> getRunningOrders() async {
+    return await apiClient.getData(AppConstants.DELIVERY_ORDER_LIST_URI);
+  }
+
+  Future<Response> getActiveOrders() async {
+    return await apiClient.getData(AppConstants.DELIVERY_ACTIVE_ORDERS_URI);
+  }
+
   Future<Response> acceptOrder(int orderId) async {
     return await apiClient.postData("${AppConstants.DELIVERY_ACCEPT_ORDER_URI}$orderId/accept", {});
   }

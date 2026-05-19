@@ -35,7 +35,8 @@ class OrderController extends GetxController {
     update();
 
     try {
-      int branchId = 1; // Default to 1 as per backend requirement
+      // Obtenemos dinámicamente la sucursal seleccionada actualmente
+      int branchId = Get.find<BranchController>().branchId;
 
       Map<String, dynamic> body = {
         'branch_id': branchId,

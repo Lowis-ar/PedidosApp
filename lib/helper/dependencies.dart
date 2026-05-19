@@ -51,6 +51,8 @@ Future<void> init() async {
   Get.lazyPut(() => CartController(cartRepo: Get.find<CartRepo>()), fenix: true);
   Get.lazyPut(() => OrderController(orderRepo: Get.find<OrderRepo>()), fenix: true);
   Get.lazyPut(() => ZoneController(zoneRepo: Get.find<ZoneRepo>()));
-  Get.lazyPut(() => DeliveryAuthController(deliveryAuthRepo: Get.find<DeliveryAuthRepo>()));
-  Get.lazyPut(() => DeliveryOrderController(orderRepo: Get.find<DeliveryOrderRepo>()));
+  
+  // Usamos Get.put para los controladores de delivery para asegurar persistencia y acceso rápido
+  Get.put(DeliveryAuthController(deliveryAuthRepo: Get.find<DeliveryAuthRepo>()), permanent: true);
+  Get.put(DeliveryOrderController(orderRepo: Get.find<DeliveryOrderRepo>()), permanent: true);
 }

@@ -5,6 +5,7 @@ import '../data/api/api_client.dart';
 import '../data/repository/delivery_auth_repo.dart';
 import '../models/deliveryman_model.dart';
 import '../utils/app_constants.dart';
+import 'delivery_order_controller.dart';
 
 class DeliveryAuthController extends GetxController {
   final DeliveryAuthRepo deliveryAuthRepo;
@@ -57,6 +58,9 @@ class DeliveryAuthController extends GetxController {
     _storage.write(AppConstants.DELIVERY_USER_KEY, deliveryman.toJson());
     Get.find<ApiClient>().updateToken(token);
     update();
+    
+    // Forzar carga de pedidos inmediata para que no aparezca vacío al entrar
+    Get.find<DeliveryOrderController>().getOrders();
   }
 
   Future<void> login(String email, String password) async {

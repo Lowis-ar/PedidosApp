@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../controllers/delivery_order_controller.dart';
-import '../../utils/colors.dart';
-import '../../widgets/big_text.dart';
-import '../../widgets/small_text.dart';
+import 'package:pedidosapp/controllers/delivery_order_controller.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/small_text.dart';
 
 class DeliveryHistoryPage extends StatefulWidget {
   const DeliveryHistoryPage({super.key});
@@ -16,8 +16,12 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage> {
   @override
   void initState() {
     super.initState();
-    // Forzar la carga de datos al entrar a la pantalla
-    Get.find<DeliveryOrderController>().getHistory();
+    // Forzar la carga de datos al entrar a la pantalla de forma segura
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<DeliveryOrderController>()) {
+        Get.find<DeliveryOrderController>().getHistory();
+      }
+    });
   }
 
   @override

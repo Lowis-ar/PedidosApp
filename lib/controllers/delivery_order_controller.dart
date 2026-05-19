@@ -19,6 +19,9 @@ class DeliveryOrderController extends GetxController {
 
   List<DeliveryOrderModel> _historyOrders = [];
   List<DeliveryOrderModel> get historyOrders => _historyOrders;
+
+  List<DeliveryOrderModel> _activeOrdersList = [];
+  List<DeliveryOrderModel> get activeOrdersList => _activeOrdersList;
   
   DeliveryOrderModel? _activeOrder;
   DeliveryOrderModel? get activeOrder => _activeOrder;
@@ -33,80 +36,78 @@ class DeliveryOrderController extends GetxController {
     _isLoading = true;
     update();
     try {
+      // 1. Obtener Pedidos Disponibles
       Response responseAvailable = await orderRepo.getAvailableOrders();
       debugPrint("=== DELIVERY getOrders ===");
-      debugPrint("StatusCode: ${responseAvailable.statusCode}");
-      debugPrint("Body type: ${responseAvailable.body.runtimeType}");
-      debugPrint("Body: ${responseAvailable.body}");
       
       if (responseAvailable.statusCode == 200) {
         final bodyRaw = responseAvailable.body;
-        try {
-          List<dynamic>? rawOrders;
-          
-          if (bodyRaw is Map) {
-            final data = bodyRaw['data'];
-            debugPrint("data type: ${data.runtimeType}, data: $data");
-            
-            if (data is List) {
-              rawOrders = data;
-            } else if (data is Map && data['orders'] is List) {
-              rawOrders = data['orders'];
-            } else if (bodyRaw['orders'] is List) {
-              rawOrders = bodyRaw['orders'];
-            }
-          } else if (bodyRaw is List) {
-            rawOrders = bodyRaw;
-          }
-          
-          if (rawOrders != null) {
-            _availableOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(Map<String, dynamic>.from(o))).toList();
-            debugPrint("Parsed ${_availableOrders.length} available orders");
-          } else {
-            debugPrint("WARN: Could not extract orders list from response body");
-            _availableOrders = [];
-          }
-        } catch (parseErr) {
-          debugPrint("ERROR parsing available orders: $parseErr");
-          _availableOrders = [];
-        }
-      } else {
-        debugPrint("WARN: Non-200 status code for available orders: ${responseAvailable.statusCode}");
-        debugPrint("Body: ${responseAvailable.body}");
+        _availableOrders = _parseOrderList(bodyRaw);
+      }
+
+      // 2. Obtener Pedidos en Curso (Active/Running)
+      Response responseActive = await orderRepo.getActiveOrders();
+      if (responseActive.statusCode == 200) {
+        _activeOrdersList = _parseOrderList(responseActive.body);
       }
 
       await getHistory();
 
-      _activeOrder = null;
-      final storedActiveId = _storage.read<int>(_activeOrderIdKey);
-      if (storedActiveId != null) {
-        for (var o in _availableOrders) {
-          if (o.id == storedActiveId) { _activeOrder = o; break; }
-        }
-      }
-      if (_activeOrder == null) {
-        for (var o in _availableOrders) {
-          if (o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up') {
-            _activeOrder = o; break;
-          }
-        }
-      }
-      if (_activeOrder == null) {
-        for (var o in _historyOrders) {
-          if (o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up') {
-            _activeOrder = o; break;
-          }
-        }
-      }
-      if (_activeOrder == null) {
-        _storage.remove(_activeOrderIdKey);
-      }
+      // 4. Identificar el Pedido Activo principal para la UI destacada
+      _updateActiveOrderState();
 
     } catch (e) {
       debugPrint("ERROR en DeliveryOrderController.getOrders: $e");
     } finally {
       _isLoading = false;
       update();
+    }
+  }
+
+  List<DeliveryOrderModel> _parseOrderList(dynamic body) {
+    try {
+      List<dynamic>? rawOrders;
+      if (body is Map) {
+        rawOrders = body['data']?['orders'] ?? body['data'] ?? body['orders'];
+      } else if (body is List) {
+        rawOrders = body;
+      }
+      
+      if (rawOrders != null) {
+        return rawOrders.map((o) => DeliveryOrderModel.fromJson(Map<String, dynamic>.from(o))).toList();
+      }
+    } catch (e) {
+      debugPrint("Error parsing order list: $e");
+    }
+    return [];
+  }
+
+  void _updateActiveOrderState() {
+    DeliveryOrderModel? foundActive;
+    
+    // Prioridad 1: Lista de activos del endpoint oficial
+    if (_activeOrdersList.isNotEmpty) {
+      foundActive = _activeOrdersList.first;
+    }
+
+    // Prioridad 2: ID guardado localmente
+    if (foundActive == null) {
+      final storedActiveId = _storage.read<int>(_activeOrderIdKey);
+      if (storedActiveId != null) {
+        foundActive = [..._availableOrders, ..._historyOrders].firstWhereOrNull((o) => o.id == storedActiveId);
+      }
+    }
+
+    // Aplicar lógica Sticky
+    if (foundActive != null) {
+      _activeOrder = foundActive;
+      _storage.write(_activeOrderIdKey, _activeOrder!.id);
+    } else if (_activeOrder != null) {
+      bool isAlreadyDelivered = _historyOrders.any((o) => o.id == _activeOrder!.id && o.orderStatus == 'delivered');
+      if (isAlreadyDelivered) {
+        _activeOrder = null;
+        _storage.remove(_activeOrderIdKey);
+      }
     }
   }
 

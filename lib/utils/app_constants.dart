@@ -41,6 +41,7 @@ class AppConstants {
   static const String DELIVERY_ORDER_STATUS_UPDATE_URI = "/api/v1/delivery/orders/"; // {order_id}/status
   static const String DELIVERY_VERIFY_OTP_URI = "/api/v1/delivery/orders/"; // {order_id}/verify-otp
   static const String DELIVERY_HISTORY_ORDERS_URI = "/api/v1/delivery/orders/history";
+  static const String DELIVERY_ACTIVE_ORDERS_URI = "/api/v1/delivery/orders/active";
   static const String DELIVERY_ORDER_LIST_URI = "/api/v1/delivery/orders";
 
   // Storage keys

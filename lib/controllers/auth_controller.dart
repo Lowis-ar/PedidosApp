@@ -3,14 +3,14 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../data/api/api_client.dart';
 import '../data/repository/auth_repo.dart';
-import '../models/user_model.dart';
-import '../models/deliveryman_model.dart';
-import '../utils/app_constants.dart';
-import '../routes/route_helper.dart';
-import 'delivery_auth_controller.dart';
-import 'cart_controller.dart';
-import 'popular_product_controller.dart';
-import 'recommended_product_controller.dart';
+import 'package:pedidosapp/models/user_model.dart';
+import 'package:pedidosapp/models/deliveryman_model.dart';
+import 'package:pedidosapp/utils/app_constants.dart';
+import 'package:pedidosapp/routes/route_helper.dart';
+import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
+import 'package:pedidosapp/controllers/cart_controller.dart';
+import 'package:pedidosapp/controllers/popular_product_controller.dart';
+import 'package:pedidosapp/controllers/recommended_product_controller.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
