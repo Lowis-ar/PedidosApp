@@ -399,51 +399,77 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Widget _buildConfirmStep() {
     return GetBuilder<CartController>(builder: (cartController) {
-      var cartList = cartController.getItems;
-      double total = 0;
-      for (var item in cartList) {
-        total += (item.price ?? 0) * (item.quantity ?? 0);
-      }
+      return GetBuilder<ZoneController>(builder: (zoneController) {
+        var cartList = cartController.getItems;
+        double subtotal = 0;
+        for (var item in cartList) {
+          subtotal += (item.price ?? 0) * (item.quantity ?? 0);
+        }
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Order items
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Productos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const Divider(),
-                ...cartList.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
+        // Obtener el costo de envío de la zona seleccionada
+        double deliveryFee = 0;
+        final selectedZone = zoneController.zoneList.firstWhereOrNull((z) => z.id == zoneController.selectedZoneId);
+        if (selectedZone != null) {
+          deliveryFee = double.tryParse(selectedZone.deliveryFee) ?? 0;
+        }
+
+        double total = subtotal + deliveryFee;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Order items
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Productos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Divider(),
+                  ...cartList.map((item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(child: Text('${item.quantity}x ${item.name}', style: const TextStyle(fontSize: 14))),
+                        Text('\$${((item.price ?? 0) * (item.quantity ?? 0)).toStringAsFixed(2)}',
+                            style: const TextStyle(fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  )),
+                  const Divider(),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text('${item.quantity}x ${item.name}', style: const TextStyle(fontSize: 14))),
-                      Text('\$${((item.price ?? 0) * (item.quantity ?? 0)).toStringAsFixed(2)}',
-                          style: const TextStyle(fontWeight: FontWeight.w500)),
+                      const Text('Subtotal', style: TextStyle(fontSize: 14)),
+                      Text('\$${subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
                     ],
                   ),
-                )),
-                const Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    Text('\$${total.toStringAsFixed(2)}',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.mainColor)),
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Envío (${selectedZone?.name ?? "Zona"})', style: const TextStyle(fontSize: 14)),
+                      Text('\$${deliveryFee.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                  const Divider(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      Text('\$${total.toStringAsFixed(2)}',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.mainColor)),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 12),
           // Address summary
           Container(
@@ -494,7 +520,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ],
       );
     });
-  }
+  });
+}
 
   void _onStepContinue() {
     if (_currentStep == 0) {

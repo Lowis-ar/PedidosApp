@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:pedidosapp/data/repository/order_repo.dart';
 import 'package:pedidosapp/models/order_model.dart';
 import 'package:pedidosapp/models/cart_model.dart';
-import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
 

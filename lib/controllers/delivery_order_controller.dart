@@ -26,6 +26,12 @@ class DeliveryOrderController extends GetxController {
   DeliveryOrderModel? _activeOrder;
   DeliveryOrderModel? get activeOrder => _activeOrder;
 
+  double _totalEarnings = 0.0;
+  double get totalEarnings => _totalEarnings;
+
+  double _todayEarnings = 0.0;
+  double get todayEarnings => _todayEarnings;
+
   double get dailyEarnings {
     return _historyOrders
         .where((o) => o.orderStatus == 'delivered')
@@ -36,28 +42,32 @@ class DeliveryOrderController extends GetxController {
     _isLoading = true;
     update();
     try {
-      // 1. Obtener Pedidos Disponibles
-      Response responseAvailable = await orderRepo.getAvailableOrders();
-      debugPrint("=== DELIVERY getOrders ===");
+      debugPrint("=== INICIO CARGA DE PEDIDOS ===");
       
-      if (responseAvailable.statusCode == 200) {
-        final bodyRaw = responseAvailable.body;
-        _availableOrders = _parseOrderList(bodyRaw);
+      // 1. Pedidos Disponibles
+      Response respAvail = await orderRepo.getAvailableOrders();
+      if (respAvail.statusCode == 200) {
+        _availableOrders = _parseOrderList(respAvail.body);
+        debugPrint("Disponibles: ${_availableOrders.length}");
       }
 
-      // 2. Obtener Pedidos en Curso (Active/Running)
-      Response responseActive = await orderRepo.getActiveOrders();
-      if (responseActive.statusCode == 200) {
-        _activeOrdersList = _parseOrderList(responseActive.body);
+      // 2. Pedidos Activos (En Curso)
+      Response respActive = await orderRepo.getActiveOrders();
+      if (respActive.statusCode == 200) {
+        _activeOrdersList = _parseOrderList(respActive.body);
+        debugPrint("En Curso (List): ${_activeOrdersList.length}");
       }
 
       await getHistory();
 
-      // 4. Identificar el Pedido Activo principal para la UI destacada
+      // 3. Sincronizar Pedido Activo Principal (Persistent/Sticky)
       _updateActiveOrderState();
+      
+      debugPrint("Pedido Activo ID: ${_activeOrder?.id ?? 'Ninguno'}");
+      debugPrint("=== FIN CARGA DE PEDIDOS ===");
 
     } catch (e) {
-      debugPrint("ERROR en DeliveryOrderController.getOrders: $e");
+      debugPrint("Error crítico en getOrders: $e");
     } finally {
       _isLoading = false;
       update();
@@ -83,50 +93,56 @@ class DeliveryOrderController extends GetxController {
   }
 
   void _updateActiveOrderState() {
-    DeliveryOrderModel? foundActive;
+    DeliveryOrderModel? found;
     
-    // Prioridad 1: Lista de activos del endpoint oficial
+    // Prioridad 1: Endpoint de Activos
     if (_activeOrdersList.isNotEmpty) {
-      foundActive = _activeOrdersList.first;
+      found = _activeOrdersList.firstWhereOrNull(
+        (o) => o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up' || o.orderStatus == 'accepted'
+      ) ?? _activeOrdersList.first;
     }
 
-    // Prioridad 2: ID guardado localmente
-    if (foundActive == null) {
-      final storedActiveId = _storage.read<int>(_activeOrderIdKey);
-      if (storedActiveId != null) {
-        foundActive = [..._availableOrders, ..._historyOrders].firstWhereOrNull((o) => o.id == storedActiveId);
+    // Prioridad 2: Buscar en Disponibles por estado
+    if (found == null) {
+      found = _availableOrders.firstWhereOrNull((o) => 
+        o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up' || o.orderStatus == 'accepted'
+      );
+    }
+
+    // Prioridad 3: Memoria Local (Persistence)
+    final storedId = _storage.read<int>(_activeOrderIdKey);
+    if (found == null && storedId != null) {
+      found = [..._availableOrders, ..._activeOrdersList, ..._historyOrders].firstWhereOrNull((o) => o.id == storedId);
+    }
+
+    if (found != null) {
+      _activeOrder = found;
+      _storage.write(_activeOrderIdKey, found.id);
+      
+      // Asegurar que esté en la lista de 'En Curso' para la pestaña
+      if (!_activeOrdersList.any((o) => o.id == found!.id)) {
+        _activeOrdersList.insert(0, found);
       }
-    }
-
-    // Aplicar lógica Sticky
-    if (foundActive != null) {
-      _activeOrder = foundActive;
-      _storage.write(_activeOrderIdKey, _activeOrder!.id);
-    } else if (_activeOrder != null) {
-      bool isAlreadyDelivered = _historyOrders.any((o) => o.id == _activeOrder!.id && o.orderStatus == 'delivered');
-      if (isAlreadyDelivered) {
-        _activeOrder = null;
-        _storage.remove(_activeOrderIdKey);
+    } else {
+      // Verificación de borrado: Solo si el historial dice que ya se entregó
+      if (_activeOrder != null) {
+        bool delivered = _historyOrders.any((o) => o.id == _activeOrder!.id && (o.orderStatus == 'delivered' || o.orderStatus == 'canceled'));
+        if (delivered) {
+          _activeOrder = null;
+          _storage.remove(_activeOrderIdKey);
+          _activeOrdersList.removeWhere((o) => o.id == storedId);
+        }
       }
     }
   }
 
-  double _totalEarnings = 0.0;
-  double get totalEarnings => _totalEarnings;
-
-  double _todayEarnings = 0.0;
-  double get todayEarnings => _todayEarnings;
-
   Future<void> getHistory() async {
     try {
       Response response = await orderRepo.getOrderHistory();
-      debugPrint("API History Raw: ${response.body}");
-      
       if (response.statusCode == 200) {
         final body = response.body;
         if (body['success'] == true && body['data'] != null) {
           final data = body['data'];
-          
           _totalEarnings = data['total_earnings'] != null ? double.parse(data['total_earnings'].toString()) : 0.0;
           _todayEarnings = data['today_earnings'] != null ? double.parse(data['today_earnings'].toString()) : 0.0;
           
@@ -149,12 +165,7 @@ class DeliveryOrderController extends GetxController {
       Response response = await orderRepo.acceptOrder(orderId);
       if (response.statusCode == 200) {
         Get.snackbar('Éxito', 'Pedido aceptado', backgroundColor: Colors.green, colorText: Colors.white);
-        // Parsear la respuesta para guardar el pedido como activo
-        final body = response.body;
-        if (body is Map && body['data'] is Map && body['data']['order'] is Map) {
-          _activeOrder = DeliveryOrderModel.fromJson(body['data']['order']);
-          _storage.write(_activeOrderIdKey, orderId);
-        }
+        _storage.write(_activeOrderIdKey, orderId);
         await getOrders();
       } else if (response.statusCode == 403) {
         Get.snackbar('Error', 'No puedes aceptar este pedido', backgroundColor: Colors.orange);
@@ -171,7 +182,6 @@ class DeliveryOrderController extends GetxController {
     _isLoading = true;
     update();
     try {
-      // Petición PUT con {"status": "on_way"}
       Response response = await orderRepo.updateOrderStatus(orderId, 'on_way');
       if (response.statusCode == 200) {
         Get.snackbar('Éxito', 'Pedido en camino', backgroundColor: Colors.blue, colorText: Colors.white);
@@ -212,7 +222,6 @@ class DeliveryOrderController extends GetxController {
   }
 
   void showNewOrderDialog(Map<String, dynamic> data) {
-    // Logic to show dialog when FCM message arrives
     Get.dialog(
       AlertDialog(
         title: const Text("¡Nuevo Pedido!"),
