@@ -1,58 +1,125 @@
 class DeliveryOrderModel {
   int? id;
+  int? userId;
   String? orderStatus;
+  double? total;
   double? deliveryFee;
   String? deliveryAddress;
+  String? addressReferences;
   String? createdAt;
   String? otp;
   Restaurant? restaurant;
   Customer? customer;
+  List<DeliveryOrderDetail>? details;
 
   DeliveryOrderModel({
     this.id,
+    this.userId,
     this.orderStatus,
+    this.total,
     this.deliveryFee,
     this.deliveryAddress,
+    this.addressReferences,
     this.createdAt,
     this.otp,
     this.restaurant,
     this.customer,
+    this.details,
   });
 
   DeliveryOrderModel.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    // Soportar tanto 'order_status' como 'status'
+    userId = json['user_id'];
+
     orderStatus = json['order_status'] ?? json['status'];
+    total = json['total'] != null ? double.parse(json['total'].toString()) : null;
     deliveryFee = json['delivery_fee'] != null ? double.parse(json['delivery_fee'].toString()) : 0.0;
-    
-    // Soportar estructuras anidadas de dirección
+
     if (json['address'] is Map) {
-      deliveryAddress = json['address']['street'] ?? json['address']['address'];
+      final addr = json['address'] as Map;
+      deliveryAddress = addr['street']?.toString() ?? addr['address']?.toString();
+      addressReferences = addr['references']?.toString();
     } else {
-      deliveryAddress = json['delivery_address'] ?? json['address'];
+      deliveryAddress = json['delivery_address']?.toString() ?? json['address']?.toString();
+      addressReferences = null;
     }
-    
+
     createdAt = json['created_at'] ?? json['delivered_at'];
-    otp = json['otp'];
-    
-    restaurant = json['branch'] != null ? Restaurant.fromJson(json['branch']) : 
-                 (json['restaurant'] != null ? Restaurant.fromJson(json['restaurant']) : null);
-    
-    customer = json['customer'] != null ? Customer.fromJson(json['customer']) : 
-               (json['user'] != null ? Customer.fromJson(json['user']) : 
-               (json['user'] != null ? Customer.fromJson(json['user']) : null));
+    otp = json['otp']?.toString();
+
+    restaurant = json['branch'] != null
+        ? Restaurant.fromJson(json['branch'])
+        : (json['restaurant'] != null ? Restaurant.fromJson(json['restaurant']) : null);
+
+    customer = json['customer'] != null
+        ? Customer.fromJson(json['customer'])
+        : (json['user'] != null ? Customer.fromJson(json['user']) : null);
+
+    // Inyectar coordenadas desde address si no vienen en user
+    if (customer != null && json['address'] is Map) {
+      customer!.lat = json['address']['latitude']?.toString() ?? json['address']['lat']?.toString() ?? customer!.lat;
+      customer!.lng = json['address']['longitude']?.toString() ?? json['address']['lng']?.toString() ?? customer!.lng;
+    }
+
+    if (json['details'] != null || json['items'] != null) {
+      details = <DeliveryOrderDetail>[];
+      var list = json['details'] ?? json['items'];
+      if (list is List) {
+        for (var v in list) {
+          details!.add(DeliveryOrderDetail.fromJson(v));
+        }
+      }
+    }
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'user_id': userId,
       'order_status': orderStatus,
+      'total': total,
       'delivery_fee': deliveryFee,
       'delivery_address': deliveryAddress,
+      'address_references': addressReferences,
       'created_at': createdAt,
       'otp': otp,
       'restaurant': restaurant?.toJson(),
       'customer': customer?.toJson(),
+      'details': details?.map((v) => v.toJson()).toList(),
+    };
+  }
+}
+
+class DeliveryOrderDetail {
+  int? id;
+  int? orderId;
+  int? foodId;
+  String? name;
+  String? img;
+  int? quantity;
+  String? price;
+
+  DeliveryOrderDetail({this.id, this.orderId, this.foodId, this.name, this.img, this.quantity, this.price});
+
+  DeliveryOrderDetail.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    orderId = json['order_id'];
+    foodId = json['product_id'] ?? json['food_id']; 
+    name = json['product_name'] ?? json['name'];
+    quantity = json['quantity'];
+    price = json['price']?.toString();
+    img = json['product_image'] ?? json['img'];
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'order_id': orderId,
+      'product_id': foodId,
+      'name': name,
+      'quantity': quantity,
+      'price': price,
+      'img': img,
     };
   }
 }

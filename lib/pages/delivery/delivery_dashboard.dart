@@ -5,7 +5,6 @@ import 'package:pedidosapp/controllers/branch_controller.dart';
 import 'package:pedidosapp/pages/delivery/active_orders_view.dart';
 import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
-import 'package:pedidosapp/models/delivery_order_model.dart';
 import 'package:pedidosapp/routes/route_helper.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
@@ -47,13 +46,45 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
   void _setupFCM() {
     try {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        bool isAvailable = Get.find<DeliveryAuthController>().deliveryman?.isAvailable ?? false;
-        if (isAvailable && message.data['type'] == 'new_order') {
+        final type = message.data['type'] ?? '';
+        final isAvailable =
+            Get.find<DeliveryAuthController>().deliveryman?.isAvailable ?? false;
+
+        debugPrint('[FCM] Mensaje recibido: type=$type');
+
+        if (type == 'ready_to_go' || type == 'new_order_available') {
+          // Pedido listo para tomar — actualizar lista de disponibles
+          if (isAvailable) {
+            Get.find<DeliveryOrderController>().getOrders(showLoading: false);
+            Get.snackbar(
+              '¡Nuevo pedido disponible!',
+              'Hay un pedido listo para ser tomado',
+              backgroundColor: Colors.orange,
+              colorText: Colors.white,
+              snackPosition: SnackPosition.TOP,
+              duration: const Duration(seconds: 5),
+              icon: const Icon(Icons.delivery_dining, color: Colors.white),
+            );
+          }
+        } else if (type == 'new_order' || type == 'assigned') {
+          // Pedido asignado al repartidor
           Get.find<DeliveryOrderController>().showNewOrderDialog(message.data);
+          Get.find<DeliveryOrderController>().getOrders(showLoading: false);
+        } else if (type == 'on_way') {
+          // Confirmación visual: pedido en camino
+          Get.snackbar(
+            'Pedido en camino',
+            'Ya estás en camino con el pedido',
+            backgroundColor: Colors.blue,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.TOP,
+            icon: const Icon(Icons.directions_bike, color: Colors.white),
+          );
+          Get.find<DeliveryOrderController>().getOrders(showLoading: false);
         }
       });
     } catch (e) {
-      debugPrint("FCM initialization skipped or failed: $e");
+      debugPrint('[FCM] Inicialización fallida o saltada: $e');
     }
   }
 
@@ -195,49 +226,6 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           ),
         );
       }),
-    );
-  }
-
-  Widget _buildActiveOrderCard(DeliveryOrderModel order) {
-    String statusLabel = "En curso";
-    if (order.orderStatus == 'accepted') statusLabel = "Aceptado - Ir al restaurante";
-    if (order.orderStatus == 'picked_up' || order.orderStatus == 'on_the_way') statusLabel = "En camino al cliente";
-
-    return GestureDetector(
-      onTap: () => Get.toNamed(RouteHelper.getDeliveryOrderDetail(), arguments: order),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-          color: AppColors.mainColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(Dimensions.radius20),
-          border: Border.all(color: AppColors.mainColor, width: 2),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.delivery_dining, size: 40, color: AppColors.mainColor),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  BigText(text: "Orden #${order.id}", size: 18),
-                  SmallText(text: "${order.restaurant?.name}", color: Colors.black87, size: 14),
-                  const SizedBox(height: 5),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.mainColor,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: SmallText(text: statusLabel.toUpperCase(), color: Colors.white, size: 10),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 20, color: AppColors.mainColor),
-          ],
-        ),
-      ),
     );
   }
 

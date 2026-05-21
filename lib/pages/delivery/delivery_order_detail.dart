@@ -178,11 +178,14 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
           TextButton(onPressed: () => Get.back(), child: const Text("CANCELAR")),
           ElevatedButton(
             onPressed: () async {
-              bool success = await controller.verifyOtp(order.id!, otpController.text);
-              if (success) {
-                Get.back(); // Close dialog
-                Get.back(); // Go back to dashboard
+              final String? errorMsg =
+                  await controller.verifyDeliveryOtp(order.id!, otpController.text);
+              if (errorMsg == null) {
+                Get.back(); // Cerrar diálogo
+                Get.back(); // Volver al dashboard
               }
+              // Si hay error, el snackbar de éxito no se muestra;
+              // el controller no muestra snackbar de error en 422
             },
             child: const Text("VERIFICAR"),
           ),
