@@ -49,6 +49,11 @@ class DeliveryAuthController extends GetxController {
     _storage.write(AppConstants.DELIVERY_USER_KEY, deliveryman.toJson());
     Get.find<ApiClient>().updateToken(token);
     update();
+    
+    // Forzar carga de pedidos inmediatamente después del login
+    if (Get.isRegistered<DeliveryOrderController>()) {
+      Get.find<DeliveryOrderController>().getOrders();
+    }
   }
 
   void syncSession(String token, DeliverymanModel deliveryman) {

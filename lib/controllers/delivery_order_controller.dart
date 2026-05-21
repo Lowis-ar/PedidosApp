@@ -4,20 +4,20 @@ import 'package:get_storage/get_storage.dart';
 import '../data/repository/delivery_order_repo.dart';
 import '../models/delivery_order_model.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 
 class DeliveryOrderController extends GetxController {
   final DeliveryOrderRepo orderRepo;
   DeliveryOrderController({required this.orderRepo});
 
   final _storage = GetStorage();
-  static const String _activeOrderIdKey = 'delivery_active_order_id';
   Timer? _pollingTimer;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   List<DeliveryOrderModel> _availableOrders = [];
-  List<DeliveryOrderModel> get availableOrders => _availableOrders;
+  List<DeliveryOrderModel> get availableOrders => _availableOrders.where((o) => o.orderStatus == 'ready_to_go' || o.orderStatus == 'pending').toList();
 
   List<DeliveryOrderModel> _historyOrders = [];
   List<DeliveryOrderModel> get historyOrders => _historyOrders;
@@ -59,56 +59,52 @@ class DeliveryOrderController extends GetxController {
     try {
       debugPrint("=== INICIO CARGA DE PEDIDOS ===");
 
-      // 1. Pedidos Disponibles (status: ready_to_go)
-      Response respAvail = await orderRepo.getAvailableOrders();
-      debugPrint("[Disponibles] status=${respAvail.statusCode} body=${respAvail.body}");
+      final results = await Future.wait([
+        orderRepo.getAvailableOrders(),
+        orderRepo.getActiveOrders(),
+        orderRepo.getOrderHistory(),
+      ]);
+
+      Response respAvail = results[0];
       if (respAvail.statusCode == 200) {
         _availableOrders = _parseOrderList(respAvail.body);
-        debugPrint("[Disponibles] parseados: ${_availableOrders.length}");
       } else if (respAvail.statusCode == 403) {
         _availableOrders = [];
-        // Solo mostrar snackbar si no viene del polling silencioso
         if (showLoading) {
           final msg = respAvail.body is Map
               ? (respAvail.body['message'] ?? 'No tienes disponibilidad activa')
               : 'No tienes disponibilidad activa';
-          Get.snackbar(
-            'Sin disponibilidad',
-            msg.toString(),
-            backgroundColor: Colors.orange,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
-          );
+          Get.snackbar('Sin disponibilidad', msg.toString(),
+              backgroundColor: Colors.orange, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
         }
       }
 
-      // 2. Pedidos Activos (status: assigned o on_way)
-      Response respActive = await orderRepo.getActiveOrders();
-      debugPrint("[Activos] status=${respActive.statusCode} body=${respActive.body}");
+      Response respActive = results[1];
       if (respActive.statusCode == 200) {
         _activeOrdersList = _parseOrderList(respActive.body);
-        debugPrint("[Activos] parseados: ${_activeOrdersList.length}");
-      } else {
-        debugPrint("[Activos] ERROR status=${respActive.statusCode}");
       }
 
-      await getHistory();
+      Response respHistory = results[2];
+      if (respHistory.statusCode == 200) {
+        final body = respHistory.body;
+        if (body['success'] == true && body['data'] != null) {
+          final data = body['data'];
+          _totalEarnings = data['total_earnings'] != null ? double.parse(data['total_earnings'].toString()) : 0.0;
+          _todayEarnings = data['today_earnings'] != null ? double.parse(data['today_earnings'].toString()) : 0.0;
+          var rawOrders = data['orders'];
+          if (rawOrders is List) {
+            _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          }
+        }
+      }
 
-      // 3. Sincronizar Pedido Activo Principal (Persistent/Sticky)
       _updateActiveOrderState();
-
       debugPrint("=== FIN CARGA DE PEDIDOS === disponibles=${_availableOrders.length} activos=${_activeOrdersList.length}");
-
     } catch (e, stack) {
       debugPrint("Error en getOrders: $e\n$stack");
       if (showLoading) {
-        Get.snackbar(
-          'Error de conexión',
-          'No se pudo cargar los pedidos. Verifica tu conexión.',
-          backgroundColor: Colors.red.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        Get.snackbar('Error de conexión', 'No se pudo cargar los pedidos. Verifica tu conexión.',
+            backgroundColor: Colors.red.shade600, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
       }
     } finally {
       _isLoading = false;
@@ -135,44 +131,12 @@ class DeliveryOrderController extends GetxController {
   }
 
   void _updateActiveOrderState() {
-    DeliveryOrderModel? found;
-    
-    // Prioridad 1: Endpoint de Activos
     if (_activeOrdersList.isNotEmpty) {
-      found = _activeOrdersList.firstWhereOrNull(
+      _activeOrder = _activeOrdersList.firstWhereOrNull(
         (o) => o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up' || o.orderStatus == 'accepted'
       ) ?? _activeOrdersList.first;
-    }
-
-    // Prioridad 2: Buscar en Disponibles por estado
-    found ??= _availableOrders.firstWhereOrNull((o) =>
-        o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up' || o.orderStatus == 'accepted');
-
-    // Prioridad 3: Memoria Local (Persistence)
-    final storedId = _storage.read<int>(_activeOrderIdKey);
-    if (found == null && storedId != null) {
-      found = [..._availableOrders, ..._activeOrdersList, ..._historyOrders].firstWhereOrNull((o) => o.id == storedId);
-    }
-
-    if (found != null) {
-      _activeOrder = found;
-      _storage.write(_activeOrderIdKey, found.id);
-      
-      // Asegurar que esté en la lista de 'En Curso' para la pestaña
-      if (!_activeOrdersList.any((o) => o.id == found!.id)) {
-        _activeOrdersList.insert(0, found);
-      }
     } else {
-      // Verificación de borrado: Solo si el historial o la ausencia total confirma que ya no existe
-      if (_activeOrder != null) {
-        final all = [..._availableOrders, ..._activeOrdersList, ..._historyOrders];
-        bool stillExists = all.any((o) => o.id == storedId && o.orderStatus != 'delivered' && o.orderStatus != 'canceled' && o.orderStatus != 'cancelled');
-        
-        if (!stillExists) {
-          _activeOrder = null;
-          _storage.remove(_activeOrderIdKey);
-        }
-      }
+      _activeOrder = null;
     }
   }
 
@@ -199,13 +163,52 @@ class DeliveryOrderController extends GetxController {
   }
 
   Future<void> acceptOrder(int orderId) async {
+    final order = _availableOrders.firstWhereOrNull((o) => o.id == orderId);
+    if (order != null && order.restaurant?.lat != null && order.restaurant?.lng != null) {
+      try {
+        bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) {
+          Get.snackbar('GPS Desactivado', 'Activa la ubicación para validar la distancia.', backgroundColor: Colors.orange, colorText: Colors.white);
+          return;
+        }
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            Get.snackbar('Permiso denegado', 'Debes dar permiso de ubicación.', backgroundColor: Colors.orange, colorText: Colors.white);
+            return;
+          }
+        }
+        if (permission == LocationPermission.deniedForever) {
+          Get.snackbar('Permiso', 'Permisos de ubicación denegados permanentemente.', backgroundColor: Colors.orange, colorText: Colors.white);
+          return;
+        }
+
+        Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        double distanceInMeters = Geolocator.distanceBetween(
+          position.latitude,
+          position.longitude,
+          double.parse(order.restaurant!.lat!),
+          double.parse(order.restaurant!.lng!)
+        );
+
+        if (distanceInMeters > 1000) { // 1 km threshold
+          Get.snackbar('Lejos del restaurante', 'Debes estar cerca del restaurante para aceptar.', backgroundColor: Colors.red, colorText: Colors.white);
+          return;
+        }
+      } catch (e) {
+        debugPrint("Error GPS: $e");
+        Get.snackbar('Error', 'No se pudo validar la ubicación.', backgroundColor: Colors.orange, colorText: Colors.white);
+        return;
+      }
+    }
+
     _isLoading = true;
     update();
     try {
       Response response = await orderRepo.acceptOrder(orderId);
       if (response.statusCode == 200) {
         Get.snackbar('Éxito', 'Pedido aceptado', backgroundColor: Colors.green, colorText: Colors.white);
-        _storage.write(_activeOrderIdKey, orderId);
         await getOrders();
       } else if (response.statusCode == 403) {
         Get.snackbar('Error', 'No puedes aceptar este pedido', backgroundColor: Colors.orange);
@@ -278,7 +281,6 @@ class DeliveryOrderController extends GetxController {
           snackPosition: SnackPosition.TOP,
         );
         _activeOrder = null;
-        _storage.remove(_activeOrderIdKey);
         await getOrders();
         return null; // éxito
       } else if (response.statusCode == 422) {

@@ -71,7 +71,10 @@ class ApiClient extends GetConnect implements GetxService {
 
   Future<Response> getData(String uri) async {
     try {
-      final Response response = await get(uri, headers: _mainHeaders);
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String cacheBustUri = uri.contains('?') ? '$uri&_t=$timestamp' : '$uri?_t=$timestamp';
+      
+      final Response response = await get(cacheBustUri, headers: _mainHeaders);
       _handleHttpError(response);
       return response;
     } catch (e) {

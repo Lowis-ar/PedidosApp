@@ -12,6 +12,9 @@ class DeliveryOrderModel {
   Customer? customer;
   List<DeliveryOrderDetail>? details;
 
+  static const String STATUS_READY_TO_GO = 'ready_to_go';
+  bool get isReadyToGo => orderStatus == STATUS_READY_TO_GO || orderStatus == 'pending';
+
   DeliveryOrderModel({
     this.id,
     this.userId,
@@ -31,7 +34,7 @@ class DeliveryOrderModel {
     id = json['id'];
     userId = json['user_id'];
 
-    orderStatus = json['order_status'] ?? json['status'];
+    orderStatus = (json['order_status'] ?? json['status'])?.toString().toLowerCase();
     total = json['total'] != null ? double.parse(json['total'].toString()) : null;
     deliveryFee = json['delivery_fee'] != null ? double.parse(json['delivery_fee'].toString()) : 0.0;
 

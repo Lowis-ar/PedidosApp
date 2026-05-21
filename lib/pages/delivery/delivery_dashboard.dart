@@ -25,6 +25,9 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
     super.initState();
     _setupFCM();
     _loadData();
+    if (Get.isRegistered<DeliveryOrderController>()) {
+      Get.find<DeliveryOrderController>().getOrders();
+    }
   }
 
   Future<void> _loadData() async {
@@ -52,7 +55,7 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
 
         debugPrint('[FCM] Mensaje recibido: type=$type');
 
-        if (type == 'ready_to_go' || type == 'new_order_available') {
+        if (type == 'ready_to_go' || type == 'new_order_available' || type == 'ORDER_READY') {
           // Pedido listo para tomar — actualizar lista de disponibles
           if (isAvailable) {
             Get.find<DeliveryOrderController>().getOrders(showLoading: false);

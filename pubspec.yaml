@@ -17,6 +17,7 @@ dependencies:
   url_launcher: ^6.2.1
   firebase_messaging: ^14.7.1
   firebase_core: ^2.21.0
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:
