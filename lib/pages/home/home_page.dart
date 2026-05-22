@@ -4,6 +4,10 @@ import 'main_food_page.dart';
 import 'order_history_page.dart';
 import '../profile/profile_page.dart';
 import '../../utils/colors.dart';
+import 'package:get/get.dart';
+import '../../controllers/cart_controller.dart';
+import '../../controllers/popular_product_controller.dart';
+import '../../controllers/recommended_product_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +18,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Forzamos la inicialización de los controladores al cargar la pantalla principal
+    if (Get.isRegistered<CartController>()) {
+      Get.find<CartController>().getCartData();
+    }
+    if (Get.isRegistered<PopularProductController>()) Get.find<PopularProductController>().getPopularProductList();
+    if (Get.isRegistered<RecommendedProductController>()) Get.find<RecommendedProductController>().getRecommendedProductList();
+  }
 
   final List<Widget> _pages = const [
     MainFoodPage(),

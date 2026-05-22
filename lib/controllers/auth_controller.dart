@@ -12,6 +12,7 @@ import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/controllers/popular_product_controller.dart';
 import 'package:pedidosapp/controllers/recommended_product_controller.dart';
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
+import 'package:pedidosapp/helper/dependencies.dart' as dep;
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
@@ -84,14 +85,6 @@ class AuthController extends GetxController {
       deliveryAuthController.syncSession(token, dm);
       Get.offAllNamed(RouteHelper.getDeliveryDashboard());
     } else {
-      if (Get.isRegistered<PopularProductController>()) {
-        Get.find<PopularProductController>().getPopularProductList();
-      }
-      if (Get.isRegistered<RecommendedProductController>()) {
-        Get.find<RecommendedProductController>().getRecommendedProductList();
-      }
-      Get.find<CartController>().getCartData();
-      
       Get.offAllNamed(RouteHelper.getInitial());
     }
     update();
@@ -262,7 +255,7 @@ class AuthController extends GetxController {
     );
   }
 
-  void logout() {
+  void logout() async {
     Get.find<ApiClient>().isLoggingOut = true;
     if (Get.isRegistered<DeliveryOrderController>()) {
       Get.find<DeliveryOrderController>().stopPolling();
@@ -271,13 +264,12 @@ class AuthController extends GetxController {
     _token = '';
     _user = null;
     _storage.erase();
-    Get.find<ApiClient>().updateToken('');
     
-    if (Get.isRegistered<CartController>()) {
-      Get.find<CartController>().clear();
-      Get.find<CartController>().getCartData();
-    }
-    update();
+    // Limpieza total de controladores de la memoria (sin destruir el enrutador)
+    Get.deleteAll(force: true);
+    
+    // Al limpiar dependencias, volvemos a inicializar las esenciales
+    await dep.init();
 
     Get.offAllNamed(RouteHelper.getLogin());
 

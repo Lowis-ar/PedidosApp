@@ -28,29 +28,29 @@ Future<void> init() async {
   await GetStorage.init();
 
   // Api Client
-  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.BASE_URL));
+  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.BASE_URL), fenix: true);
 
   // Repos
-  Get.lazyPut(() => AuthRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => BranchRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => PopularProductRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => RecommendedProductRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => ProductRepo(apiClient: Get.find<ApiClient>())); 
-  Get.lazyPut(() => CartRepo());
-  Get.lazyPut(() => OrderRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => ZoneRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => DeliveryAuthRepo(apiClient: Get.find<ApiClient>()));
-  Get.lazyPut(() => DeliveryOrderRepo(apiClient: Get.find<ApiClient>()));
+  Get.lazyPut(() => AuthRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => BranchRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => PopularProductRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => RecommendedProductRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => ProductRepo(apiClient: Get.find<ApiClient>()), fenix: true); 
+  Get.lazyPut(() => CartRepo(), fenix: true);
+  Get.lazyPut(() => OrderRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => ZoneRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => DeliveryAuthRepo(apiClient: Get.find<ApiClient>()), fenix: true);
+  Get.lazyPut(() => DeliveryOrderRepo(apiClient: Get.find<ApiClient>()), fenix: true);
 
   // Controllers
-  Get.lazyPut(() => AuthController(authRepo: Get.find<AuthRepo>()));
+  Get.lazyPut(() => AuthController(authRepo: Get.find<AuthRepo>()), fenix: true);
   Get.lazyPut(() => BranchController(branchRepo: Get.find<BranchRepo>()), fenix: true);
-  Get.lazyPut(() => PopularProductController(popularProductRepo: Get.find<PopularProductRepo>()));
-  Get.lazyPut(() => RecommendedProductController(recommendedProductRepo: Get.find<RecommendedProductRepo>()));
+  Get.lazyPut(() => PopularProductController(popularProductRepo: Get.find<PopularProductRepo>()), fenix: true);
+  Get.lazyPut(() => RecommendedProductController(recommendedProductRepo: Get.find<RecommendedProductRepo>()), fenix: true);
   Get.lazyPut(() => SearchProductController(productRepo: Get.find<ProductRepo>()), fenix: true);
   Get.lazyPut(() => CartController(cartRepo: Get.find<CartRepo>()), fenix: true);
   Get.lazyPut(() => OrderController(orderRepo: Get.find<OrderRepo>()), fenix: true);
-  Get.lazyPut(() => ZoneController(zoneRepo: Get.find<ZoneRepo>()));
+  Get.lazyPut(() => ZoneController(zoneRepo: Get.find<ZoneRepo>()), fenix: true);
   
   // Usamos Get.put para los controladores de delivery para asegurar persistencia y acceso rápido
   Get.put(DeliveryAuthController(deliveryAuthRepo: Get.find<DeliveryAuthRepo>()), permanent: true);

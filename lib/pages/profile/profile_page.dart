@@ -129,8 +129,8 @@ class ProfilePage extends StatelessWidget {
                     buttonColor: AppColors.mainColor,
                     cancelTextColor: AppColors.mainBlackColor,
                     onConfirm: () {
-                      authController.logout();
-                      Get.offAllNamed(RouteHelper.getLogin());
+                      Get.back(); // Cerramos el modal primero
+                      authController.logout(); // El controlador ya se encarga de redirigir al login
                     },
                   );
                 },
