@@ -22,6 +22,10 @@ class OrderRepo {
     return await apiClient.postData("${AppConstants.CANCEL_ORDER_URI}$orderId/cancel", {});
   }
 
+  Future<Response> getShippingFee(double lat, double lng, int branchId) async {
+    return await apiClient.getData('/shipping/fee?lat=$lat&lng=$lng&branch_id=$branchId');
+  }
+
   // Address endpoints
   Future<Response> getAddressList() async {
     return await apiClient.getData(AppConstants.ADDRESSES_URI);

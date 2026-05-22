@@ -58,10 +58,10 @@ class DeliveryOrderModel {
         ? Customer.fromJson(json['customer'])
         : (json['user'] != null ? Customer.fromJson(json['user']) : null);
 
-    // Inyectar coordenadas desde address si no vienen en user
-    if (customer != null && json['address'] is Map) {
-      customer!.lat = json['address']['latitude']?.toString() ?? json['address']['lat']?.toString() ?? customer!.lat;
-      customer!.lng = json['address']['longitude']?.toString() ?? json['address']['lng']?.toString() ?? customer!.lng;
+    // Inyectar coordenadas desde el pedido, o desde address si no vienen en user
+    if (customer != null) {
+      customer!.lat = json['latitude']?.toString() ?? json['lat']?.toString() ?? (json['address'] is Map ? (json['address']['latitude']?.toString() ?? json['address']['lat']?.toString()) : null) ?? customer!.lat;
+      customer!.lng = json['longitude']?.toString() ?? json['lng']?.toString() ?? (json['address'] is Map ? (json['address']['longitude']?.toString() ?? json['address']['lng']?.toString()) : null) ?? customer!.lng;
     }
 
     if (json['details'] != null || json['items'] != null) {

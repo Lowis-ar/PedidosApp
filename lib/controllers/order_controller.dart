@@ -29,6 +29,8 @@ class OrderController extends GetxController {
     required List<CartModel> cartItems,
     required int addressId,
     String? orderNote,
+    double? lat,
+    double? lng,
   }) async {
     _isLoading = true;
     update();
@@ -40,6 +42,8 @@ class OrderController extends GetxController {
       Map<String, dynamic> body = {
         'branch_id': branchId,
         'address_id': addressId,
+        'lat': lat,
+        'lng': lng,
         'coupon_code': null,
         'use_loyalty_points': false,
         'notes': orderNote ?? '',
@@ -89,6 +93,20 @@ class OrderController extends GetxController {
       _isLoading = false;
       update();
     }
+  }
+
+  Future<double?> getShippingFee(double lat, double lng, int branchId) async {
+    try {
+      Response response = await orderRepo.getShippingFee(lat, lng, branchId);
+      if (response.statusCode == 200) {
+        if (response.body['fee'] != null) {
+          return double.tryParse(response.body['fee'].toString());
+        }
+      }
+    } catch (e) {
+      debugPrint("Error getting shipping fee: $e");
+    }
+    return null;
   }
 
   Future<void> getOrderList() async {

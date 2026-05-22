@@ -11,6 +11,7 @@ import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/controllers/popular_product_controller.dart';
 import 'package:pedidosapp/controllers/recommended_product_controller.dart';
+import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
@@ -262,16 +263,28 @@ class AuthController extends GetxController {
   }
 
   void logout() {
+    Get.find<ApiClient>().isLoggingOut = true;
+    if (Get.isRegistered<DeliveryOrderController>()) {
+      Get.find<DeliveryOrderController>().stopPolling();
+    }
+
     _token = '';
     _user = null;
-    _storage.remove('token');
-    _storage.remove('user');
-    _storage.remove('user_type');
-    _storage.remove(AppConstants.DELIVERY_TOKEN);
-    _storage.remove(AppConstants.DELIVERY_USER_KEY);
+    _storage.erase();
     Get.find<ApiClient>().updateToken('');
-    Get.find<CartController>().clear();
-    Get.find<CartController>().getCartData();
+    
+    if (Get.isRegistered<CartController>()) {
+      Get.find<CartController>().clear();
+      Get.find<CartController>().getCartData();
+    }
     update();
+
+    Get.offAllNamed(RouteHelper.getLogin());
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (Get.isRegistered<ApiClient>()) {
+        Get.find<ApiClient>().isLoggingOut = false;
+      }
+    });
   }
 }

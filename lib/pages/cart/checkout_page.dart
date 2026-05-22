@@ -11,6 +11,9 @@ import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 import '../../widgets/big_text.dart';
 import '../../widgets/small_text.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../address/map_pin_picker_view.dart';
+import '../../controllers/branch_controller.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -35,6 +38,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
   int _currentStep = 0;
   bool _cardValid = false;
   String _cardType = '';
+
+  double? _selectedLat;
+  double? _selectedLng;
+  double? _dynamicDeliveryFee;
+  bool _isLoadingFee = false;
+
+  Future<void> _calculateDynamicFee() async {
+    if (_selectedLat != null && _selectedLng != null) {
+      setState(() => _isLoadingFee = true);
+      int branchId = Get.find<BranchController>().branchId;
+      double? fee = await Get.find<OrderController>().getShippingFee(_selectedLat!, _selectedLng!, branchId);
+      setState(() {
+        _dynamicDeliveryFee = fee;
+        _isLoadingFee = false;
+      });
+      if (fee != null) {
+        Get.snackbar('Tarifa calculada', 'Costo de envío dinámico: \$${fee.toStringAsFixed(2)}', backgroundColor: Colors.green, colorText: Colors.white);
+      } else {
+        Get.snackbar('Error', 'No se pudo calcular la tarifa, se usará la tarifa base de la zona', backgroundColor: Colors.orange, colorText: Colors.white);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -296,7 +321,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
               }).toList(),
             ),
             const SizedBox(height: 12),
-            _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on),
+            Row(
+              children: [
+                Expanded(child: _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on)),
+                const SizedBox(width: 8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.mainColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    onPressed: () async {
+                      final LatLng? result = await Get.to(() => const MapPinPickerView(initialLat: 13.68935, initialLng: -89.18718)); // Default El Salvador or similar
+                      if (result != null) {
+                        setState(() {
+                          _selectedLat = result.latitude;
+                          _selectedLng = result.longitude;
+                        });
+                        _calculateDynamicFee();
+                      }
+                    },
+                    icon: const Icon(Icons.map, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
             const SizedBox(height: 10),
@@ -406,10 +455,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
           subtotal += (item.price ?? 0) * (item.quantity ?? 0);
         }
 
-        // Obtener el costo de envío de la zona seleccionada
-        double deliveryFee = 0;
+        // Obtener el costo de envío de la zona seleccionada o dinámico
+        double deliveryFee = _dynamicDeliveryFee ?? 0;
         final selectedZone = zoneController.zoneList.firstWhereOrNull((z) => z.id == zoneController.selectedZoneId);
-        if (selectedZone != null) {
+        if (_dynamicDeliveryFee == null && selectedZone != null) {
           deliveryFee = double.tryParse(selectedZone.deliveryFee) ?? 0;
         }
 
@@ -454,7 +503,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Envío (${selectedZone?.name ?? "Zona"})', style: const TextStyle(fontSize: 14)),
+                      Text('Envío (${_dynamicDeliveryFee != null ? "Mapa" : (selectedZone?.name ?? "Zona")})', style: const TextStyle(fontSize: 14)),
                       Text('\$${deliveryFee.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
                     ],
                   ),
@@ -611,6 +660,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       cartItems: cartController.getItems,
       addressId: finalAddressId,
       orderNote: _noteController.text,
+      lat: _selectedLat,
+      lng: _selectedLng,
     );
 
     if (success) {

@@ -150,13 +150,25 @@ class DeliveryAuthController extends GetxController {
   }
 
   void logout() async {
+    Get.find<ApiClient>().isLoggingOut = true;
+    if (Get.isRegistered<DeliveryOrderController>()) {
+      Get.find<DeliveryOrderController>().stopPolling();
+    }
+
     await deliveryAuthRepo.logout();
     _token = '';
     _deliveryman = null;
-    _storage.remove(AppConstants.DELIVERY_TOKEN);
-    _storage.remove(AppConstants.DELIVERY_USER_KEY);
+    _storage.erase();
     Get.find<ApiClient>().updateToken('');
     update();
+
+    Get.offAllNamed('/delivery-login');
+
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (Get.isRegistered<ApiClient>()) {
+        Get.find<ApiClient>().isLoggingOut = false;
+      }
+    });
   }
 
   void _handleApiError(Response response, String fallback) {

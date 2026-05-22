@@ -19,16 +19,18 @@ class ActiveOrdersView extends StatelessWidget {
           color: AppColors.mainColor,
           child: controller.isLoading && controller.activeOrdersList.isEmpty
               ? const Center(child: CircularProgressIndicator())
-              : controller.activeOrdersList.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: controller.activeOrdersList.length,
-                      itemBuilder: (context, index) {
-                        return _buildOrderCard(
-                            context, controller.activeOrdersList[index], controller);
-                      },
-                    ),
+              : controller.activeOrdersError && controller.activeOrdersList.isEmpty
+                  ? _buildErrorState(controller)
+                  : controller.activeOrdersList.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: controller.activeOrdersList.length,
+                          itemBuilder: (context, index) {
+                            return _buildOrderCard(
+                                context, controller.activeOrdersList[index], controller);
+                          },
+                        ),
         ),
       );
     });
@@ -386,6 +388,64 @@ class ActiveOrdersView extends StatelessWidget {
               const BigText(text: 'No tienes pedidos en curso', color: Colors.grey),
               SmallText(text: 'Jala hacia abajo para refrescar', color: Colors.grey),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorState(DeliveryOrderController controller) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(height: Get.height * 0.18),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.wifi_off_rounded, size: 60, color: Colors.red.shade400),
+                ),
+                const SizedBox(height: 20),
+                const BigText(text: 'Error de conexión', size: 20),
+                const SizedBox(height: 8),
+                Text(
+                  'No fue posible actualizar tus pedidos en curso. Por favor, verifica tu cobertura de red.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    color: Colors.grey.shade500,
+                    fontSize: 13,
+                    height: 1.2,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: 200,
+                  child: ElevatedButton.icon(
+                    onPressed: () => controller.getOrders(),
+                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    label: const Text('REINTENTAR', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

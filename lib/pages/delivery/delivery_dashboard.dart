@@ -211,7 +211,9 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
             children: [
               const BigText(text: "Pedidos Disponibles", size: 18),
               const SizedBox(height: 10),
-              if (orderController.availableOrders.isEmpty)
+              if (orderController.availableOrdersError)
+                _buildErrorState(orderController)
+              else if (orderController.availableOrders.isEmpty)
                 SizedBox(
                   height: 200,
                   child: Center(child: SmallText(text: "No hay pedidos nuevos por ahora", size: 14)),
@@ -229,6 +231,48 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildErrorState(DeliveryOrderController controller) {
+    return Container(
+      height: 250,
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(top: 10),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.red.shade100),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.wifi_off_rounded, size: 50, color: Colors.red.shade400),
+          const SizedBox(height: 12),
+          const BigText(text: "Error de conexión", size: 18),
+          const SizedBox(height: 6),
+          SmallText(
+            text: "No pudimos conectar con el servidor. Revisa tu internet.",
+            color: Colors.grey.shade600,
+            size: 13,
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => controller.getOrders(),
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            label: const Text(
+              "REINTENTAR",
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          )
+        ],
+      ),
     );
   }
 

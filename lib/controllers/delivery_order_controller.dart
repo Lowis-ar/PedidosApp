@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import '../data/repository/delivery_order_repo.dart';
 import '../models/delivery_order_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 
 class DeliveryOrderController extends GetxController {
@@ -15,6 +16,18 @@ class DeliveryOrderController extends GetxController {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  bool _hasError = false;
+  bool get hasError => _hasError;
+
+  bool _availableOrdersError = false;
+  bool get availableOrdersError => _availableOrdersError;
+
+  bool _activeOrdersError = false;
+  bool get activeOrdersError => _activeOrdersError;
+
+  bool _historyError = false;
+  bool get historyError => _historyError;
 
   List<DeliveryOrderModel> _availableOrders = [];
   List<DeliveryOrderModel> get availableOrders => _availableOrders.where((o) => o.orderStatus == 'ready_to_go' || o.orderStatus == 'pending').toList();
@@ -53,23 +66,54 @@ class DeliveryOrderController extends GetxController {
     });
   }
 
+  void stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  Future<Response> _safeRequest(Future<Response> call) async {
+    try {
+      return await call.timeout(const Duration(seconds: 8));
+    } catch (e) {
+      debugPrint("[safeRequest] Error en petición: $e");
+      return const Response(statusCode: 503, statusText: "Service Unavailable");
+    }
+  }
+
   Future<void> getOrders({bool showLoading = true}) async {
-    if (showLoading) _isLoading = true;
+    if (showLoading) {
+      _isLoading = true;
+    }
+    // Siempre restablecemos los flags de error para permitir un intento limpio en reintentos
+    _availableOrdersError = false;
+    _activeOrdersError = false;
+    _historyError = false;
+    _hasError = false;
     update();
+
+    final List<int> oldAvailableIds = _availableOrders.map((o) => o.id ?? 0).toList();
+    final List<int> oldActiveIds = _activeOrdersList.map((o) => o.id ?? 0).toList();
+
     try {
       debugPrint("=== INICIO CARGA DE PEDIDOS ===");
 
       final results = await Future.wait([
-        orderRepo.getAvailableOrders(),
-        orderRepo.getActiveOrders(),
-        orderRepo.getOrderHistory(),
+        _safeRequest(orderRepo.getAvailableOrders()),
+        _safeRequest(orderRepo.getActiveOrders()),
+        _safeRequest(orderRepo.getOrderHistory()),
       ]);
 
       Response respAvail = results[0];
+      Response respActive = results[1];
+      Response respHistory = results[2];
+
+      // Procesar Pedidos Disponibles
       if (respAvail.statusCode == 200) {
         _availableOrders = _parseOrderList(respAvail.body);
+        _availableOrdersError = false;
       } else if (respAvail.statusCode == 403) {
         _availableOrders = [];
+        _availableOrdersError = false; // 403 es un estado de negocio válido (sin disponibilidad)
         if (showLoading) {
           final msg = respAvail.body is Map
               ? (respAvail.body['message'] ?? 'No tienes disponibilidad activa')
@@ -77,14 +121,19 @@ class DeliveryOrderController extends GetxController {
           Get.snackbar('Sin disponibilidad', msg.toString(),
               backgroundColor: Colors.orange, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
         }
+      } else {
+        _availableOrdersError = true;
       }
 
-      Response respActive = results[1];
+      // Procesar Pedidos Activos
       if (respActive.statusCode == 200) {
         _activeOrdersList = _parseOrderList(respActive.body);
+        _activeOrdersError = false;
+      } else {
+        _activeOrdersError = true;
       }
 
-      Response respHistory = results[2];
+      // Procesar Historial y Ganancias
       if (respHistory.statusCode == 200) {
         final body = respHistory.body;
         if (body['success'] == true && body['data'] != null) {
@@ -95,13 +144,50 @@ class DeliveryOrderController extends GetxController {
           if (rawOrders is List) {
             _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
           }
+          _historyError = false;
+        } else {
+          _historyError = true;
         }
+      } else {
+        _historyError = true;
+      }
+
+      // Si cualquiera de las dos consultas principales falla por error del servidor/red
+      if (_availableOrdersError || _activeOrdersError) {
+        _hasError = true;
       }
 
       _updateActiveOrderState();
-      debugPrint("=== FIN CARGA DE PEDIDOS === disponibles=${_availableOrders.length} activos=${_activeOrdersList.length}");
+      
+      // Feedback visual/háptico sutil e inteligente para actualización en segundo plano
+      if (!showLoading) {
+        final List<int> newAvailableIds = _availableOrders.map((o) => o.id ?? 0).toList();
+        final List<int> newActiveIds = _activeOrdersList.map((o) => o.id ?? 0).toList();
+
+        bool availableChanged = newAvailableIds.length != oldAvailableIds.length ||
+            !newAvailableIds.every((id) => oldAvailableIds.contains(id));
+        bool activeChanged = newActiveIds.length != oldActiveIds.length ||
+            !newActiveIds.every((id) => oldActiveIds.contains(id));
+        bool listsChanged = availableChanged || activeChanged;
+
+        if (!_availableOrdersError && !_activeOrdersError) {
+          if (listsChanged) {
+            // Vibración media si entraron pedidos nuevos o cambiaron de estado
+            HapticFeedback.mediumImpact();
+          } else {
+            // Click muy sutil si se completó la recarga periódica silenciosa sin cambios
+            HapticFeedback.selectionClick();
+          }
+        }
+      }
+
+      debugPrint("=== FIN CARGA DE PEDIDOS === dispCount=${_availableOrders.length} actCount=${_activeOrdersList.length} availErr=$_availableOrdersError actErr=$_activeOrdersError histErr=$_historyError");
     } catch (e, stack) {
       debugPrint("Error en getOrders: $e\n$stack");
+      _availableOrdersError = true;
+      _activeOrdersError = true;
+      _historyError = true;
+      _hasError = true;
       if (showLoading) {
         Get.snackbar('Error de conexión', 'No se pudo cargar los pedidos. Verifica tu conexión.',
             backgroundColor: Colors.red.shade600, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
@@ -192,7 +278,8 @@ class DeliveryOrderController extends GetxController {
           double.parse(order.restaurant!.lng!)
         );
 
-        if (distanceInMeters > 1000) { // 1 km threshold
+        // Agregamos tolerancia de 100m al límite de 1 km para mitigar problemas de jitter/imprecisión del satélite GPS.
+        if (distanceInMeters > 1100) { 
           Get.snackbar('Lejos del restaurante', 'Debes estar cerca del restaurante para aceptar.', backgroundColor: Colors.red, colorText: Colors.white);
           return;
         }

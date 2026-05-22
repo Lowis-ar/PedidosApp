@@ -7,6 +7,7 @@ class ApiClient extends GetConnect implements GetxService {
   late String token;
   final String appBaseUrl;
   final _storage = GetStorage();
+  bool isLoggingOut = false;
 
   ApiClient({required this.appBaseUrl}) {
     baseUrl = appBaseUrl;
@@ -27,6 +28,8 @@ class ApiClient extends GetConnect implements GetxService {
   /// Maneja respuestas con código 401 (token expirado) y 500 (error servidor).
   /// Redirige al login correcto según el tipo de token activo.
   void _handleHttpError(Response response) {
+    if (isLoggingOut) return;
+
     if (response.statusCode == 401) {
       final bool isDeliveryToken =
           _storage.read<String>(AppConstants.DELIVERY_TOKEN) != null &&
