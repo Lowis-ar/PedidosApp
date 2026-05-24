@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import '../../controllers/cart_controller.dart';
 import '../../controllers/popular_product_controller.dart';
 import '../../controllers/recommended_product_controller.dart';
+import '../../controllers/review_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,12 +23,15 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Forzamos la inicialización de los controladores al cargar la pantalla principal
     if (Get.isRegistered<CartController>()) {
       Get.find<CartController>().getCartData();
     }
-    if (Get.isRegistered<PopularProductController>()) Get.find<PopularProductController>().getPopularProductList();
-    if (Get.isRegistered<RecommendedProductController>()) Get.find<RecommendedProductController>().getRecommendedProductList();
+    if (Get.isRegistered<PopularProductController>()) {
+      Get.find<PopularProductController>().getPopularProductList();
+    }
+    if (Get.isRegistered<RecommendedProductController>()) {
+      Get.find<RecommendedProductController>().getRecommendedProductList();
+    }
   }
 
   final List<Widget> _pages = const [
@@ -38,9 +42,7 @@ class _HomePageState extends State<HomePage> {
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override
@@ -60,39 +62,68 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: AppColors.mainColor,
-          unselectedItemColor: AppColors.textColor,
-          selectedFontSize: 12,
-          unselectedFontSize: 11,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Inicio',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long),
-              label: 'Pedidos',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_cart_outlined),
-              activeIcon: Icon(Icons.shopping_cart),
-              label: 'Carrito',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Perfil',
-            ),
-          ],
-        ),
+        child: Obx(() {
+          // ── Badge count from ReviewController ──────────────────────
+          final reviewCtrl = Get.isRegistered<ReviewController>()
+              ? Get.find<ReviewController>()
+              : null;
+          final pendingCount = reviewCtrl?.pendingReviews.length ?? 0;
+
+          return BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: AppColors.mainColor,
+            unselectedItemColor: AppColors.textColor,
+            selectedFontSize: 12,
+            unselectedFontSize: 11,
+            elevation: 0,
+            items: [
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.home_outlined),
+                activeIcon: Icon(Icons.home),
+                label: 'Inicio',
+              ),
+              // ── Orders tab with badge ──────────────────────────────
+              BottomNavigationBarItem(
+                icon: pendingCount > 0
+                    ? Badge(
+                        label: Text(
+                          '$pendingCount',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10),
+                        ),
+                        backgroundColor: Colors.orange,
+                        child: const Icon(Icons.receipt_long_outlined),
+                      )
+                    : const Icon(Icons.receipt_long_outlined),
+                activeIcon: pendingCount > 0
+                    ? Badge(
+                        label: Text(
+                          '$pendingCount',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10),
+                        ),
+                        backgroundColor: Colors.orange,
+                        child: const Icon(Icons.receipt_long),
+                      )
+                    : const Icon(Icons.receipt_long),
+                label: 'Pedidos',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.shopping_cart_outlined),
+                activeIcon: Icon(Icons.shopping_cart),
+                label: 'Carrito',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Perfil',
+              ),
+            ],
+          );
+        }),
       ),
     );
   }

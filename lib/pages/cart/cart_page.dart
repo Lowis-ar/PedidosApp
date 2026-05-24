@@ -113,7 +113,42 @@ class CartPage extends StatelessWidget {
                                       text: cartList[index].name!,
                                       color: Colors.black54,
                                     ),
-                                    SmallText(text: cartList[index].product?.location ?? "Local"),
+                                    Builder(
+                                      builder: (context) {
+                                        final item = cartList[index];
+                                        // Extract variant
+                                        String? variantName;
+                                        if (item.variantId != null && item.product?.variants != null) {
+                                          final variant = item.product!.variants!.firstWhereOrNull((v) => v.id == item.variantId);
+                                          if (variant != null) variantName = variant.name;
+                                        }
+                                        
+                                        // Extract extras
+                                        List<String> extrasDescriptions = [];
+                                        if (item.extras != null && item.extras!.isNotEmpty && item.product?.extras != null) {
+                                          final uniqueExtras = item.extras!.toSet();
+                                          for (var extraId in uniqueExtras) {
+                                            int count = item.extras!.where((e) => e == extraId).length;
+                                            final extra = item.product!.extras!.firstWhereOrNull((e) => e.id == extraId);
+                                            if (extra != null) {
+                                              extrasDescriptions.add("+$count ${extra.name}");
+                                            }
+                                          }
+                                        }
+
+                                        return Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (variantName != null)
+                                              SmallText(text: "Var: $variantName"),
+                                            if (extrasDescriptions.isNotEmpty)
+                                              SmallText(text: extrasDescriptions.join(', ')),
+                                            if (variantName == null && extrasDescriptions.isEmpty)
+                                              SmallText(text: item.product?.location ?? "Local"),
+                                          ],
+                                        );
+                                      }
+                                    ),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
@@ -134,7 +169,16 @@ class CartPage extends StatelessWidget {
                                             children: [
                                               GestureDetector(
                                                 onTap: () {
-                                                  cartController.addItem(cartList[index].product!, -1);
+                                                  final currentItem = cartList[index];
+                                                  cartController.addItem(
+                                                    currentItem.product!,
+                                                    -1,
+                                                    variantId: currentItem.variantId,
+                                                    extras: currentItem.extras,
+                                                    notes: currentItem.notes,
+                                                    price: currentItem.price,
+                                                    extrasPrice: currentItem.extrasPrice,
+                                                  );
                                                 },
                                                 child: Icon(
                                                   Icons.remove,
@@ -150,7 +194,16 @@ class CartPage extends StatelessWidget {
                                               SizedBox(width: Dimensions.width10 / 2),
                                               GestureDetector(
                                                 onTap: () {
-                                                  cartController.addItem(cartList[index].product!, 1);
+                                                  final currentItem = cartList[index];
+                                                  cartController.addItem(
+                                                    currentItem.product!,
+                                                    1,
+                                                    variantId: currentItem.variantId,
+                                                    extras: currentItem.extras,
+                                                    notes: currentItem.notes,
+                                                    price: currentItem.price,
+                                                    extrasPrice: currentItem.extrasPrice,
+                                                  );
                                                 },
                                                 child: Icon(
                                                   Icons.add,
@@ -183,7 +236,7 @@ class CartPage extends StatelessWidget {
 
         double totalAmount = 0;
         for (var item in cartList) {
-          totalAmount += (item.price ?? 0) * (item.quantity ?? 0);
+          totalAmount += ((item.price ?? 0) * (item.quantity ?? 0)) + (item.extrasPrice ?? 0);
         }
 
         return Container(
@@ -210,7 +263,7 @@ class CartPage extends StatelessWidget {
                   color: Colors.white,
                 ),
                 child: BigText(
-                  text: "\$ ${totalAmount.toStringAsFixed(1)}",
+                  text: "\$ ${totalAmount.toStringAsFixed(2)}",
                   size: Dimensions.font18,
                 ),
               ),

@@ -45,7 +45,7 @@ class ProductModel {
   int? id;
   String? name;
   String? description;
-  int? price;
+  double? price;
   double? stars;
   String? timePreparation;
   String? img;
@@ -57,6 +57,9 @@ class ProductModel {
   bool? isRecommended;
   bool? isPopular;
   CategoryModel? category;
+  List<ProductVariant>? variants;
+  List<ProductExtra>? extras;
+  List<ReviewModel>? reviews;
 
   ProductModel({
     this.id,
@@ -74,6 +77,9 @@ class ProductModel {
     this.isRecommended,
     this.isPopular,
     this.category,
+    this.variants,
+    this.extras,
+    this.reviews,
   });
 
   ProductModel.fromJson(Map<String, dynamic> json) {
@@ -84,7 +90,7 @@ class ProductModel {
     // Precio
     var priceValue = json['base_price'] ?? json['price'];
     if (priceValue != null) {
-      price = double.tryParse(priceValue.toString())?.toInt() ?? 0;
+      price = double.tryParse(priceValue.toString()) ?? 0.0;
     }
 
     // Estrellas
@@ -112,6 +118,36 @@ class ProductModel {
     } else {
       typeName = isRecommended! ? "Recomendado" : (isPopular! ? "Popular" : "Normal");
     }
+
+    // Variants
+    if (json['variants'] != null) {
+      variants = <ProductVariant>[];
+      json['variants'].forEach((v) {
+        variants!.add(ProductVariant.fromJson(v));
+      });
+    } else {
+      variants = [];
+    }
+
+    // Extras
+    if (json['extras'] != null) {
+      extras = <ProductExtra>[];
+      json['extras'].forEach((v) {
+        extras!.add(ProductExtra.fromJson(v));
+      });
+    } else {
+      extras = [];
+    }
+
+    // Reviews
+    if (json['reviews'] != null) {
+      reviews = <ReviewModel>[];
+      json['reviews'].forEach((v) {
+        reviews!.add(ReviewModel.fromJson(v));
+      });
+    } else {
+      reviews = [];
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -129,6 +165,9 @@ class ProductModel {
       'is_recommended': isRecommended,
       'is_popular': isPopular,
       'category': category?.toJson(),
+      'variants': variants?.map((v) => v.toJson()).toList(),
+      'extras': extras?.map((v) => v.toJson()).toList(),
+      'reviews': reviews?.map((v) => v.toJson()).toList(),
     };
   }
 }
@@ -148,6 +187,84 @@ class CategoryModel {
     return {
       'id': id,
       'name': name,
+    };
+  }
+}
+
+class ProductVariant {
+  int? id;
+  String? name;
+  double? priceModifier;
+  bool? isDefault;
+  bool? isAvailable;
+
+  ProductVariant({this.id, this.name, this.priceModifier, this.isDefault, this.isAvailable});
+
+  ProductVariant.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    priceModifier = double.tryParse(json['price_modifier']?.toString() ?? "") ?? 0.0;
+    isDefault = json['is_default'] == 1 || json['is_default'] == true;
+    isAvailable = json['is_available'] == 1 || json['is_available'] == true;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price_modifier': priceModifier,
+      'is_default': isDefault,
+      'is_available': isAvailable,
+    };
+  }
+}
+
+class ProductExtra {
+  int? id;
+  String? name;
+  double? price;
+  bool? isAvailable;
+
+  ProductExtra({this.id, this.name, this.price, this.isAvailable});
+
+  ProductExtra.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    price = double.tryParse(json['price']?.toString() ?? "") ?? 0.0;
+    isAvailable = json['is_available'] == 1 || json['is_available'] == true;
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price': price,
+      'is_available': isAvailable,
+    };
+  }
+}
+
+class ReviewModel {
+  String? name;
+  String? date;
+  double? rating;
+  String? comment;
+
+  ReviewModel({this.name, this.date, this.rating, this.comment});
+
+  ReviewModel.fromJson(Map<String, dynamic> json) {
+    name = json['name'] ?? json['user_name'];
+    date = json['date'] ?? json['created_at'] ?? json['date_relative'];
+    rating = double.tryParse(json['rating']?.toString() ?? "") ?? 5.0;
+    comment = json['comment'];
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'date': date,
+      'rating': rating,
+      'comment': comment,
     };
   }
 }

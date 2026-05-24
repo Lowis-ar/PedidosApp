@@ -39,20 +39,36 @@ class OrderController extends GetxController {
       // Obtenemos dinámicamente la sucursal seleccionada actualmente
       int branchId = Get.find<BranchController>().branchId;
 
+      String mainNote = orderNote ?? '';
+      List<String> itemNotes = [];
+      for (var item in cartItems) {
+        if (item.notes != null && item.notes!.trim().isNotEmpty) {
+          itemNotes.add("${item.product?.name ?? item.name}: ${item.notes}");
+        }
+      }
+      if (itemNotes.isNotEmpty) {
+        if (mainNote.isNotEmpty) {
+          mainNote += " | " + itemNotes.join(" - ");
+        } else {
+          mainNote = itemNotes.join(" - ");
+        }
+      }
+
       Map<String, dynamic> body = {
         'branch_id': branchId,
         'address_id': addressId,
-        'lat': lat,
-        'lng': lng,
         'coupon_code': null,
         'use_loyalty_points': false,
-        'notes': orderNote ?? '',
+        'notes': mainNote,
         'items': cartItems.map((item) {
           return {
             'product_id': item.product?.id ?? item.id,
-            'variant_id': null,
+            'variant_id': item.variantId,
             'quantity': item.quantity,
-            'extras': [],
+            'extras': item.extras != null ? item.extras!.toSet().map((eId) {
+              int count = item.extras!.where((e) => e == eId).length;
+              return {'extra_id': eId, 'quantity': count};
+            }).toList() : [],
           };
         }).toList(),
       };

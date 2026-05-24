@@ -452,7 +452,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         var cartList = cartController.getItems;
         double subtotal = 0;
         for (var item in cartList) {
-          subtotal += (item.price ?? 0) * (item.quantity ?? 0);
+          subtotal += ((item.price ?? 0) * (item.quantity ?? 0)) + (item.extrasPrice ?? 0);
         }
 
         // Obtener el costo de envío de la zona seleccionada o dinámico
@@ -480,17 +480,83 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 children: [
                   const Text('Productos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const Divider(),
-                  ...cartList.map((item) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(child: Text('${item.quantity}x ${item.name}', style: const TextStyle(fontSize: 14))),
-                        Text('\$${((item.price ?? 0) * (item.quantity ?? 0)).toStringAsFixed(2)}',
-                            style: const TextStyle(fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  )),
+                  ...cartList.map((item) {
+                    // Extract variant
+                    String? variantName;
+                    double variantPrice = 0.0;
+                    if (item.variantId != null && item.product?.variants != null) {
+                      final variant = item.product!.variants!.firstWhereOrNull((v) => v.id == item.variantId);
+                      if (variant != null) {
+                        variantName = variant.name;
+                        variantPrice = variant.priceModifier?.toDouble() ?? 0.0;
+                      }
+                    }
+                    
+                    // Extract extras
+                    List<Widget> extraWidgets = [];
+                    if (item.extras != null && item.extras!.isNotEmpty && item.product?.extras != null) {
+                      final uniqueExtras = item.extras!.toSet();
+                      for (var extraId in uniqueExtras) {
+                        int count = item.extras!.where((e) => e == extraId).length;
+                        final extra = item.product!.extras!.firstWhereOrNull((e) => e.id == extraId);
+                        if (extra != null) {
+                          double extraTotal = (extra.price?.toDouble() ?? 0.0) * count;
+                          extraWidgets.add(
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("  +$count ${extra.name}", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  Text("+\$${extraTotal.toStringAsFixed(2)}", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                ],
+                              ),
+                            )
+                          );
+                        }
+                      }
+                    }
+
+                    double basePrice = item.product?.price?.toDouble() ?? (item.price ?? 0);
+                    int qty = item.quantity ?? 1;
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text('${qty}x ${item.name}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))
+                              ),
+                              Text('\$${(basePrice * qty).toStringAsFixed(2)}',
+                                  style: const TextStyle(fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                          if (variantName != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text("  Variante: $variantName", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  Text(variantPrice >= 0 ? "+\$${(variantPrice * qty).toStringAsFixed(2)}" : "-\$${(variantPrice.abs() * qty).toStringAsFixed(2)}", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                ],
+                              ),
+                            ),
+                          if (extraWidgets.isNotEmpty) ...[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text("  Complementos:", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            ),
+                            ...extraWidgets,
+                          ],
+                        ],
+                      ),
+                    );
+                  }),
                   const Divider(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -9,8 +9,18 @@ import '../utils/colors.dart';
 class CartController extends GetxController{
   final CartRepo cartRepo;
   CartController({required this.cartRepo});
-  final Map<int, CartModel> _items = {};
-  Map<int, CartModel> get items => _items;
+  final Map<String, CartModel> _items = {};
+  Map<String, CartModel> get items => _items;
+
+  String _generateKey(ProductModel product, int? variantId, List<int>? extras) {
+    String key = "${product.id}";
+    if (variantId != null) key += "_$variantId";
+    if (extras != null && extras.isNotEmpty) {
+      var sortedExtras = List<int>.from(extras)..sort();
+      key += "_${sortedExtras.join('-')}";
+    }
+    return key;
+  }
 
   @override
   void onInit() {
@@ -25,44 +35,66 @@ class CartController extends GetxController{
   set setCart(List<CartModel> items) {
     _items.clear();
     for (int i = 0; i < items.length; i++) {
-      _items.putIfAbsent(items[i].product!.id!, () => items[i]);
+      String key = _generateKey(items[i].product!, items[i].variantId, items[i].extras);
+      _items.putIfAbsent(key, () => items[i]);
     }
     update();
   }
 
 
-  void addItem(ProductModel product, int quantity) {
+  void addItem(
+    ProductModel product,
+    int quantity, {
+    int? variantId,
+    List<int>? extras,
+    String? notes,
+    double? price,
+    double? extrasPrice,
+  }) {
     var totalQuantity = 0;
-    if (_items.containsKey(product.id!)) {
-      _items.update(product.id!, (value) {
+    double finalPrice = price ?? product.price ?? 0.0;
+    double finalExtrasPrice = extrasPrice ?? 0.0;
+
+    String key = _generateKey(product, variantId, extras);
+
+    if (_items.containsKey(key)) {
+      _items.update(key, (value) {
         totalQuantity = value.quantity! + quantity;
         return CartModel(
           id: value.id,
           name: value.name,
-          price: value.price,
+          price: price ?? value.price,
           img: value.img,
           quantity: value.quantity! + quantity,
           isExist: true,
           time: DateTime.now().toString(),
           product: product,
+          variantId: variantId ?? value.variantId,
+          extras: extras ?? value.extras,
+          notes: notes ?? value.notes,
+          extrasPrice: extrasPrice ?? value.extrasPrice,
         );
       });
 
       if (totalQuantity <= 0) {
-        _items.remove(product.id);
+        _items.remove(key);
       }
     } else {
       if (quantity > 0) {
-        _items.putIfAbsent(product.id!, () {
+        _items.putIfAbsent(key, () {
           return CartModel(
             id: product.id,
             name: product.name,
-            price: product.price,
+            price: finalPrice,
             img: product.img,
             quantity: quantity,
             isExist: true,
             time: DateTime.now().toString(),
             product: product,
+            variantId: variantId,
+            extras: extras,
+            notes: notes,
+            extrasPrice: finalExtrasPrice,
           );
         });
       } else {
@@ -79,21 +111,22 @@ class CartController extends GetxController{
   }
 
   bool existInCart(ProductModel product){
-    if(_items.containsKey(product.id!)){
-      return true;
-    }
-    return false;
+    bool exists = false;
+    _items.forEach((key, value) {
+      if (value.product!.id == product.id) {
+        exists = true;
+      }
+    });
+    return exists;
   }
 
   int getQuantity(ProductModel product){
     var quantity = 0;
-    if(_items.containsKey(product.id!)){
-      _items.forEach((key, value) {
-        if(key == product.id){
-          quantity = value.quantity!;
-        }
-      });
-    }
+    _items.forEach((key, value) {
+      if (value.product!.id == product.id) {
+        quantity += value.quantity!;
+      }
+    });
     return quantity;
   }
 

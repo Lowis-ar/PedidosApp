@@ -36,4 +36,10 @@ class ProductRepo extends GetxService {
   Future<Response> getProductDetail(int productId) async {
     return await apiClient.getData("${AppConstants.PRODUCT_DETAIL_URI}$productId");
   }
+
+  Future<Response> getProductReviews(int productId, {int page = 1, int perPage = 20}) async {
+    return await apiClient.getData(
+      "${AppConstants.PRODUCT_REVIEWS_URI}$productId/reviews?page=$page&per_page=$perPage",
+    );
+  }
 }

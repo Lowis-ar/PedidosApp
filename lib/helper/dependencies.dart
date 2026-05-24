@@ -5,6 +5,7 @@ import 'package:pedidosapp/controllers/popular_product_controller.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
 import 'package:pedidosapp/controllers/search_product_controller.dart';
 import 'package:pedidosapp/controllers/order_controller.dart';
+import 'package:pedidosapp/controllers/review_controller.dart';
 import 'package:pedidosapp/data/api/api_client.dart';
 import 'package:pedidosapp/data/repository/auth_repo.dart';
 import 'package:pedidosapp/data/repository/branch_repo.dart';
@@ -51,6 +52,7 @@ Future<void> init() async {
   Get.lazyPut(() => CartController(cartRepo: Get.find<CartRepo>()), fenix: true);
   Get.lazyPut(() => OrderController(orderRepo: Get.find<OrderRepo>()), fenix: true);
   Get.lazyPut(() => ZoneController(zoneRepo: Get.find<ZoneRepo>()), fenix: true);
+  Get.lazyPut(() => ReviewController(orderRepo: Get.find<OrderRepo>()), fenix: true);
   
   // Usamos Get.put para los controladores de delivery para asegurar persistencia y acceso rápido
   Get.put(DeliveryAuthController(deliveryAuthRepo: Get.find<DeliveryAuthRepo>()), permanent: true);

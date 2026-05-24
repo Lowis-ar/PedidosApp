@@ -17,10 +17,74 @@ class PopularProductController extends GetxController {
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
 
-  int _quantity = 0;
+  int _quantity = 1;
   int get quantity => _quantity;
-  int _inCartItems = 0;
-  int get inCartItems => _inCartItems + _quantity;
+  int get inCartItems => _quantity;
+
+  ProductModel? _product;
+  ProductModel? get product => _product;
+
+  ProductVariant? _selectedVariant;
+  ProductVariant? get selectedVariant => _selectedVariant;
+
+  final Map<int, int> _extraQuantities = {};
+  Map<int, int> get extraQuantities => _extraQuantities;
+
+  String _notes = "";
+  String get notes => _notes;
+
+  double get unitPrice {
+    double base = _product?.price ?? 0.0;
+    double variantMod = 0.0;
+    if (_selectedVariant != null) {
+      variantMod = _selectedVariant!.priceModifier ?? 0.0;
+    }
+    return base + variantMod;
+  }
+
+  double get extrasPrice {
+    double extrasSum = 0.0;
+    if (_product?.extras != null) {
+      _extraQuantities.forEach((id, qty) {
+        if (qty > 0) {
+          try {
+            var extra = _product!.extras!.firstWhere((e) => e.id == id);
+            extrasSum += (extra.price ?? 0.0) * qty;
+          } catch (e) {
+            // Extra not found
+          }
+        }
+      });
+    }
+    return extrasSum;
+  }
+
+  void selectVariant(ProductVariant variant) {
+    _selectedVariant = variant;
+    update();
+  }
+
+  void setExtraQuantity(ProductExtra extra, bool isIncrement) {
+    int current = _extraQuantities[extra.id!] ?? 0;
+    if (isIncrement) {
+      if (current < 10) {
+        _extraQuantities[extra.id!] = current + 1;
+      } else {
+        Get.snackbar("Extras", "Máximo 10 unidades por extra",
+            backgroundColor: AppColors.mainColor, colorText: Colors.white);
+      }
+    } else {
+      if (current > 0) {
+        _extraQuantities[extra.id!] = current - 1;
+      }
+    }
+    update();
+  }
+
+  void updateNotes(String value) {
+    _notes = value;
+    update();
+  }
 
   Future<void> getPopularProductList() async {
     debugPrint("Fetching popular products...");
@@ -46,37 +110,59 @@ class PopularProductController extends GetxController {
   }
 
   int checkQuantity(int quantity) {
-    if ((_inCartItems + quantity) < 0) {
-      Get.snackbar("Item count", "No puedes reducir más",
+    if (quantity < 1) {
+      Get.snackbar("Cantidad", "La cantidad mínima es 1",
           backgroundColor: AppColors.mainColor, colorText: Colors.white);
-      if (_inCartItems > 0) {
-        return -_inCartItems;
-      }
-      return 0;
-    } else if ((_inCartItems + quantity) > 20) {
-      Get.snackbar("Item count", "No puedes agregar más de 20 unidades",
+      return 1;
+    } else if (quantity > 20) {
+      Get.snackbar("Cantidad", "No puedes agregar más de 20 unidades",
           backgroundColor: AppColors.mainColor, colorText: Colors.white);
-      return 20 - _inCartItems;
+      return 20;
     } else {
       return quantity;
     }
   }
 
   void initProduct(ProductModel product, CartController cart) {
-    _quantity = 0;
-    _inCartItems = 0;
+    _product = product;
+    _quantity = 1;
     _cart = cart;
-    var exist = false;
-    exist = _cart.existInCart(product);
-    if (exist) {
-      _inCartItems = _cart.getQuantity(product);
+    _selectedVariant = null;
+    _extraQuantities.clear();
+    _notes = "";
+
+    // Set default variant if any
+    if (product.variants != null && product.variants!.isNotEmpty) {
+      for (var variant in product.variants!) {
+        if (variant.isDefault == true) {
+          _selectedVariant = variant;
+          break;
+        }
+      }
+      _selectedVariant ??= product.variants!.first;
     }
   }
 
   void addItem(ProductModel product) {
-    _cart.addItem(product, _quantity);
-    _quantity = 0;
-    _inCartItems = _cart.getQuantity(product);
+    List<int> extrasList = [];
+    _extraQuantities.forEach((id, qty) {
+      for (int i = 0; i < qty; i++) {
+        extrasList.add(id);
+      }
+    });
+
+    _cart.addItem(
+      product,
+      _quantity,
+      variantId: _selectedVariant?.id,
+      extras: extrasList,
+      notes: _notes,
+      price: unitPrice,
+      extrasPrice: extrasPrice,
+    );
+    _quantity = 1;
+    _extraQuantities.clear();
+    _notes = "";
     update();
   }
 

@@ -7,6 +7,11 @@ class OrderModel {
   String? deliveryAddress;
   String? otp;
   String? createdAt;
+  String? deliveredAt;
+  String? deliveredAtIso;   // ISO for 24h window check
+  String? reviewedAt;       // null = not yet reviewed
+  String? cancelledAt;
+  OrderDeliveryman? deliveryman;
   List<OrderDetail>? details;
 
   OrderModel({
@@ -18,6 +23,11 @@ class OrderModel {
     this.deliveryAddress,
     this.otp,
     this.createdAt,
+    this.deliveredAt,
+    this.deliveredAtIso,
+    this.reviewedAt,
+    this.cancelledAt,
+    this.deliveryman,
     this.details,
   });
 
@@ -41,6 +51,14 @@ class OrderModel {
     
     otp = json['otp'];
     createdAt = json['created_at'];
+    deliveredAt = json['delivered_at'];
+    deliveredAtIso = json['delivered_at_iso'];
+    reviewedAt = json['reviewed_at'];
+    cancelledAt = json['cancelled_at'];
+
+    if (json['deliveryman'] != null && json['deliveryman'] is Map) {
+      deliveryman = OrderDeliveryman.fromJson(json['deliveryman']);
+    }
 
     var detailsList = json['details'] ?? json['items'];
     if (detailsList != null && detailsList is Iterable) {
@@ -49,6 +67,16 @@ class OrderModel {
         details!.add(OrderDetail.fromJson(v));
       }
     }
+  }
+
+  /// Returns true if this order needs a review (delivered, not reviewed, within 24h)
+  bool get needsReview {
+    if (orderStatus != 'delivered') return false;
+    if (reviewedAt != null) return false;
+    if (deliveredAtIso == null) return false;
+    final deliveredTime = DateTime.tryParse(deliveredAtIso!);
+    if (deliveredTime == null) return false;
+    return DateTime.now().difference(deliveredTime).inHours < 24;
   }
 
   Map<String, dynamic> toJson() {
@@ -61,6 +89,10 @@ class OrderModel {
       'delivery_address': deliveryAddress,
       'otp': otp,
       'created_at': createdAt,
+      'delivered_at': deliveredAt,
+      'delivered_at_iso': deliveredAtIso,
+      'reviewed_at': reviewedAt,
+      'deliveryman': deliveryman?.toJson(),
       'details': details?.map((v) => v.toJson()).toList(),
     };
   }
@@ -69,7 +101,7 @@ class OrderModel {
 class OrderDetail {
   int? id;
   int? orderId;
-  int? foodId;
+  int? productId;
   String? price;
   int? quantity;
   String? name;
@@ -78,7 +110,7 @@ class OrderDetail {
   OrderDetail({
     this.id,
     this.orderId,
-    this.foodId,
+    this.productId,
     this.price,
     this.quantity,
     this.name,
@@ -88,24 +120,41 @@ class OrderDetail {
   OrderDetail.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     orderId = json['order_id'];
-    foodId = json['product_id'] ?? json['food_id'];
+    productId = json['product_id'] ?? json['food_id'];
     price = json['unit_price']?.toString() ?? json['price']?.toString();
     quantity = json['quantity'];
     name = json['product_name'] ?? json['name'];
-    img = json['img'];
+    img = json['product_image'] ?? json['img'];
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'order_id': orderId,
-      'food_id': foodId,
+      'product_id': productId,
       'price': price,
       'quantity': quantity,
       'name': name,
       'img': img,
     };
   }
+}
+
+/// Minimal deliveryman data returned with an order
+class OrderDeliveryman {
+  int? id;
+  String? name;
+  String? photo;
+
+  OrderDeliveryman({this.id, this.name, this.photo});
+
+  OrderDeliveryman.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    name = json['name'];
+    photo = json['photo'];
+  }
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'photo': photo};
 }
 
 class AddressModel {

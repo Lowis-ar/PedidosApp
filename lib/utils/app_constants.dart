@@ -14,6 +14,7 @@ class AppConstants {
   static const String RECOMMENDED_PRODUCT_URI = "/api/v1/products?recommended=true";
   static const String ALL_PRODUCTS_URI = "/api/v1/products";
   static const String PRODUCT_DETAIL_URI = "/api/v1/products/";
+  static const String PRODUCT_REVIEWS_URI = "/api/v1/products/"; // append: {id}/reviews
 
   // Customer endpoints
   static const String CUSTOMER_INFO_URI = "/api/v1/auth/me";
