@@ -8,7 +8,15 @@ import GoogleMaps
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GMSServices.provideAPIKey("AIzaSyA5ZkDI6IJQZQwCk-gBd5FivF3R8UhgW4I")
+    let dartDefinesString = Bundle.main.infoDictionary!["DART_DEFINES"] as! String
+    var dartDefinesDictionary = [String:String]()
+    for definedValue in dartDefinesString.components(separatedBy: ",") {
+        let decoded = String(data: Data(base64Encoded: definedValue)!, encoding: .utf8)!
+        let values = decoded.components(separatedBy: "=")
+        dartDefinesDictionary[values[0]] = values[1]
+    }
+    let googleMapsApiKey = dartDefinesDictionary["GOOGLE_MAPS_API_KEY"]!
+    GMSServices.provideAPIKey(googleMapsApiKey)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
