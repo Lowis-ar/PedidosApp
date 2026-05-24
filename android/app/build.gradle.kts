@@ -19,6 +19,18 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    val dartEnvironmentVariables = project.property("dart-defines") as? String
+    val dartDefinesMap = mutableMapOf<String, String>()
+    if (dartEnvironmentVariables != null) {
+        dartEnvironmentVariables.split(",").forEach {
+            val parts = String(java.util.Base64.getDecoder().decode(it)).split("=")
+            if (parts.size == 2) {
+                dartDefinesMap[parts[0]] = parts[1]
+            }
+        }
+    }
+    val mapsApiKey = dartDefinesMap["GOOGLE_MAPS_API_KEY"] ?: ""
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.pedidosapp"
@@ -28,6 +40,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
