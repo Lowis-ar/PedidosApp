@@ -30,7 +30,6 @@ class AppConstants {
   static const String ORDER_LIST_URI = "/api/v1/orders";
   static const String ORDER_DETAIL_URI = "/api/v1/orders/";
   static const String CANCEL_ORDER_URI = "/api/v1/orders/";
-  static const String SUBMIT_REVIEW_URI = "/api/v1/reviews";
 
   // Delivery endpoints
   static const String DELIVERY_LOGIN_URI = "/api/v1/delivery/auth/login";
