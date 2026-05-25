@@ -40,7 +40,7 @@ class OrderRepo {
   }
 
   Future<Response> submitReview(int orderId, Map<String, dynamic> body) async {
-    return await apiClient.postData(
-        "${AppConstants.ORDER_DETAIL_URI}$orderId/review", body);
+    body['order_id'] = orderId;
+    return await apiClient.postData(AppConstants.SUBMIT_REVIEW_URI, body);
   }
 }

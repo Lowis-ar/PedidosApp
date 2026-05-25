@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -16,14 +18,14 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
 
     val dartEnvironmentVariables = project.property("dart-defines") as? String
     val dartDefinesMap = mutableMapOf<String, String>()
     if (dartEnvironmentVariables != null) {
         dartEnvironmentVariables.split(",").forEach {
-            val parts = String(java.util.Base64.getDecoder().decode(it)).split("=")
+            val parts = String(Base64.getDecoder().decode(it)).split("=")
             if (parts.size == 2) {
                 dartDefinesMap[parts[0]] = parts[1]
             }
