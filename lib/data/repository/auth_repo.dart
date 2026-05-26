@@ -14,11 +14,20 @@ class AuthRepo extends GetxService {
   }
 
   Future<Response> register(String name, String phone, String email, String password) async {
+    // Format phone to +503 XXXX XXXX if it is just 8 digits
+    String formattedPhone = phone.replaceAll(RegExp(r'\s+'), '');
+    if (formattedPhone.length == 8) {
+      formattedPhone = '+503 ${formattedPhone.substring(0, 4)} ${formattedPhone.substring(4)}';
+    } else if (formattedPhone.startsWith('+503') && formattedPhone.length == 12) {
+      formattedPhone = '+503 ${formattedPhone.substring(4, 8)} ${formattedPhone.substring(8)}';
+    }
+
     return await apiClient.postData(AppConstants.REGISTER_URI, {
-      'f_name': name,
-      'phone': phone,
+      'name': name,
+      'phone': formattedPhone,
       'email': email,
       'password': password,
+      'password_confirmation': password,
     });
   }
 
@@ -34,6 +43,27 @@ class AuthRepo extends GetxService {
     return await apiClient.putData(AppConstants.CHANGE_PASSWORD_URI, {
       'current_password': currentPassword,
       'new_password': newPassword,
+    });
+  }
+
+  Future<Response> forgotPassword(String email) async {
+    return await apiClient.postData(AppConstants.FORGOT_PASSWORD_URI, {
+      'email': email,
+    });
+  }
+
+  Future<Response> resetPassword(String email, String otp, String password) async {
+    return await apiClient.postData(AppConstants.RESET_PASSWORD_URI, {
+      'email': email,
+      'otp': otp,
+      'password': password,
+      'password_confirmation': password,
+    });
+  }
+
+  Future<Response> verifyEmail(String otp) async {
+    return await apiClient.postData(AppConstants.VERIFY_EMAIL_URI, {
+      'otp': otp,
     });
   }
 }

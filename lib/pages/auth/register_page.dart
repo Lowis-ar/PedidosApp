@@ -123,6 +123,28 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                               );
                               return;
                             }
+                            if (!GetUtils.isEmail(email)) {
+                              Get.snackbar(
+                                'Correo inválido',
+                                'Ingresa un correo electrónico válido.',
+                                backgroundColor: Colors.redAccent,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                                margin: const EdgeInsets.all(16),
+                              );
+                              return;
+                            }
+                            if (pass.length < 8 || !pass.contains(RegExp(r'[0-9]'))) {
+                              Get.snackbar(
+                                'Contraseña inválida',
+                                'Debe tener al menos 8 caracteres y un número.',
+                                backgroundColor: Colors.redAccent,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                                margin: const EdgeInsets.all(16),
+                              );
+                              return;
+                            }
                             await authController.register(name, phone, email, pass);
                             if (authController.isLoggedIn) {
                               Get.offAllNamed(RouteHelper.getInitial());

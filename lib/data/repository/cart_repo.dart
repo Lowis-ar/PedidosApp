@@ -25,14 +25,17 @@ class CartRepo {
   }
 
   void addToCartList(List<CartModel> cartList) {
-    var time = DateTime.now().toString();
     var cart = [];
-    cartList.forEach((element) {
+    for (var element in cartList) {
       cart.add(jsonEncode(element.toJson()));
-    });
+    }
     
     _storage.write(_getCartKey(), cart);
-    _storage.write(_getTimeKey(), time);
+
+    if (!_storage.hasData(_getTimeKey())) {
+      var time = DateTime.now().toString();
+      _storage.write(_getTimeKey(), time);
+    }
   }
 
   List<CartModel> getCartList() {
@@ -48,9 +51,9 @@ class CartRepo {
       }
       
       List<CartModel> cartList = [];
-      carts.forEach((element) {
+      for (var element in carts) {
         cartList.add(CartModel.fromJson(jsonDecode(element)));
-      });
+      }
       return cartList;
     }
     return [];

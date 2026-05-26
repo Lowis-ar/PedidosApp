@@ -16,6 +16,21 @@ class OrderController extends GetxController {
   List<OrderModel> _orderList = [];
   List<OrderModel> get orderList => _orderList;
 
+  List<OrderModel> get activeOrderList => _orderList.where((o) => 
+      o.orderStatus == 'pending' || 
+      o.orderStatus == 'confirmed' || 
+      o.orderStatus == 'preparing' || 
+      o.orderStatus == 'ready_to_go' || 
+      o.orderStatus == 'assigned' || 
+      o.orderStatus == 'on_way'
+  ).toList();
+
+  List<OrderModel> get historyOrderList => _orderList.where((o) => 
+      o.orderStatus == 'delivered' || 
+      o.orderStatus == 'cancelled' || 
+      o.orderStatus == 'canceled'
+  ).toList();
+
   List<AddressModel> _addressList = [];
   List<AddressModel> get addressList => _addressList;
 
@@ -48,7 +63,7 @@ class OrderController extends GetxController {
       }
       if (itemNotes.isNotEmpty) {
         if (mainNote.isNotEmpty) {
-          mainNote += " | " + itemNotes.join(" - ");
+          mainNote += " | ${itemNotes.join(" - ")}";
         } else {
           mainNote = itemNotes.join(" - ");
         }

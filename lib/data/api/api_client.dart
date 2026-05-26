@@ -31,6 +31,9 @@ class ApiClient extends GetConnect implements GetxService {
     if (isLoggingOut) return;
 
     if (response.statusCode == 401) {
+      if (token.isEmpty) return; // Ya estaba deslogueado
+      isLoggingOut = true;
+
       final bool isDeliveryToken =
           _storage.read<String>(AppConstants.DELIVERY_TOKEN) != null &&
           _storage.read<String>(AppConstants.DELIVERY_TOKEN)!.isNotEmpty;
@@ -55,6 +58,7 @@ class ApiClient extends GetConnect implements GetxService {
         } else {
           Get.offAllNamed('/login');
         }
+        isLoggingOut = false; // Reset para futuras sesiones
       });
     } else if (response.statusCode == 500 || response.statusCode == 503) {
       Get.snackbar(

@@ -54,67 +54,83 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: BigText(
-            text: "Mis Pedidos",
-            color: AppColors.mainBlackColor,
-            size: Dimensions.font20),
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-      ),
-      body: GetBuilder<OrderController>(builder: (orderController) {
-        if (orderController.isLoading) {
-          return Center(
-              child: CircularProgressIndicator(color: AppColors.mainColor));
-        }
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: BigText(
+              text: "Mis Pedidos",
+              color: AppColors.mainBlackColor,
+              size: Dimensions.font20),
+          centerTitle: true,
+          automaticallyImplyLeading: false,
+          bottom: TabBar(
+            indicatorColor: AppColors.mainColor,
+            labelColor: AppColors.mainColor,
+            unselectedLabelColor: Colors.grey,
+            tabs: const [
+              Tab(text: "Activos"),
+              Tab(text: "Historial"),
+            ],
+          ),
+        ),
+        body: GetBuilder<OrderController>(builder: (orderController) {
+          if (orderController.isLoading) {
+            return Center(
+                child: CircularProgressIndicator(color: AppColors.mainColor));
+          }
 
-        if (orderController.orderList.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.receipt_long_outlined,
-                    size: 80, color: Colors.grey.shade300),
-                const SizedBox(height: 16),
-                BigText(text: "Sin pedidos", color: Colors.grey, size: 20),
-                const SizedBox(height: 8),
-                SmallText(
-                    text: "Tus pedidos aparecerán aquí", color: Colors.grey),
-              ],
-            ),
+          return TabBarView(
+            children: [
+              _buildOrderList(orderController.activeOrderList, orderController, isActive: true),
+              _buildOrderList(orderController.historyOrderList, orderController, isActive: false),
+            ],
           );
-        }
+        }),
+      ),
+    );
+  }
 
-        return RefreshIndicator(
-          onRefresh: _loadOrders,
-          color: AppColors.mainColor,
-          child: Obx(() {
-            final pendingReviews = Get.isRegistered<ReviewController>()
-                ? Get.find<ReviewController>().pendingReviews
-                : <OrderModel>[].obs;
+  Widget _buildOrderList(List<OrderModel> orders, OrderController orderController, {required bool isActive}) {
+    if (orders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey.shade300),
+            const SizedBox(height: 16),
+            BigText(text: "Sin pedidos", color: Colors.grey, size: 20),
+            const SizedBox(height: 8),
+            SmallText(text: "Tus pedidos aparecerán aquí", color: Colors.grey),
+          ],
+        ),
+      );
+    }
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // ── Pending Reviews Banner ──────────────────────────
-                if (pendingReviews.isNotEmpty) ...[
-                  _PendingReviewsBanner(
-                    pendingOrders: pendingReviews,
-                    onTap: (order) => _openReviewPage(order),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+    return RefreshIndicator(
+      onRefresh: _loadOrders,
+      color: AppColors.mainColor,
+      child: Obx(() {
+        final pendingReviews = Get.isRegistered<ReviewController>()
+            ? Get.find<ReviewController>().pendingReviews
+            : <OrderModel>[].obs;
 
-                // ── Order list ──────────────────────────────────────
-                ...orderController.orderList
-                    .map((order) => _buildOrderCard(order, orderController)),
-              ],
-            );
-          }),
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (isActive && pendingReviews.isNotEmpty) ...[
+              _PendingReviewsBanner(
+                pendingOrders: pendingReviews,
+                onTap: (order) => _openReviewPage(order),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            ...orders.map((order) => _buildOrderCard(order, orderController)),
+          ],
         );
       }),
     );

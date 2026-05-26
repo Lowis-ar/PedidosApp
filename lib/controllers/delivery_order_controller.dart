@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
+
 import '../data/repository/delivery_order_repo.dart';
 import '../models/delivery_order_model.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,6 @@ class DeliveryOrderController extends GetxController {
   final DeliveryOrderRepo orderRepo;
   DeliveryOrderController({required this.orderRepo});
 
-  final _storage = GetStorage();
   Timer? _pollingTimer;
 
   bool _isLoading = false;
@@ -270,7 +269,8 @@ class DeliveryOrderController extends GetxController {
           return;
         }
 
-        Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+        Position position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
         double distanceInMeters = Geolocator.distanceBetween(
           position.latitude,
           position.longitude,

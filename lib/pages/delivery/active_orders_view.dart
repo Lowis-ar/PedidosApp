@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 import 'package:pedidosapp/models/delivery_order_model.dart';
 import 'package:pedidosapp/utils/colors.dart';
@@ -95,11 +96,46 @@ class ActiveOrdersView extends StatelessWidget {
               children: [
                 _infoRow(Icons.person, 'Cliente', order.customer?.name ?? 'N/A'),
                 const SizedBox(height: 12),
-                _infoRow(Icons.location_on, 'Entrega',
-                    fullAddress.isNotEmpty ? fullAddress : 'Sin dirección'),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _infoRow(Icons.location_on, 'Entrega',
+                          fullAddress.isNotEmpty ? fullAddress : 'Sin dirección'),
+                    ),
+                    if (order.customer?.lat != null && order.customer?.lng != null)
+                      IconButton(
+                        icon: const Icon(Icons.map, color: Colors.blueAccent),
+                        onPressed: () async {
+                          final url = 'https://www.google.com/maps/dir/?api=1&destination=${order.customer!.lat},${order.customer!.lng}';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          }
+                        },
+                        tooltip: 'Ver en Mapa',
+                      ),
+                  ],
+                ),
                 if (order.customer?.phone != null) ...[
                   const SizedBox(height: 12),
-                  _infoRow(Icons.phone, 'Teléfono', order.customer!.phone!),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _infoRow(Icons.phone, 'Teléfono', order.customer!.phone!),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.phone, color: Colors.green),
+                        onPressed: () async {
+                          final url = 'tel:${order.customer!.phone!}';
+                          if (await canLaunchUrl(Uri.parse(url))) {
+                            await launchUrl(Uri.parse(url));
+                          }
+                        },
+                        tooltip: 'Llamar',
+                      ),
+                    ],
+                  ),
                 ],
                 const SizedBox(height: 12),
                 // Fila de montos
@@ -227,7 +263,7 @@ class ActiveOrdersView extends StatelessWidget {
                 TextField(
                   controller: otpInput,
                   keyboardType: TextInputType.number,
-                  maxLength: 4,
+                  maxLength: 6,
                   textAlign: TextAlign.center,
                   autofocus: true,
                   onChanged: (_) => otpError.value = '',
@@ -287,7 +323,7 @@ class ActiveOrdersView extends StatelessWidget {
                         ? null
                         : () async {
                             if (otpInput.text.length < 4) {
-                              otpError.value = 'Ingresa el código de 4 dígitos';
+                              otpError.value = 'Ingresa el código de al menos 4 dígitos';
                               return;
                             }
                             isSubmitting.value = true;

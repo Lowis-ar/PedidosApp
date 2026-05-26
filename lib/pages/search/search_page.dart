@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/search_product_controller.dart';
 import '../../controllers/branch_controller.dart';
-import '../../controllers/cart_controller.dart';
-import '../../controllers/popular_product_controller.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 import '../../widgets/big_text.dart';
@@ -187,7 +185,7 @@ class _SearchPageState extends State<SearchPage> {
                                       child: Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: AppColors.mainColor.withOpacity(0.1),
+                                          color: AppColors.mainColor.withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(Dimensions.radius15),
                                         ),
                                         child:  Icon(Icons.add_shopping_cart, color: AppColors.mainColor, size: 22),
@@ -222,7 +220,7 @@ class _SearchPageState extends State<SearchPage> {
           decoration: BoxDecoration(
             color: isSelected ? AppColors.mainColor : Colors.white,
             borderRadius: BorderRadius.circular(Dimensions.radius20),
-            border: Border.all(color: AppColors.mainColor.withOpacity(0.5)),
+            border: Border.all(color: AppColors.mainColor.withValues(alpha: 0.5)),
           ),
           child: SmallText(text: label, color: isSelected ? Colors.white : Colors.black87),
         ),
@@ -239,7 +237,7 @@ class _SearchPageState extends State<SearchPage> {
           margin: const EdgeInsets.only(right: 8),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.mainColor.withOpacity(0.8) : AppColors.mainColor.withOpacity(0.1),
+            color: isSelected ? AppColors.mainColor.withValues(alpha: 0.8) : AppColors.mainColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(Dimensions.radius20),
           ),
           child: SmallText(text: label, color: isSelected ? Colors.white : Colors.black87),

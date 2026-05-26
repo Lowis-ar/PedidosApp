@@ -1,3 +1,5 @@
+// ignore_for_file: constant_identifier_names
+
 class AppConstants {
   static const String APP_NAME = "PedidosApp";
   static const int APP_VERSION = 1;
@@ -8,6 +10,9 @@ class AppConstants {
   // Auth endpoints
   static const String LOGIN_URI = "/api/v1/auth/login";
   static const String REGISTER_URI = "/api/v1/auth/register";
+  static const String FORGOT_PASSWORD_URI = "/api/v1/auth/forgot-password";
+  static const String RESET_PASSWORD_URI = "/api/v1/auth/reset-password";
+  static const String VERIFY_EMAIL_URI = "/api/v1/auth/verify-email";
 
   // Product endpoints
   static const String POPULAR_PRODUCT_URI = "/api/v1/products?popular=true";

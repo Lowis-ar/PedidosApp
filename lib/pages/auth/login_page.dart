@@ -172,19 +172,33 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   ),
                 ),
                 SizedBox(height: Dimensions.height10),
-                // Subtext
+                // Subtext & Forgot Password
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      'Inicia sesion en tu cuenta',
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: Dimensions.font16 * 0.85,
-                        color: AppColors.paraColor,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Inicia sesion en tu cuenta',
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: Dimensions.font16 * 0.85,
+                          color: AppColors.paraColor,
+                        ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () => Get.toNamed(RouteHelper.getForgotPassword()),
+                        child: Text(
+                          '¿Olvidaste tu contraseña?',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: Dimensions.font16 * 0.85,
+                            color: AppColors.mainColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: Dimensions.height30),

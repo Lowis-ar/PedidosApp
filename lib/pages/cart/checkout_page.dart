@@ -14,6 +14,7 @@ import '../../widgets/small_text.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../address/map_pin_picker_view.dart';
 import '../../controllers/branch_controller.dart';
+import 'package:geocoding/geocoding.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -42,16 +43,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
   double? _selectedLat;
   double? _selectedLng;
   double? _dynamicDeliveryFee;
-  bool _isLoadingFee = false;
 
   Future<void> _calculateDynamicFee() async {
     if (_selectedLat != null && _selectedLng != null) {
-      setState(() => _isLoadingFee = true);
       int branchId = Get.find<BranchController>().branchId;
       double? fee = await Get.find<OrderController>().getShippingFee(_selectedLat!, _selectedLng!, branchId);
       setState(() {
         _dynamicDeliveryFee = fee;
-        _isLoadingFee = false;
       });
       if (fee != null) {
         Get.snackbar('Tarifa calculada', 'Costo de envío dinámico: \$${fee.toStringAsFixed(2)}', backgroundColor: Colors.green, colorText: Colors.white);
@@ -338,6 +336,29 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           _selectedLat = result.latitude;
                           _selectedLng = result.longitude;
                         });
+
+                        try {
+                          List<Placemark> placemarks = await placemarkFromCoordinates(result.latitude, result.longitude);
+                          if (placemarks.isNotEmpty) {
+                            String? locality = placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea;
+                            if (locality != null) {
+                               final zoneCtrl = Get.find<ZoneController>();
+                               final matchedZone = zoneCtrl.zoneList.firstWhereOrNull((z) => 
+                                  locality.toLowerCase().contains(z.name.toLowerCase()) || 
+                                  z.name.toLowerCase().contains(locality.toLowerCase())
+                               );
+                               if (matchedZone != null) {
+                                  zoneCtrl.setZoneId(matchedZone.id);
+                                  Get.snackbar('Zona detectada', 'Se ha seleccionado la zona: ${matchedZone.name}', backgroundColor: Colors.green, colorText: Colors.white);
+                               } else {
+                                  Get.snackbar('Sin cobertura', 'Lo sentimos, no hay cobertura en $locality', backgroundColor: Colors.orange, colorText: Colors.white);
+                               }
+                            }
+                          }
+                        } catch(e) {
+                          debugPrint('Error reverse geocoding: $e');
+                        }
+
                         _calculateDynamicFee();
                       }
                     },
@@ -418,7 +439,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _buildCheckoutField(_cardNumberController, 'Número de tarjeta', Icons.credit_card,
             keyboardType: TextInputType.number,
             onChanged: _onCardNumberChanged,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(19)]),
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(16)]),
         if (_cardNumberController.text.isNotEmpty && !_cardValid)
           Padding(
             padding: const EdgeInsets.only(left: 12, top: 4),
@@ -438,7 +459,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             Expanded(
               child: _buildCheckoutField(_cvvController, 'CVV', Icons.lock,
                   keyboardType: TextInputType.number, obscure: true,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)]),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)]),
             ),
           ],
         ),
@@ -670,6 +691,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
           backgroundColor: Colors.redAccent, colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
         return;
+      } else {
+        // Validate MM/YY > 26
+        List<String> parts = _expiryController.text.split('/');
+        if (parts.length == 2) {
+          int? month = int.tryParse(parts[0]);
+          int? year = int.tryParse(parts[1]);
+          if (month == null || month < 1 || month > 12) {
+            Get.snackbar('Expiración inválida', 'El mes debe estar entre 01 y 12',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          }
+          if (year == null || year <= 26) {
+            Get.snackbar('Expiración inválida', 'El año debe ser mayor a 26',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          }
+        }
       }
       if (_cvvController.text.length < 3) {
         Get.snackbar('Datos incompletos', 'Ingresa el CVV',
@@ -854,6 +894,18 @@ class _ExpiryFormatter extends TextInputFormatter {
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
     String text = newValue.text.replaceAll('/', '');
     if (text.length > 4) text = text.substring(0, 4);
+    
+    if (text.isNotEmpty) {
+      String mStr = text.substring(0, text.length >= 2 ? 2 : text.length);
+      int? month = int.tryParse(mStr);
+      if (month != null) {
+        if (text.length == 1 && month > 1) {
+          text = "0$month";
+        } else if (text.length >= 2 && (month < 1 || month > 12)) {
+          return oldValue;
+        }
+      }
+    }
     
     StringBuffer buffer = StringBuffer();
     for (int i = 0; i < text.length; i++) {

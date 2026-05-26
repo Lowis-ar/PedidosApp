@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class DeliveryOrderModel {
   int? id;
   int? userId;
@@ -35,20 +37,11 @@ class DeliveryOrderModel {
     userId = json['user_id'];
 
     orderStatus = (json['order_status'] ?? json['status'])?.toString().toLowerCase();
-    total = json['total'] != null ? double.parse(json['total'].toString()) : null;
-    deliveryFee = json['delivery_fee'] != null ? double.parse(json['delivery_fee'].toString()) : 0.0;
-
-    if (json['address'] is Map) {
-      final addr = json['address'] as Map;
-      deliveryAddress = addr['street']?.toString() ?? addr['address']?.toString();
-      addressReferences = addr['references']?.toString();
-    } else {
-      deliveryAddress = json['delivery_address']?.toString() ?? json['address']?.toString();
-      addressReferences = null;
-    }
-
-    createdAt = json['created_at'] ?? json['delivered_at'];
-    otp = json['otp']?.toString();
+    
+    final totalRaw = json['total'] ?? json['order_amount'];
+    total = totalRaw != null ? double.tryParse(totalRaw.toString()) : null;
+    
+    deliveryFee = json['delivery_fee'] != null ? double.tryParse(json['delivery_fee'].toString()) ?? 0.0 : 0.0;
 
     restaurant = json['branch'] != null
         ? Restaurant.fromJson(json['branch'])
@@ -58,10 +51,44 @@ class DeliveryOrderModel {
         ? Customer.fromJson(json['customer'])
         : (json['user'] != null ? Customer.fromJson(json['user']) : null);
 
-    // Inyectar coordenadas desde el pedido, o desde address si no vienen en user
+    var deliveryAddrData = json['delivery_address'];
+    if (deliveryAddrData is String && deliveryAddrData.trim().startsWith('{')) {
+      try {
+        deliveryAddrData = jsonDecode(deliveryAddrData);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (deliveryAddrData is Map) {
+      deliveryAddress = deliveryAddrData['address']?.toString() ?? deliveryAddrData['street']?.toString();
+      addressReferences = deliveryAddrData['references']?.toString();
+      
+      customer ??= Customer();
+      customer!.name ??= deliveryAddrData['contact_person_name'] ?? deliveryAddrData['name'];
+      customer!.phone ??= deliveryAddrData['contact_person_number'] ?? deliveryAddrData['phone'];
+      customer!.lat ??= deliveryAddrData['latitude']?.toString() ?? deliveryAddrData['lat']?.toString();
+      customer!.lng ??= deliveryAddrData['longitude']?.toString() ?? deliveryAddrData['lng']?.toString();
+    } else if (json['address'] is Map) {
+      final addr = json['address'] as Map;
+      deliveryAddress = addr['street']?.toString() ?? addr['address']?.toString();
+      addressReferences = addr['references']?.toString();
+      
+      customer ??= Customer();
+      customer!.lat ??= addr['latitude']?.toString() ?? addr['lat']?.toString();
+      customer!.lng ??= addr['longitude']?.toString() ?? addr['lng']?.toString();
+    } else {
+      deliveryAddress = deliveryAddrData?.toString() ?? json['address']?.toString();
+      addressReferences = null;
+    }
+
+    createdAt = json['created_at'] ?? json['delivered_at'];
+    otp = json['otp']?.toString();
+
+    // Inyectar coordenadas base si aun están nulas
     if (customer != null) {
-      customer!.lat = json['latitude']?.toString() ?? json['lat']?.toString() ?? (json['address'] is Map ? (json['address']['latitude']?.toString() ?? json['address']['lat']?.toString()) : null) ?? customer!.lat;
-      customer!.lng = json['longitude']?.toString() ?? json['lng']?.toString() ?? (json['address'] is Map ? (json['address']['longitude']?.toString() ?? json['address']['lng']?.toString()) : null) ?? customer!.lng;
+      customer!.lat ??= json['latitude']?.toString() ?? json['lat']?.toString();
+      customer!.lng ??= json['longitude']?.toString() ?? json['lng']?.toString();
     }
 
     if (json['details'] != null || json['items'] != null) {

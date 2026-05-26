@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/register_page.dart';
+import '../pages/auth/forgot_password_page.dart';
+import '../pages/auth/reset_password_page.dart';
+import '../pages/auth/verify_email_page.dart';
 import '../pages/cart/cart_page.dart';
 import '../pages/cart/checkout_page.dart';
 import '../pages/food/popular_food_detail.dart';
@@ -18,6 +21,9 @@ class RouteHelper {
   static const String initial = "/";
   static const String login = "/login";
   static const String register = "/register";
+  static const String forgotPassword = "/forgot-password";
+  static const String resetPassword = "/reset-password";
+  static const String verifyEmail = "/verify-email";
   static const String popularFood = "/popular-food";
   static const String recommendedFood = "/recommended-food";
   static const String cartPage = "/cart-page";
@@ -35,6 +41,9 @@ class RouteHelper {
   static String getInitial() => initial;
   static String getLogin() => login;
   static String getRegister() => register;
+  static String getForgotPassword() => forgotPassword;
+  static String getResetPassword(String email) => '$resetPassword?email=$email';
+  static String getVerifyEmail() => verifyEmail;
   static String getPopularFood(int pageId) => '$popularFood?pageId=$pageId';
   static String getRecommendedFood(int pageid) => '$recommendedFood?pageid=$pageid';
   static String getCartPage() => cartPage;
@@ -63,6 +72,24 @@ class RouteHelper {
       name: register,
       page: () => const RegisterPage(),
       transition: Transition.rightToLeftWithFade,
+    ),
+    GetPage(
+      name: forgotPassword,
+      page: () => const ForgotPasswordPage(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: resetPassword,
+      page: () {
+        var email = Get.parameters['email'];
+        return ResetPasswordPage(email: email ?? "");
+      },
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: verifyEmail,
+      page: () => const VerifyEmailPage(),
+      transition: Transition.fadeIn,
     ),
     GetPage(
       name: popularFood,

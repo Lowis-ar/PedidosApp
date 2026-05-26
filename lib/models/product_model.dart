@@ -5,7 +5,7 @@ class Product {
   late List<ProductModel> _products;
   List<ProductModel> get products => _products;
 
-  Product({required totalSize, required typeId, required offset, required products}) {
+  Product({required int totalSize, required int typeId, required int offset, required List<ProductModel> products}) {
     _totalSize = totalSize;
     _typeId = typeId;
     _offset = offset;

@@ -8,9 +8,7 @@ import 'package:pedidosapp/models/deliveryman_model.dart';
 import 'package:pedidosapp/utils/app_constants.dart';
 import 'package:pedidosapp/routes/route_helper.dart';
 import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
-import 'package:pedidosapp/controllers/cart_controller.dart';
-import 'package:pedidosapp/controllers/popular_product_controller.dart';
-import 'package:pedidosapp/controllers/recommended_product_controller.dart';
+
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 import 'package:pedidosapp/helper/dependencies.dart' as dep;
 
@@ -218,6 +216,75 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       _showError('Error al cambiar la contraseña');
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await authRepo.forgotPassword(email);
+      if (response.statusCode == 200) {
+        Get.snackbar('Éxito', 'Código enviado a tu correo',
+            backgroundColor: Colors.green, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return true;
+      } else {
+        _handleApiError(response, 'No se pudo enviar el código');
+        return false;
+      }
+    } catch (e) {
+      _showError('Error de conexión');
+      return false;
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<bool> resetPassword(String email, String otp, String password) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await authRepo.resetPassword(email, otp, password);
+      if (response.statusCode == 200) {
+        Get.snackbar('Éxito', 'Contraseña restablecida correctamente',
+            backgroundColor: Colors.green, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return true;
+      } else {
+        _handleApiError(response, 'No se pudo restablecer la contraseña');
+        return false;
+      }
+    } catch (e) {
+      _showError('Error de conexión');
+      return false;
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<bool> verifyEmail(String otp) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await authRepo.verifyEmail(otp);
+      if (response.statusCode == 200) {
+        Get.snackbar('Éxito', 'Correo verificado',
+            backgroundColor: Colors.green, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return true;
+      } else {
+        _handleApiError(response, 'Código inválido');
+        return false;
+      }
+    } catch (e) {
+      _showError('Error de conexión');
+      return false;
     } finally {
       _isLoading = false;
       update();

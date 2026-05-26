@@ -25,7 +25,7 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
 
   void _openMap(String? lat, String? lng) async {
     if (lat == null || lng == null) return;
-    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    final url = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     }
@@ -164,7 +164,7 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
             TextField(
               controller: otpController,
               keyboardType: TextInputType.number,
-              maxLength: 4,
+              maxLength: 6,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 10),
               decoration: const InputDecoration(

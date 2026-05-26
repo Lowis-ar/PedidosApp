@@ -7,15 +7,14 @@ class MapPinPickerView extends StatefulWidget {
   final double? initialLat;
   final double? initialLng;
 
-  const MapPinPickerView({Key? key, this.initialLat, this.initialLng}) : super(key: key);
+  const MapPinPickerView({super.key, this.initialLat, this.initialLng});
 
   @override
-  _MapPinPickerViewState createState() => _MapPinPickerViewState();
+  State<MapPinPickerView> createState() => _MapPinPickerViewState();
 }
 
 class _MapPinPickerViewState extends State<MapPinPickerView> {
   late CameraPosition _initialPosition;
-  GoogleMapController? _mapController;
   LatLng _currentCameraPosition = const LatLng(0, 0);
   bool _isLoading = true;
 
@@ -54,7 +53,7 @@ class _MapPinPickerViewState extends State<MapPinPickerView> {
         return;
       }
 
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      Position position = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
       _currentCameraPosition = LatLng(position.latitude, position.longitude);
       _initialPosition = CameraPosition(target: _currentCameraPosition, zoom: 16);
     } catch (e) {
@@ -83,7 +82,6 @@ class _MapPinPickerViewState extends State<MapPinPickerView> {
               children: [
                 GoogleMap(
                   initialCameraPosition: _initialPosition,
-                  onMapCreated: (controller) => _mapController = controller,
                   onCameraMove: (position) {
                     _currentCameraPosition = position.target;
                   },

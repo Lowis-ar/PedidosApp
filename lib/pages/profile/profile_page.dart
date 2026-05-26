@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
-import '../../routes/route_helper.dart';
+
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 
@@ -80,7 +80,7 @@ class ProfilePage extends StatelessWidget {
                 'Editar Teléfono',
                 () => _showEditPhoneDialog(context, authController),
               ),
-              _profileRow(Icons.shopping_bag_outlined, '${user.orderCount ?? 0} pedidos realizados'),
+
               SizedBox(height: Dimensions.height20),
               // Change password button
               GestureDetector(
