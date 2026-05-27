@@ -4,6 +4,7 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../widgets/shimmer_widgets.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -48,14 +49,18 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: SlideTransition(
-            position: _slideAnim,
+    return GetBuilder<AuthController>(builder: (authController) {
+      return AppLoadingOverlay(
+        isLoading: authController.isLoading,
+        label: 'Creando cuenta...',
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
             child: Column(
               children: [
                 SizedBox(height: Dimensions.screenHeight * 0.06),
@@ -239,6 +244,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
         ),
       ),
     );
+    });
   }
 
   Widget _socialIcon(IconData icon, Color color) {

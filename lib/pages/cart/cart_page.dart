@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/app_icon.dart';
+import 'package:pedidosapp/widgets/shimmer_widgets.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';

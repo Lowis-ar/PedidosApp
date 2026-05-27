@@ -10,6 +10,7 @@ import '../../models/zone_model.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 import '../../widgets/big_text.dart';
+import '../../widgets/shimmer_widgets.dart';
 import '../../widgets/small_text.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../address/map_pin_picker_view.dart';
@@ -125,88 +126,94 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
-          onPressed: () => Get.back(),
-        ),
-        title: BigText(text: "Checkout", color: AppColors.mainBlackColor, size: Dimensions.font20),
-        centerTitle: true,
-      ),
-      body: Stepper(
-        currentStep: _currentStep,
-        onStepContinue: _onStepContinue,
-        onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep--) : null,
-        type: StepperType.vertical,
-        controlsBuilder: (context, details) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: details.onStepContinue,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.mainColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text(
-                      _currentStep == 2 ? 'Confirmar Pedido' : 'Continuar',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                if (_currentStep > 0) ...[
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: details.onStepCancel,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppColors.mainColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      child: Text('Atrás', style: TextStyle(color: AppColors.mainColor)),
-                    ),
-                  ),
-                ],
-              ],
+    return GetBuilder<OrderController>(builder: (orderController) {
+      return AppLoadingOverlay(
+        isLoading: orderController.isLoading,
+        label: 'Procesando pedido...',
+        child: Scaffold(
+          backgroundColor: Colors.grey.shade50,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+              onPressed: () => Get.back(),
             ),
-          );
-        },
-        steps: [
-          // Step 1: Address
-          Step(
-            title: const Text('Dirección de Entrega', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('¿Dónde te entregamos?'),
-            isActive: _currentStep >= 0,
-            state: _currentStep > 0 ? StepState.complete : StepState.indexed,
-            content: _buildAddressStep(),
+            title: BigText(text: "Checkout", color: AppColors.mainBlackColor, size: Dimensions.font20),
+            centerTitle: true,
           ),
-          // Step 2: Payment
-          Step(
-            title: const Text('Método de Pago', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Ingresa los datos de tu tarjeta'),
-            isActive: _currentStep >= 1,
-            state: _currentStep > 1 ? StepState.complete : StepState.indexed,
-            content: _buildPaymentStep(),
+          body: Stepper(
+            currentStep: _currentStep,
+            onStepContinue: _onStepContinue,
+            onStepCancel: _currentStep > 0 ? () => setState(() => _currentStep--) : null,
+            type: StepperType.vertical,
+            controlsBuilder: (context, details) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: details.onStepContinue,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.mainColor,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(
+                          _currentStep == 2 ? 'Confirmar Pedido' : 'Continuar',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    if (_currentStep > 0) ...[
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: details.onStepCancel,
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: AppColors.mainColor),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: Text('Atrás', style: TextStyle(color: AppColors.mainColor)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+            steps: [
+              // Step 1: Address
+              Step(
+                title: const Text('Dirección de Entrega', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('¿Dónde te entregamos?'),
+                isActive: _currentStep >= 0,
+                state: _currentStep > 0 ? StepState.complete : StepState.indexed,
+                content: _buildAddressStep(),
+              ),
+              // Step 2: Payment
+              Step(
+                title: const Text('Método de Pago', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Ingresa los datos de tu tarjeta'),
+                isActive: _currentStep >= 1,
+                state: _currentStep > 1 ? StepState.complete : StepState.indexed,
+                content: _buildPaymentStep(),
+              ),
+              // Step 3: Confirm
+              Step(
+                title: const Text('Confirmar Pedido', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Revisa tu pedido'),
+                isActive: _currentStep >= 2,
+                state: _currentStep > 2 ? StepState.complete : StepState.indexed,
+                content: _buildConfirmStep(),
+              ),
+            ],
           ),
-          // Step 3: Confirm
-          Step(
-            title: const Text('Confirmar Pedido', style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Revisa tu pedido'),
-            isActive: _currentStep >= 2,
-            state: _currentStep > 2 ? StepState.complete : StepState.indexed,
-            content: _buildConfirmStep(),
-          ),
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 
   Widget _buildAddressStep() {

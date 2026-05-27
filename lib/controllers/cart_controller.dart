@@ -38,7 +38,7 @@ class CartController extends GetxController{
       String key = _generateKey(items[i].product!, items[i].variantId, items[i].extras);
       _items.putIfAbsent(key, () => items[i]);
     }
-    update();
+    Future.microtask(() => update());
   }
 
 

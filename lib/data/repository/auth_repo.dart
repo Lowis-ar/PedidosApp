@@ -14,12 +14,12 @@ class AuthRepo extends GetxService {
   }
 
   Future<Response> register(String name, String phone, String email, String password) async {
-    // Format phone to +503 XXXX XXXX if it is just 8 digits
     String formattedPhone = phone.replaceAll(RegExp(r'\s+'), '');
     if (formattedPhone.length == 8) {
-      formattedPhone = '+503 ${formattedPhone.substring(0, 4)} ${formattedPhone.substring(4)}';
+      formattedPhone = '+503$formattedPhone';
     } else if (formattedPhone.startsWith('+503') && formattedPhone.length == 12) {
-      formattedPhone = '+503 ${formattedPhone.substring(4, 8)} ${formattedPhone.substring(8)}';
+      // Backend expects +503XXXXXXXX or +503 XXXXXXXX
+      formattedPhone = formattedPhone;
     }
 
     return await apiClient.postData(AppConstants.REGISTER_URI, {

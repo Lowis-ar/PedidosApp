@@ -4,6 +4,7 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../widgets/shimmer_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -43,14 +44,18 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: SlideTransition(
-            position: _slideAnim,
+    return GetBuilder<AuthController>(builder: (authController) {
+      return AppLoadingOverlay(
+        isLoading: authController.isLoading,
+        label: 'Iniciando sesión...',
+        child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
             child: Column(
               children: [
                 SizedBox(height: Dimensions.screenHeight * 0.08),
@@ -293,6 +298,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
         ),
       ),
     );
+    });
   }
 
   Widget _buildTextField({

@@ -23,15 +23,17 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    if (Get.isRegistered<CartController>()) {
-      Get.find<CartController>().getCartData();
-    }
-    if (Get.isRegistered<PopularProductController>()) {
-      Get.find<PopularProductController>().getPopularProductList();
-    }
-    if (Get.isRegistered<RecommendedProductController>()) {
-      Get.find<RecommendedProductController>().getRecommendedProductList();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<CartController>()) {
+        Get.find<CartController>().getCartData();
+      }
+      if (Get.isRegistered<PopularProductController>()) {
+        Get.find<PopularProductController>().getPopularProductList();
+      }
+      if (Get.isRegistered<RecommendedProductController>()) {
+        Get.find<RecommendedProductController>().getRecommendedProductList();
+      }
+    });
   }
 
   final List<Widget> _pages = const [

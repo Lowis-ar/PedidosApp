@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/models/product_model.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/shimmer_widgets.dart';
 
 import '../../controllers/popular_product_controller.dart';
 import '../../controllers/recommended_product_controller.dart';
@@ -61,10 +62,10 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                 )
               : SizedBox(
                   height: Dimensions.pageView,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.mainColor,
-                    ),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 2,
+                    itemBuilder: (_, __) => const PopularProductSkeleton(),
                   ),
                 );
         }),
@@ -215,12 +216,10 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                     );
                   },
                 )
-              :  SizedBox(
-                  height: 100,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.mainColor,
-                    ),
+              : Column(
+                  children: List.generate(
+                    3,
+                    (_) => const RecommendedProductSkeleton(),
                   ),
                 );
         }),

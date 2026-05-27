@@ -6,6 +6,7 @@ import 'package:pedidosapp/models/order_model.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
+import 'package:pedidosapp/widgets/shimmer_widgets.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
 
 import '../review/review_order_page.dart';
@@ -79,8 +80,10 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
         ),
         body: GetBuilder<OrderController>(builder: (orderController) {
           if (orderController.isLoading) {
-            return Center(
-                child: CircularProgressIndicator(color: AppColors.mainColor));
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: List.generate(3, (_) => const OrderCardSkeleton()),
+            );
           }
 
           return TabBarView(
