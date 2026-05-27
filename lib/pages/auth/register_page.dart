@@ -4,6 +4,7 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -17,6 +18,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _nameController = TextEditingController();
+  String _fullPhoneNumber = '';
   bool _obscurePassword = true;
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
@@ -88,12 +90,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                 ),
                 SizedBox(height: Dimensions.height15),
                 // Phone
-                _buildTextField(
-                  controller: _phoneController,
-                  hint: 'Telefono',
-                  icon: Icons.phone_android_outlined,
-                  keyboardType: TextInputType.phone,
-                ),
+                _buildPhoneField(),
                 SizedBox(height: Dimensions.height15),
                 // Name
                 _buildTextField(
@@ -110,7 +107,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                         : () async {
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
-                            String phone = _phoneController.text.trim();
+                            String phone = _fullPhoneNumber.trim();
                             final name = _nameController.text.trim();
                             if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
                               Get.snackbar(
@@ -145,12 +142,6 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                               );
                               return;
                             }
-                            
-                            // Format El Salvador phone number
-                            if (phone.length == 8 && RegExp(r'^[267]\d{7}$').hasMatch(phone)) {
-                              phone = '+503 $phone';
-                            }
-                            
                             await authController.register(name, phone, email, pass);
                             if (authController.isLoggedIn) {
                               Get.offAllNamed(RouteHelper.getInitial());
@@ -308,6 +299,46 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
               horizontal: Dimensions.width20,
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhoneField() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(Dimensions.radius30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade200,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: IntlPhoneField(
+          controller: _phoneController,
+          initialCountryCode: 'SV',
+          countries: const ['SV'],
+          disableLengthCheck: true,
+          disableDropdown: true,
+          showDropdownIcon: false,
+          decoration: InputDecoration(
+            hintText: 'Teléfono',
+            hintStyle: TextStyle(color: AppColors.textColor, fontFamily: 'Roboto'),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(
+              vertical: Dimensions.height15,
+              horizontal: Dimensions.width20,
+            ),
+          ),
+          style: TextStyle(fontFamily: 'Roboto', fontSize: Dimensions.font16),
+          onChanged: (phone) {
+            _fullPhoneNumber = phone.completeNumber;
+          },
         ),
       ),
     );

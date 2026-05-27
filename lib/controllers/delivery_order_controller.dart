@@ -6,6 +6,7 @@ import '../models/delivery_order_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'delivery_auth_controller.dart';
 
 class DeliveryOrderController extends GetxController {
   final DeliveryOrderRepo orderRepo;
@@ -61,7 +62,11 @@ class DeliveryOrderController extends GetxController {
   void startPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      getOrders(showLoading: false);
+      if (Get.isRegistered<DeliveryAuthController>() && Get.find<DeliveryAuthController>().isLoggedIn) {
+        getOrders(showLoading: false);
+      } else {
+        stopPolling();
+      }
     });
   }
 
