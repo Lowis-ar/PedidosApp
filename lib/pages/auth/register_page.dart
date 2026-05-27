@@ -243,7 +243,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
           ),
         ),
       ),
-    );
+    ));
     });
   }
 
