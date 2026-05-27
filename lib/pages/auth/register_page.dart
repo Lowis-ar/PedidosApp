@@ -106,7 +106,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                         : () async {
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
-                            String phone = _fullPhoneNumber.trim();
+                            String phone = '+503${_phoneController.text.replaceAll(' ', '').trim()}';
                             final name = _nameController.text.trim();
                             if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
                               Get.snackbar(
@@ -323,7 +323,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
           keyboardType: TextInputType.phone,
           style: TextStyle(fontFamily: 'Roboto', fontSize: Dimensions.font16),
           onChanged: (val) {
-            _fullPhoneNumber = '+503 $val';
+            _fullPhoneNumber = '+503${val.replaceAll(' ', '')}';
           },
           decoration: InputDecoration(
             prefixIcon: Container(

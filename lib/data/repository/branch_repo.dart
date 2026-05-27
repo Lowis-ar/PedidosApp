@@ -7,6 +7,6 @@ class BranchRepo extends GetxService {
   BranchRepo({required this.apiClient});
 
   Future<Response> getBranchList() async {
-    return await apiClient.getData(AppConstants.BRANCHES_URI);
+    return await apiClient.getData(AppConstants.BRANCHES_URI, handleError: false);
   }
 }

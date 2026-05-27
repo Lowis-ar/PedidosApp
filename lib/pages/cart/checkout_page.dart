@@ -677,6 +677,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
             snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
           return;
         }
+        if (_selectedLat == null || _selectedLng == null) {
+          Get.snackbar('Ubicación requerida', 'Usa el botón de mapa para seleccionar la ubicación exacta de entrega',
+            backgroundColor: Colors.redAccent, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          return;
+        }
       }
       setState(() => _currentStep = 1);
     } else if (_currentStep == 1) {
@@ -764,8 +770,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
         address: _addressController.text,
         contactPersonName: _contactNameController.text,
         contactPersonNumber: _contactPhoneController.text,
-        latitude: '0',
-        longitude: '0',
+        latitude: _selectedLat?.toString() ?? '0',
+        longitude: _selectedLng?.toString() ?? '0',
         zoneId: Get.find<ZoneController>().selectedZoneId,
       );
       
