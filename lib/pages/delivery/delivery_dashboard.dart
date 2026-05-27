@@ -203,13 +203,72 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
         }
       },
       child: GetBuilder<DeliveryOrderController>(builder: (orderController) {
+        final int activeCount = orderController.activeOrdersList.length;
+        final bool atLimit = activeCount >= 3;
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const BigText(text: "Pedidos Disponibles", size: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const BigText(text: "Pedidos Disponibles", size: 18),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: atLimit ? Colors.red.shade100 : AppColors.mainColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: atLimit ? Colors.red.shade400 : AppColors.mainColor.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.local_shipping_outlined,
+                          size: 14,
+                          color: atLimit ? Colors.red.shade600 : AppColors.mainColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'En curso: $activeCount / 3',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: atLimit ? Colors.red.shade600 : AppColors.mainColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (atLimit)
+                Container(
+                  margin: const EdgeInsets.only(top: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.orange.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Límite alcanzado. Completa un pedido antes de aceptar otro.',
+                          style: TextStyle(fontSize: 12, color: Colors.orange.shade800),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 10),
               if (orderController.availableOrdersError)
                 _buildErrorState(orderController)
@@ -224,7 +283,7 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: orderController.availableOrders.length,
                   itemBuilder: (context, index) {
-                    return _buildAvailableOrderCard(orderController.availableOrders[index]);
+                    return _buildAvailableOrderCard(orderController.availableOrders[index], atLimit);
                   },
                 ),
             ],
@@ -276,7 +335,7 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
     );
   }
 
-  Widget _buildAvailableOrderCard(dynamic order) {
+  Widget _buildAvailableOrderCard(dynamic order, bool atLimit) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
@@ -314,12 +373,21 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Get.find<DeliveryOrderController>().acceptOrder(order.id!),
+              onPressed: atLimit
+                  ? null
+                  : () => Get.find<DeliveryOrderController>().acceptOrder(order.id!),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mainColor,
+                backgroundColor: atLimit ? Colors.grey.shade300 : AppColors.mainColor,
+                disabledBackgroundColor: Colors.grey.shade300,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(Dimensions.radius15)),
               ),
-              child: const Text("ACEPTAR PEDIDO", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text(
+                atLimit ? "LÍMITE ALCANZADO" : "ACEPTAR PEDIDO",
+                style: TextStyle(
+                  color: atLimit ? Colors.grey.shade600 : Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           )
         ],

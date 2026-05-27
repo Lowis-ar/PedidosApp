@@ -16,10 +16,14 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage> {
   @override
   void initState() {
     super.initState();
-    // Forzar la carga de datos al entrar a la pantalla de forma segura
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       if (Get.isRegistered<DeliveryOrderController>()) {
-        Get.find<DeliveryOrderController>().getHistory();
+        final ctrl = Get.find<DeliveryOrderController>();
+        // Solo volver a pedir si no hay datos o si hubo error y el usuario regresó
+        if (ctrl.historyOrders.isEmpty || ctrl.historyError) {
+          ctrl.getHistory();
+        }
       }
     });
   }
@@ -44,6 +48,34 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage> {
           ),
         ),
         body: GetBuilder<DeliveryOrderController>(builder: (controller) {
+          // Si el historial no está disponible en el servidor, mostrar estado amigable
+          if (controller.historyError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.history_toggle_off, size: 70, color: Colors.grey.shade300),
+                    const SizedBox(height: 16),
+                    const BigText(text: "Historial no disponible", color: Colors.grey),
+                    const SizedBox(height: 8),
+                    SmallText(
+                      text: "El historial de entregas no está disponible por ahora. Intenta más tarde.",
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      onPressed: () => controller.getHistory(),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text("Reintentar"),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           return Column(
             children: [
               // Earnings Summary
@@ -53,8 +85,8 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _earningsItem("Total Ganancias", "\$${controller.totalEarnings}"),
-                    _earningsItem("Hoy", "\$${controller.todayEarnings}"),
+                    _earningsItem("Total Ganancias", "\$${controller.totalEarnings.toStringAsFixed(2)}"),
+                    _earningsItem("Hoy", "\$${controller.todayEarnings.toStringAsFixed(2)}"),
                   ],
                 ),
               ),

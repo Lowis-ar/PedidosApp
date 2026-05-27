@@ -104,7 +104,8 @@ class DeliveryOrderController extends GetxController {
       final results = await Future.wait([
         _safeRequest(orderRepo.getAvailableOrders(handleError: showLoading)),
         _safeRequest(orderRepo.getActiveOrders(handleError: showLoading)),
-        _safeRequest(orderRepo.getOrderHistory(handleError: showLoading)),
+        // El historial siempre se pide silenciosamente: su error 500 se maneja internamente
+        _safeRequest(orderRepo.getOrderHistory(handleError: false)),
       ]);
 
       Response respAvail = results[0];
@@ -140,20 +141,38 @@ class DeliveryOrderController extends GetxController {
       // Procesar Historial y Ganancias
       if (respHistory.statusCode == 200) {
         final body = respHistory.body;
-        if (body['success'] == true && body['data'] != null) {
-          final data = body['data'];
-          _totalEarnings = data['total_earnings'] != null ? double.parse(data['total_earnings'].toString()) : 0.0;
-          _todayEarnings = data['today_earnings'] != null ? double.parse(data['today_earnings'].toString()) : 0.0;
+        bool historyParsed = false;
+        
+        // Estructura 1: { success:true, data: { total_earnings, today_earnings, orders:[] } }
+        if (body is Map && body['success'] == true && body['data'] is Map) {
+          final data = body['data'] as Map;
+          _totalEarnings = data['total_earnings'] != null ? double.tryParse(data['total_earnings'].toString()) ?? 0.0 : 0.0;
+          _todayEarnings = data['today_earnings'] != null ? double.tryParse(data['today_earnings'].toString()) ?? 0.0 : 0.0;
           var rawOrders = data['orders'];
           if (rawOrders is List) {
             _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
           }
-          _historyError = false;
-        } else {
-          _historyError = true;
+          historyParsed = true;
+        }
+        // Estructura 2: { success:true, data: [] } — lista plana
+        else if (body is Map && body['data'] is List) {
+          final rawOrders = body['data'] as List;
+          _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          historyParsed = true;
+        }
+        // Estructura 3: lista plana directa
+        else if (body is List) {
+          _historyOrders = (body as List).map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          historyParsed = true;
+        }
+        
+        _historyError = !historyParsed;
+        if (!historyParsed) {
+          debugPrint('[History] Formato desconocido: ${body.runtimeType} keys=${body is Map ? body.keys.toList() : 'list'}');
         }
       } else {
         _historyError = true;
+        debugPrint('[History] Error HTTP ${respHistory.statusCode} — historial no disponible (no crítico)');
       }
 
       // Si cualquiera de las dos consultas principales falla por error del servidor/red
@@ -232,83 +251,141 @@ class DeliveryOrderController extends GetxController {
 
   Future<void> getHistory() async {
     try {
-      Response response = await orderRepo.getOrderHistory();
+      // handleError:false para suprimir el snackbar global del 500 del backend
+      Response response = await orderRepo.getOrderHistory(handleError: false);
       if (response.statusCode == 200) {
         final body = response.body;
-        if (body['success'] == true && body['data'] != null) {
-          final data = body['data'];
-          _totalEarnings = data['total_earnings'] != null ? double.parse(data['total_earnings'].toString()) : 0.0;
-          _todayEarnings = data['today_earnings'] != null ? double.parse(data['today_earnings'].toString()) : 0.0;
-          
+        bool historyParsed = false;
+        
+        if (body is Map && body['success'] == true && body['data'] is Map) {
+          final data = body['data'] as Map;
+          _totalEarnings = data['total_earnings'] != null ? double.tryParse(data['total_earnings'].toString()) ?? 0.0 : 0.0;
+          _todayEarnings = data['today_earnings'] != null ? double.tryParse(data['today_earnings'].toString()) ?? 0.0 : 0.0;
           var rawOrders = data['orders'];
           if (rawOrders is List) {
             _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
           }
+          historyParsed = true;
+        } else if (body is Map && body['data'] is List) {
+          _historyOrders = (body['data'] as List).map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          historyParsed = true;
+        } else if (body is List) {
+          _historyOrders = (body as List).map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          historyParsed = true;
         }
+        
+        _historyError = !historyParsed;
+      } else {
+        _historyError = true;
+        debugPrint('[getHistory] HTTP ${response.statusCode} — historial no disponible en el servidor');
       }
     } catch (e) {
       debugPrint("Error en getHistory: $e");
+      _historyError = true;
     }
     update();
   }
 
   Future<void> acceptOrder(int orderId) async {
+    // ─── 1. Verificar límite de 3 pedidos activos ──────────────────────────
+    if (_activeOrdersList.length >= 3) {
+      Get.snackbar(
+        'Límite alcanzado',
+        'Ya tienes 3 pedidos en curso. Completa uno antes de aceptar otro.',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 4),
+      );
+      return;
+    }
+
+    // ─── 2. Validación de distancia GPS (informativa, no bloqueante) ───────
     final order = _availableOrders.firstWhereOrNull((o) => o.id == orderId);
     if (order != null && order.restaurant?.lat != null && order.restaurant?.lng != null) {
       try {
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        if (!serviceEnabled) {
-          Get.snackbar('GPS Desactivado', 'Activa la ubicación para validar la distancia.', backgroundColor: Colors.orange, colorText: Colors.white);
-          return;
-        }
-        LocationPermission permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          permission = await Geolocator.requestPermission();
+        if (serviceEnabled) {
+          LocationPermission permission = await Geolocator.checkPermission();
           if (permission == LocationPermission.denied) {
-            Get.snackbar('Permiso denegado', 'Debes dar permiso de ubicación.', backgroundColor: Colors.orange, colorText: Colors.white);
-            return;
+            permission = await Geolocator.requestPermission();
+          }
+          if (permission != LocationPermission.denied &&
+              permission != LocationPermission.deniedForever) {
+            Position position = await Geolocator.getCurrentPosition(
+                locationSettings:
+                    const LocationSettings(accuracy: LocationAccuracy.high));
+            double distanceInMeters = Geolocator.distanceBetween(
+              position.latitude,
+              position.longitude,
+              double.parse(order.restaurant!.lat!),
+              double.parse(order.restaurant!.lng!),
+            );
+            // Aviso informativo si está muy lejos (>5 km), pero no bloquea
+            if (distanceInMeters > 5000) {
+              Get.snackbar(
+                'Aviso de distancia',
+                'Estás a ${(distanceInMeters / 1000).toStringAsFixed(1)} km del restaurante.',
+                backgroundColor: Colors.orange.shade700,
+                colorText: Colors.white,
+                snackPosition: SnackPosition.BOTTOM,
+                duration: const Duration(seconds: 3),
+              );
+            }
           }
         }
-        if (permission == LocationPermission.deniedForever) {
-          Get.snackbar('Permiso', 'Permisos de ubicación denegados permanentemente.', backgroundColor: Colors.orange, colorText: Colors.white);
-          return;
-        }
-
-        Position position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.high));
-        double distanceInMeters = Geolocator.distanceBetween(
-          position.latitude,
-          position.longitude,
-          double.parse(order.restaurant!.lat!),
-          double.parse(order.restaurant!.lng!)
-        );
-
-        // Agregamos tolerancia de 100m al límite de 1 km para mitigar problemas de jitter/imprecisión del satélite GPS.
-        if (distanceInMeters > 1100) { 
-          Get.snackbar('Lejos del restaurante', 'Debes estar cerca del restaurante para aceptar.', backgroundColor: Colors.red, colorText: Colors.white);
-          return;
-        }
       } catch (e) {
-        debugPrint("Error GPS: $e");
-        Get.snackbar('Error', 'No se pudo validar la ubicación.', backgroundColor: Colors.orange, colorText: Colors.white);
-        return;
+        debugPrint("Error GPS (no crítico): $e");
+        // No bloqueamos si el GPS falla
       }
     }
 
+    // ─── 3. Enviar solicitud de aceptación ───────────────────────────────
     _isLoading = true;
     update();
     try {
       Response response = await orderRepo.acceptOrder(orderId);
-      if (response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Pedido aceptado', backgroundColor: Colors.green, colorText: Colors.white);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar('¡Pedido aceptado!', 'El pedido #$orderId fue aceptado exitosamente.',
+            backgroundColor: Colors.green, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM);
         await getOrders();
-      } else if (response.statusCode == 403) {
-        Get.snackbar('Error', 'No puedes aceptar este pedido', backgroundColor: Colors.orange);
       } else {
-        Get.snackbar('Error', 'No se pudo aceptar el pedido');
+        // Extraer el mensaje real del servidor
+        String serverMessage = 'No se pudo aceptar el pedido.';
+        if (response.body != null && response.body is Map) {
+          final body = response.body as Map;
+          serverMessage = body['message']?.toString() ??
+              body['error']?.toString() ??
+              serverMessage;
+          // Si hay errores de validación con detalle
+          if (body['errors'] != null && body['errors'] is Map) {
+            final errors = body['errors'] as Map;
+            List<String> msgs = [];
+            errors.forEach((k, v) {
+              if (v is List) msgs.addAll(v.map((e) => e.toString()));
+              else msgs.add(v.toString());
+            });
+            if (msgs.isNotEmpty) serverMessage = msgs.join(' | ');
+          }
+        } else if (response.body is String && (response.body as String).isNotEmpty) {
+          serverMessage = response.body as String;
+        }
+        debugPrint('[acceptOrder] Error ${response.statusCode}: $serverMessage');
+        Get.snackbar(
+          'No se pudo aceptar',
+          serverMessage,
+          backgroundColor: Colors.red.shade600,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 5),
+        );
       }
     } catch (e) {
       debugPrint('Error en acceptOrder: $e');
+      Get.snackbar('Error de conexión', 'No se pudo conectar con el servidor.',
+          backgroundColor: Colors.red.shade600, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM);
     } finally {
       _isLoading = false;
       update();
