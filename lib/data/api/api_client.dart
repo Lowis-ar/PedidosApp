@@ -27,7 +27,7 @@ class ApiClient extends GetConnect implements GetxService {
 
   /// Maneja respuestas con código 401 (token expirado) y 500 (error servidor).
   /// Redirige al login correcto según el tipo de token activo.
-  void _handleHttpError(Response response) {
+  void _handleHttpError(Response response, {bool handleError = true}) {
     if (isLoggingOut) return;
 
     if (response.statusCode == 401) {
@@ -60,7 +60,7 @@ class ApiClient extends GetConnect implements GetxService {
         }
         isLoggingOut = false; // Reset para futuras sesiones
       });
-    } else if (response.statusCode == 500 || response.statusCode == 503) {
+    } else if ((response.statusCode == 500 || response.statusCode == 503) && handleError) {
       Get.snackbar(
         'Error del servidor',
         'Ocurrió un error inesperado. Intenta de nuevo.',
@@ -76,13 +76,13 @@ class ApiClient extends GetConnect implements GetxService {
     }
   }
 
-  Future<Response> getData(String uri) async {
+  Future<Response> getData(String uri, {bool handleError = true}) async {
     try {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String cacheBustUri = uri.contains('?') ? '$uri&_t=$timestamp' : '$uri?_t=$timestamp';
       
       final Response response = await get(cacheBustUri, headers: _mainHeaders);
-      _handleHttpError(response);
+      _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
       debugPrint('[ApiClient] GET error $uri: $e');
@@ -90,10 +90,10 @@ class ApiClient extends GetConnect implements GetxService {
     }
   }
 
-  Future<Response> postData(String uri, dynamic body) async {
+  Future<Response> postData(String uri, dynamic body, {bool handleError = true}) async {
     try {
       final Response response = await post(uri, body, headers: _mainHeaders);
-      _handleHttpError(response);
+      _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
       debugPrint('[ApiClient] POST error $uri: $e');
@@ -101,10 +101,10 @@ class ApiClient extends GetConnect implements GetxService {
     }
   }
 
-  Future<Response> putData(String uri, dynamic body) async {
+  Future<Response> putData(String uri, dynamic body, {bool handleError = true}) async {
     try {
       final Response response = await put(uri, body, headers: _mainHeaders);
-      _handleHttpError(response);
+      _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
       debugPrint('[ApiClient] PUT error $uri: $e');
@@ -112,10 +112,10 @@ class ApiClient extends GetConnect implements GetxService {
     }
   }
 
-  Future<Response> deleteData(String uri) async {
+  Future<Response> deleteData(String uri, {bool handleError = true}) async {
     try {
       final Response response = await delete(uri, headers: _mainHeaders);
-      _handleHttpError(response);
+      _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
       debugPrint('[ApiClient] DELETE error $uri: $e');

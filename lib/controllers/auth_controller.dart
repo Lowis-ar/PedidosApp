@@ -295,15 +295,15 @@ class AuthController extends GetxController {
     String message = fallback;
     if (response.body != null && response.body is Map) {
       final body = response.body as Map<String, dynamic>;
-      if (body['message'] != null) {
-        message = body['message'];
-      } else if (body['errors'] != null) {
+      if (body['errors'] != null) {
         var errors = body['errors'];
         if (errors is Map) {
           message = errors.values.first[0].toString();
-        } else if (errors is List) {
+        } else if (errors is List && errors.isNotEmpty) {
           message = errors[0].toString();
         }
+      } else if (body['message'] != null) {
+        message = body['message'];
       }
     } else if (response.statusText != null) {
       message = response.statusText!;

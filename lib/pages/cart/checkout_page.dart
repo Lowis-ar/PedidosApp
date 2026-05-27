@@ -670,6 +670,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
             snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
           return;
         }
+      } else {
+        if (Get.find<ZoneController>().selectedZoneId == -1) {
+          Get.snackbar('Zona requerida', 'Selecciona una zona que corresponda a tu dirección',
+            backgroundColor: Colors.redAccent, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          return;
+        }
       }
       setState(() => _currentStep = 1);
     } else if (_currentStep == 1) {
@@ -692,23 +699,41 @@ class _CheckoutPageState extends State<CheckoutPage> {
           snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
         return;
       } else {
-        // Validate MM/YY > 26
+        // Validate MM/YY
         List<String> parts = _expiryController.text.split('/');
         if (parts.length == 2) {
           int? month = int.tryParse(parts[0]);
           int? year = int.tryParse(parts[1]);
+          
           if (month == null || month < 1 || month > 12) {
             Get.snackbar('Expiración inválida', 'El mes debe estar entre 01 y 12',
               backgroundColor: Colors.redAccent, colorText: Colors.white,
               snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
             return;
           }
-          if (year == null || year <= 26) {
-            Get.snackbar('Expiración inválida', 'El año debe ser mayor a 26',
+          
+          final now = DateTime.now();
+          final currentYear = now.year % 100;
+          final currentMonth = now.month;
+
+          if (year == null || year < currentYear) {
+            Get.snackbar('Tarjeta expirada', 'La tarjeta ya venció (año inválido)',
               backgroundColor: Colors.redAccent, colorText: Colors.white,
               snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
             return;
           }
+          
+          if (year == currentYear && month < currentMonth) {
+            Get.snackbar('Tarjeta expirada', 'La tarjeta venció en el mes $month/$year',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          }
+        } else {
+          Get.snackbar('Datos inválidos', 'El formato debe ser MM/YY',
+            backgroundColor: Colors.redAccent, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          return;
         }
       }
       if (_cvvController.text.length < 3) {

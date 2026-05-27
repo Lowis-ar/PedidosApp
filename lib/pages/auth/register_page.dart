@@ -110,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                         : () async {
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
-                            final phone = _phoneController.text.trim();
+                            String phone = _phoneController.text.trim();
                             final name = _nameController.text.trim();
                             if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
                               Get.snackbar(
@@ -145,6 +145,12 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                               );
                               return;
                             }
+                            
+                            // Format El Salvador phone number
+                            if (phone.length == 8 && RegExp(r'^[267]\d{7}$').hasMatch(phone)) {
+                              phone = '+503 $phone';
+                            }
+                            
                             await authController.register(name, phone, email, pass);
                             if (authController.isLoggedIn) {
                               Get.offAllNamed(RouteHelper.getInitial());

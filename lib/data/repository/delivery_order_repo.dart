@@ -6,20 +6,20 @@ class DeliveryOrderRepo {
   final ApiClient apiClient;
   DeliveryOrderRepo({required this.apiClient});
 
-  Future<Response> getAvailableOrders() async {
-    return await apiClient.getData(AppConstants.DELIVERY_AVAILABLE_ORDERS_URI);
+  Future<Response> getAvailableOrders({bool handleError = true}) async {
+    return await apiClient.getData(AppConstants.DELIVERY_AVAILABLE_ORDERS_URI, handleError: handleError);
   }
 
-  Future<Response> getOrderHistory() async {
-    return await apiClient.getData(AppConstants.DELIVERY_HISTORY_ORDERS_URI);
+  Future<Response> getOrderHistory({bool handleError = true}) async {
+    return await apiClient.getData(AppConstants.DELIVERY_HISTORY_ORDERS_URI, handleError: handleError);
   }
 
   Future<Response> getRunningOrders() async {
     return await apiClient.getData(AppConstants.DELIVERY_ORDER_LIST_URI);
   }
 
-  Future<Response> getActiveOrders() async {
-    return await apiClient.getData(AppConstants.DELIVERY_ACTIVE_ORDERS_URI);
+  Future<Response> getActiveOrders({bool handleError = true}) async {
+    return await apiClient.getData(AppConstants.DELIVERY_ACTIVE_ORDERS_URI, handleError: handleError);
   }
 
   Future<Response> acceptOrder(int orderId) async {

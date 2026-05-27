@@ -48,15 +48,23 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    final success = await _ctrl.submitReview(
-      orderId: widget.order.id!,
-      productRatings: _productRatings,
-      deliverymanRating: widget.order.deliveryman != null
-          ? {'rating': _deliveryRating, 'comment': _deliveryCommentCtrl.text.trim().isEmpty ? null : _deliveryCommentCtrl.text.trim()}
-          : null,
-    );
-    if (success && mounted) Get.back();
+  void _submitOrNext() async {
+    if (widget.order.deliveryman != null) {
+      Get.offNamed(
+        RouteHelper.getReviewDelivery(),
+        arguments: {
+          'order': widget.order,
+          'productRatings': _productRatings,
+        },
+      );
+    } else {
+      final success = await _ctrl.submitReview(
+        orderId: widget.order.id!,
+        productRatings: _productRatings,
+        deliverymanRating: null,
+      );
+      if (success && mounted) Get.back();
+    }
   }
 
   @override
@@ -144,20 +152,6 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                       )),
                   const SizedBox(height: 20),
                 ],
-
-                // Deliveryman section
-                if (deliveryman != null) ...[
-                  _sectionTitle('Repartidor'),
-                  const SizedBox(height: 10),
-                  _DeliverymanReviewCard(
-                    deliveryman: deliveryman,
-                    commentController: _deliveryCommentCtrl,
-                    rating: _deliveryRating,
-                    onRatingChanged: (r) => setState(() => _deliveryRating = r),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-
                 const SizedBox(height: 10),
               ],
             ),
@@ -186,7 +180,19 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                 // Skip button
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Get.back(),
+                    onPressed: () {
+                      if (deliveryman != null) {
+                        Get.offNamed(
+                          RouteHelper.getReviewDelivery(),
+                          arguments: {
+                            'order': widget.order,
+                            'productRatings': <int, Map<String, dynamic>>{}, // empty ratings
+                          },
+                        );
+                      } else {
+                        Get.back();
+                      }
+                    },
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: Colors.grey.shade300),
@@ -208,7 +214,7 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                   flex: 2,
                   child: GetBuilder<ReviewController>(
                     builder: (ctrl) => ElevatedButton(
-                      onPressed: ctrl.isSubmitting ? null : _submit,
+                      onPressed: ctrl.isSubmitting ? null : _submitOrNext,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.mainColor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -224,9 +230,9 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                               child: CircularProgressIndicator(
                                   color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text(
-                              'Enviar reseñas',
-                              style: TextStyle(
+                          : Text(
+                              deliveryman != null ? 'Siguiente' : 'Enviar reseñas',
+                              style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15),

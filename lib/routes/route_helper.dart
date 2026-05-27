@@ -16,6 +16,7 @@ import '../pages/delivery/delivery_dashboard.dart';
 import '../pages/delivery/delivery_history.dart';
 import '../pages/delivery/delivery_profile.dart';
 import '../pages/delivery/delivery_order_detail.dart';
+import '../pages/review/review_delivery_page.dart';
 
 class RouteHelper {
   static const String initial = "/";
@@ -37,6 +38,7 @@ class RouteHelper {
   static const String deliveryHistory = "/delivery-history";
   static const String deliveryProfile = "/delivery-profile";
   static const String deliveryOrderDetail = "/delivery-order-detail";
+  static const String reviewDelivery = "/review-delivery";
 
   static String getInitial() => initial;
   static String getLogin() => login;
@@ -56,6 +58,7 @@ class RouteHelper {
   static String getDeliveryHistory() => deliveryHistory;
   static String getDeliveryProfile() => deliveryProfile;
   static String getDeliveryOrderDetail() => deliveryOrderDetail;
+  static String getReviewDelivery() => reviewDelivery;
 
   static List<GetPage> routes = [
     GetPage(
@@ -152,6 +155,11 @@ class RouteHelper {
       name: deliveryOrderDetail,
       page: () => const DeliveryOrderDetailPage(),
       transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: reviewDelivery,
+      page: () => const ReviewDeliveryPage(),
+      transition: Transition.rightToLeftWithFade,
     ),
   ];
 }

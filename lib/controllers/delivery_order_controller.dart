@@ -97,9 +97,9 @@ class DeliveryOrderController extends GetxController {
       debugPrint("=== INICIO CARGA DE PEDIDOS ===");
 
       final results = await Future.wait([
-        _safeRequest(orderRepo.getAvailableOrders()),
-        _safeRequest(orderRepo.getActiveOrders()),
-        _safeRequest(orderRepo.getOrderHistory()),
+        _safeRequest(orderRepo.getAvailableOrders(handleError: showLoading)),
+        _safeRequest(orderRepo.getActiveOrders(handleError: showLoading)),
+        _safeRequest(orderRepo.getOrderHistory(handleError: showLoading)),
       ]);
 
       Response respAvail = results[0];
