@@ -4,7 +4,6 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -69,7 +68,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                 // Email
                 _buildTextField(
                   controller: _emailController,
-                  hint: 'Correo electronico',
+                  hint: 'Correo electrónico',
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -77,7 +76,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                 // Password
                 _buildTextField(
                   controller: _passwordController,
-                  hint: 'Contrasena',
+                  hint: 'Contraseña',
                   icon: Icons.lock_outline,
                   obscure: _obscurePassword,
                   suffixIcon: IconButton(
@@ -201,7 +200,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                     GestureDetector(
                       onTap: () => Get.back(),
                       child: Text(
-                        'Inicia sesion',
+                        'Inicia sesión',
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: Dimensions.font16,
@@ -319,26 +318,39 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
             ),
           ],
         ),
-        child: IntlPhoneField(
+        child: TextField(
           controller: _phoneController,
-          initialCountryCode: 'SV',
-          countries: const ['SV'],
-          disableLengthCheck: true,
-          disableDropdown: true,
-          showDropdownIcon: false,
+          keyboardType: TextInputType.phone,
+          style: TextStyle(fontFamily: 'Roboto', fontSize: Dimensions.font16),
+          onChanged: (val) {
+            _fullPhoneNumber = '+503 $val';
+          },
           decoration: InputDecoration(
+            prefixIcon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              margin: const EdgeInsets.only(right: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🇸🇻', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: 8),
+                  Text('+503', style: TextStyle(
+                    fontFamily: 'Roboto', 
+                    fontSize: Dimensions.font16,
+                    fontWeight: FontWeight.w500,
+                  )),
+                  const SizedBox(width: 8),
+                  Container(width: 1, height: 20, color: Colors.grey.shade300),
+                ],
+              ),
+            ),
             hintText: 'Teléfono',
             hintStyle: TextStyle(color: AppColors.textColor, fontFamily: 'Roboto'),
             border: InputBorder.none,
             contentPadding: EdgeInsets.symmetric(
               vertical: Dimensions.height15,
-              horizontal: Dimensions.width20,
             ),
           ),
-          style: TextStyle(fontFamily: 'Roboto', fontSize: Dimensions.font16),
-          onChanged: (phone) {
-            _fullPhoneNumber = phone.completeNumber;
-          },
         ),
       ),
     );
