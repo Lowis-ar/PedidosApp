@@ -99,17 +99,18 @@ class OrderController extends GetxController {
         // Clear cart after successful order
         Get.find<CartController>().clearCartHistory();
         
-        Get.snackbar(
-          '¡Pedido realizado!',
-          _lastOtp != null 
-              ? 'Tu código de entrega es: $_lastOtp'
-              : 'Tu pedido ha sido creado con éxito.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 5),
-        );
+        // Solo mostrar Snackbar si NO hay OTP (el diálogo de OTP se muestra desde checkout_page)
+        if (_lastOtp == null) {
+          Get.snackbar(
+            '¡Pedido realizado!',
+            'Tu pedido ha sido creado con éxito.',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            margin: const EdgeInsets.all(16),
+            duration: const Duration(seconds: 4),
+          );
+        }
         
         await getOrderList();
         return true;

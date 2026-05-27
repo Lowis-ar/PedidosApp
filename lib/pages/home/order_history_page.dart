@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/order_controller.dart';
 import 'package:pedidosapp/controllers/review_controller.dart';
@@ -352,29 +353,39 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                     ),
                   ),
 
-                // OTP badge
+                // OTP badge — visible en todos los estados activos
                 if (order.otp != null &&
                     (order.orderStatus == 'pending' ||
+                        order.orderStatus == 'confirmed' ||
+                        order.orderStatus == 'preparing' ||
+                        order.orderStatus == 'ready_to_go' ||
+                        order.orderStatus == 'assigned' ||
                         order.orderStatus == 'accepted' ||
+                        order.orderStatus == 'on_way' ||
                         order.orderStatus == 'on_the_way'))
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: AppColors.mainColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.pin, size: 14, color: AppColors.mainColor),
-                        const SizedBox(width: 4),
-                        Text('PIN: ${order.otp}',
-                            style: TextStyle(
-                                color: AppColors.mainColor,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold)),
-                      ],
+                  GestureDetector(
+                    onTap: () => _showOtpDialog(order.otp!),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.mainColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: AppColors.mainColor.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.pin, size: 14, color: AppColors.mainColor),
+                          const SizedBox(width: 4),
+                          Text('Ver PIN',
+                              style: TextStyle(
+                                  color: AppColors.mainColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
                   ),
               ],
@@ -382,6 +393,105 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
           ),
         ],
       ),
+    );
+  }
+  /// Muestra el código OTP en un diálogo grande y permite copiarlo
+  void _showOtpDialog(String otp) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.mainColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.lock_open_rounded,
+                  color: AppColors.mainColor, size: 52),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Código de Entrega',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Muéstraselo al repartidor cuando llegue',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: otp));
+                Get.snackbar(
+                  'Copiado',
+                  'El código PIN fue copiado al portapapeles',
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM,
+                  margin: const EdgeInsets.all(16),
+                  duration: const Duration(seconds: 2),
+                );
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.mainColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: AppColors.mainColor, width: 2),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      otp,
+                      style: TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.mainColor,
+                        letterSpacing: 10,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Icon(Icons.copy_rounded,
+                        color: AppColors.mainColor, size: 20),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Toca el código para copiarlo',
+              style:
+                  TextStyle(color: Colors.grey.shade400, fontSize: 11),
+            ),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Get.back(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainColor,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              child: const Text('Cerrar',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
     );
   }
 }
