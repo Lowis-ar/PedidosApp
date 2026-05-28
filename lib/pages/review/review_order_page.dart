@@ -64,7 +64,10 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
         productRatings: _productRatings,
         deliverymanRating: null,
       );
-      if (success && mounted) Get.back();
+      if (success && mounted) {
+        // Cerrar todo el flujo de reseñas y volver al inicio
+        Get.until((route) => route.isFirst);
+      }
     }
   }
 

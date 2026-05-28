@@ -145,6 +145,26 @@ class CartController extends GetxController{
     }).toList();
   }
 
+  /// Removes all cart items whose product ID is in [productIds].
+  /// Returns the list of removed item names for display purposes.
+  List<String> removeItemsByProductIds(List<int> productIds) {
+    final Set<int> toRemove = productIds.toSet();
+    final List<String> removedNames = [];
+
+    _items.removeWhere((key, value) {
+      final id = value.product?.id;
+      if (id != null && toRemove.contains(id)) {
+        removedNames.add(value.name ?? 'Producto desconocido');
+        return true;
+      }
+      return false;
+    });
+
+    cartRepo.addToCartList(getItems);
+    update();
+    return removedNames;
+  }
+
   void clear() {
     _items.clear();
     update();

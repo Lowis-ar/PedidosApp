@@ -118,14 +118,18 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
       onRefresh: _loadOrders,
       color: AppColors.mainColor,
       child: Obx(() {
-        final pendingReviews = Get.isRegistered<ReviewController>()
-            ? Get.find<ReviewController>().pendingReviews
-            : <OrderModel>[].obs;
+        final reviewCtrl = Get.isRegistered<ReviewController>()
+            ? Get.find<ReviewController>()
+            : null;
+        // Siempre acceder al observable para que Obx pueda rastrearlo,
+        // independientemente de la condición `isActive`.
+        final pendingCount = reviewCtrl?.pendingReviews.length ?? 0;
+        final pendingReviews = reviewCtrl?.pendingReviews ?? <OrderModel>[];
 
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            if (isActive && pendingReviews.isNotEmpty) ...[
+            if (isActive && pendingCount > 0) ...[
               _PendingReviewsBanner(
                 pendingOrders: pendingReviews,
                 onTap: (order) => _openReviewPage(order),
@@ -238,59 +242,189 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
               ],
             ),
           ),
-          // Items
+          // ── Desglose completo (Estilo Original + Detalles Extra) ────
           if (order.details != null && order.details!.isNotEmpty)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
               child: Column(
-                children: order.details!.map((detail) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Icon(Icons.receipt_long_outlined,
+                          size: 14, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text('Detalle del pedido',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade600)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Items
+                  ...order.details!.map((detail) {
+                    final unitPrice =
+                        double.tryParse(detail.price ?? '0') ?? 0.0;
+                    final qty = detail.quantity ?? 1;
+                    final lineTotal = unitPrice * qty;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Qty badge
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: AppColors.mainColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Center(
+                              child: Text('$qty',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.mainColor)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Name + details
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Text(detail.name ?? 'Producto',
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.black87)),
+                                    ),
+                                    Text(
+                                      '\$${lineTotal.toStringAsFixed(2)}',
+                                      style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '\$${unitPrice.toStringAsFixed(2)} c/u',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade500),
+                                ),
+                                if (detail.variantName != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      '• ${detail.variantName}',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade500),
+                                    ),
+                                  ),
+                                if (detail.extras != null && detail.extras!.isNotEmpty)
+                                  ...detail.extras!.map((extra) {
+                                    final extraQty = extra.quantity ?? 1;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 2),
+                                      child: Text(
+                                        '+$extraQty ${extra.name ?? ''}',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade500),
+                                      ),
+                                    );
+                                  }),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+
+                  // Divider
+                  Divider(color: Colors.grey.shade300, height: 16),
+
+                  // Subtotal de productos, Envío, Total
+                  Builder(builder: (_) {
+                    final productsSubtotal = order.details!.fold(0.0,
+                        (sum, d) =>
+                            sum +
+                            (double.tryParse(d.price ?? '0') ?? 0.0) *
+                                (d.quantity ?? 1));
+                    
+                    double deliveryFeeVal =
+                        double.tryParse(order.deliveryFee ?? '') ?? 0.0;
+                    final totalVal =
+                        double.tryParse(order.orderAmount ?? '0') ?? 0.0;
+                    
+                    if (deliveryFeeVal == 0 &&
+                        (totalVal - productsSubtotal).abs() > 0.01) {
+                      deliveryFeeVal = totalVal - productsSubtotal;
+                    }
+
+                    final zoneLabel = order.zoneName != null
+                        ? 'Envío (${order.zoneName})'
+                        : 'Envío';
+
+                    return Column(
                       children: [
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            color: AppColors.mainColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Center(
-                            child: Text('${detail.quantity}',
+                        _breakdownRow('Subtotal productos',
+                            '\$${productsSubtotal.toStringAsFixed(2)}'),
+                        const SizedBox(height: 4),
+                        _breakdownRow(zoneLabel,
+                            '\$${deliveryFeeVal.toStringAsFixed(2)}'),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Total',
                                 style: TextStyle(
-                                    fontSize: 11,
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: AppColors.mainBlackColor)),
+                            Text('\$${order.orderAmount}',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
                                     color: AppColors.mainColor)),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: Text(detail.name ?? 'Producto',
-                                style: const TextStyle(fontSize: 13))),
-                        Text('\$${detail.price}',
-                            style: const TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w500)),
                       ],
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }),
+                ],
               ),
             ),
-          // Footer
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.grey.shade100)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                BigText(
-                    text: "Total: \$${order.orderAmount}",
-                    size: 16,
-                    color: AppColors.mainColor),
 
-                // ── Review button ────────────────────────────────────
+
+          // ── Action buttons ────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Review button
                 if (needsReview)
                   GestureDetector(
                     onTap: () => _openReviewPage(order),
@@ -319,7 +453,8 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                   ),
 
                 // Cancel button
-                if (order.orderStatus == 'pending')
+                if (order.orderStatus == 'pending') ...[
+                  if (needsReview) const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () {
                       Get.defaultDialog(
@@ -352,8 +487,9 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                               fontWeight: FontWeight.bold)),
                     ),
                   ),
+                ],
 
-                // OTP badge — visible en todos los estados activos
+                // OTP badge
                 if (order.otp != null &&
                     (order.orderStatus == 'pending' ||
                         order.orderStatus == 'confirmed' ||
@@ -362,7 +498,8 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                         order.orderStatus == 'assigned' ||
                         order.orderStatus == 'accepted' ||
                         order.orderStatus == 'on_way' ||
-                        order.orderStatus == 'on_the_way'))
+                        order.orderStatus == 'on_the_way')) ...[
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => _showOtpDialog(order.otp!),
                     child: Container(
@@ -388,6 +525,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                       ),
                     ),
                   ),
+                ],
               ],
             ),
           ),
@@ -395,6 +533,21 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
       ),
     );
   }
+
+  /// Helper para filas de desglose (subtotal, envío)
+  Widget _breakdownRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        Text(value,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
   /// Muestra el código OTP en un diálogo grande y permite copiarlo
   void _showOtpDialog(String otp) {
     Get.dialog(

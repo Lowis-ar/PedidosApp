@@ -150,6 +150,7 @@ class OrderController extends GetxController {
       if (response.statusCode == 200) {
         _orderList = [];
         final body = response.body;
+        debugPrint("Order List Response: $body");
         var orders = body['orders'] ?? body['data'];
         if (orders != null && orders is List) {
           for (var o in orders) {

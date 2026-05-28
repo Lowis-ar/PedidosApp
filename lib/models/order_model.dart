@@ -2,6 +2,9 @@ class OrderModel {
   int? id;
   int? userId;
   String? orderAmount;
+  String? deliveryFee;
+  String? subtotal;
+  String? zoneName;
   String? orderStatus;
   String? orderNote;
   String? deliveryAddress;
@@ -18,6 +21,9 @@ class OrderModel {
     this.id,
     this.userId,
     this.orderAmount,
+    this.deliveryFee,
+    this.subtotal,
+    this.zoneName,
     this.orderStatus,
     this.orderNote,
     this.deliveryAddress,
@@ -35,6 +41,14 @@ class OrderModel {
     id = json['id'];
     userId = json['user_id'];
     orderAmount = json['order_amount']?.toString() ?? json['total']?.toString();
+    deliveryFee = json['delivery_fee']?.toString() ?? json['shipping_fee']?.toString();
+    subtotal = json['subtotal']?.toString() ?? json['products_amount']?.toString();
+    // Nombre de zona — puede venir como objeto o string directo
+    if (json['zone'] != null && json['zone'] is Map) {
+      zoneName = json['zone']['name']?.toString();
+    } else {
+      zoneName = json['zone_name']?.toString() ?? json['zone']?.toString();
+    }
     orderStatus = json['order_status'] ?? json['status'];
     orderNote = json['order_note'] ?? json['notes'];
     
@@ -84,6 +98,9 @@ class OrderModel {
       'id': id,
       'user_id': userId,
       'order_amount': orderAmount,
+      'delivery_fee': deliveryFee,
+      'subtotal': subtotal,
+      'zone_name': zoneName,
       'order_status': orderStatus,
       'order_note': orderNote,
       'delivery_address': deliveryAddress,
@@ -102,19 +119,27 @@ class OrderDetail {
   int? id;
   int? orderId;
   int? productId;
-  String? price;
+  String? price;          // precio unitario base (sin variante)
+  String? totalPrice;     // precio total de esta línea
   int? quantity;
   String? name;
   String? img;
+  String? variantName;
+  String? variantPriceModifier; // modificador de precio de variante
+  List<OrderDetailExtra>? extras;
 
   OrderDetail({
     this.id,
     this.orderId,
     this.productId,
     this.price,
+    this.totalPrice,
     this.quantity,
     this.name,
     this.img,
+    this.variantName,
+    this.variantPriceModifier,
+    this.extras,
   });
 
   OrderDetail.fromJson(Map<String, dynamic> json) {
@@ -122,9 +147,20 @@ class OrderDetail {
     orderId = json['order_id'];
     productId = json['product_id'] ?? json['food_id'];
     price = json['unit_price']?.toString() ?? json['price']?.toString();
+    totalPrice = json['total_price']?.toString() ?? json['line_total']?.toString();
     quantity = json['quantity'];
     name = json['product_name'] ?? json['name'];
     img = json['product_image'] ?? json['img'];
+    variantName = json['variant_name'];
+    variantPriceModifier = json['variant_price_modifier']?.toString()
+        ?? json['variant_price']?.toString();
+    // Extras detallados
+    var extrasRaw = json['extras'] ?? json['order_extras'];
+    if (extrasRaw != null && extrasRaw is List) {
+      extras = extrasRaw
+          .map((e) => OrderDetailExtra.fromJson(e))
+          .toList();
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -137,6 +173,23 @@ class OrderDetail {
       'name': name,
       'img': img,
     };
+  }
+}
+
+/// Extra individual dentro de un OrderDetail
+class OrderDetailExtra {
+  int? id;
+  String? name;
+  String? price;
+  int? quantity;
+
+  OrderDetailExtra({this.id, this.name, this.price, this.quantity});
+
+  OrderDetailExtra.fromJson(Map<String, dynamic> json) {
+    id = json['id'] ?? json['extra_id'];
+    name = json['name'] ?? json['extra_name'];
+    price = json['price']?.toString() ?? json['unit_price']?.toString();
+    quantity = json['quantity'] ?? 1;
   }
 }
 

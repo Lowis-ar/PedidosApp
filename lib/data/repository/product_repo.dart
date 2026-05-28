@@ -33,6 +33,31 @@ class ProductRepo extends GetxService {
     return await apiClient.getData("${AppConstants.CATEGORIES_URI}?branch_id=$branchId");
   }
 
+  Future<List<int>?> getProductIdsByBranch(int branchId) async {
+    try {
+      final response = await apiClient.getData(
+        '${AppConstants.ALL_PRODUCTS_URI}?branch_id=$branchId',
+      );
+      if (response.statusCode == 200) {
+        var body = response.body;
+        List<dynamic>? list;
+        if (body is List) {
+          list = body;
+        } else if (body is Map) {
+          list = body['data'] ?? body['products'];
+        }
+        if (list != null) {
+          return list
+              .map<int?>((e) => e['id'] as int?)
+              .whereType<int>()
+              .toList();
+        }
+        return []; // Éxito pero lista vacía
+      }
+    } catch (_) {}
+    return null; // Error
+  }
+
   Future<Response> getProductDetail(int productId) async {
     return await apiClient.getData("${AppConstants.PRODUCT_DETAIL_URI}$productId");
   }

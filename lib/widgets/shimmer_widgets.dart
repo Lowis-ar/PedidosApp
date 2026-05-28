@@ -105,18 +105,19 @@ class PopularProductSkeleton extends StatelessWidget {
       width: w,
       margin: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Image placeholder
           ShimmerBlock(
             width: w,
-            height: 200,
+            height: 190,
             borderRadius: BorderRadius.circular(24),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           // Card info placeholder
           Container(
             width: w,
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -130,8 +131,9 @@ class PopularProductSkeleton extends StatelessWidget {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                ShimmerBlock(width: w * 0.6, height: 16),
+                ShimmerBlock(width: w * 0.6, height: 14),
                 const SizedBox(height: 8),
                 ShimmerBlock(width: w * 0.4, height: 12),
                 const SizedBox(height: 8),

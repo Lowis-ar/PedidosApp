@@ -48,7 +48,10 @@ class _ReviewDeliveryPageState extends State<ReviewDeliveryPage> {
               'comment': _deliveryCommentCtrl.text.trim().isEmpty ? null : _deliveryCommentCtrl.text.trim()
             },
     );
-    if (success && mounted) Get.back();
+    if (success && mounted) {
+      // Cerrar todo el flujo de reseñas y volver al inicio
+      Get.until((route) => route.isFirst);
+    }
   }
 
   @override
