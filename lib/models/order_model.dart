@@ -215,6 +215,7 @@ class AddressModel {
   String? addressType;
   String? contactPersonNumber;
   String? address;
+  String? references;
   String? latitude;
   String? longitude;
   int? userId;
@@ -226,6 +227,7 @@ class AddressModel {
     this.addressType,
     this.contactPersonNumber,
     this.address,
+    this.references,
     this.latitude,
     this.longitude,
     this.userId,
@@ -237,7 +239,8 @@ class AddressModel {
     id = json['id'];
     addressType = json['address_type'] ?? json['label'];
     contactPersonNumber = json['contact_person_number'] ?? json['phone'];
-    address = json['address'] ?? json['street_address'];
+    address = json['address'] ?? json['street_address'] ?? json['street'];
+    references = json['references'];
     latitude = json['latitude']?.toString();
     longitude = json['longitude']?.toString();
     userId = json['user_id'];
@@ -250,6 +253,7 @@ class AddressModel {
       'id': id,
       'label': addressType, 
       'street': address,
+      'references': references,
       'zone_id': zoneId ?? 1,
       'latitude': latitude,
       'longitude': longitude,

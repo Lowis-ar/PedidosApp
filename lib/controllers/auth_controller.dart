@@ -58,7 +58,7 @@ class AuthController extends GetxController {
     update();
   }
 
-  void _saveSession(String token, UserModel user, String type, {Map<String, dynamic>? rawJson}) {
+  void _saveSession(String token, UserModel user, String type, {Map<String, dynamic>? rawJson, bool navigate = true}) {
     _token = token;
     _user = user;
     _userType = type;
@@ -67,23 +67,25 @@ class AuthController extends GetxController {
     _storage.write('user_type', type);
     Get.find<ApiClient>().updateToken(token);
 
-    if (type == 'delivery') {
-      final deliveryAuthController = Get.find<DeliveryAuthController>();
-      
-      final dm = rawJson != null 
-          ? DeliverymanModel.fromJson(rawJson)
-          : DeliverymanModel(
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              phone: user.phone,
-              isAvailable: true,
-            );
+    if (navigate) {
+      if (type == 'delivery') {
+        final deliveryAuthController = Get.find<DeliveryAuthController>();
+        
+        final dm = rawJson != null 
+            ? DeliverymanModel.fromJson(rawJson)
+            : DeliverymanModel(
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                isAvailable: true,
+              );
 
-      deliveryAuthController.syncSession(token, dm);
-      Get.offAllNamed(RouteHelper.getDeliveryDashboard());
-    } else {
-      Get.offAllNamed(RouteHelper.getInitial());
+        deliveryAuthController.syncSession(token, dm);
+        Get.offAllNamed(RouteHelper.getDeliveryDashboard());
+      } else {
+        Get.offAllNamed(RouteHelper.getInitial());
+      }
     }
     update();
   }
@@ -128,7 +130,7 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> register(String name, String phone, String email, String password) async {
+  Future<bool> register(String name, String phone, String email, String password) async {
     _isLoading = true;
     update();
 
@@ -136,23 +138,14 @@ class AuthController extends GetxController {
       Response response = await authRepo.register(name, phone, email, password);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final body = response.body;
-        if (body != null) {
-          final String? token = body['token'] ?? body['access_token'] ?? body['data']?['token'];
-          final dynamic userJson = body['user'] ?? body['data']?['user'] ?? body['data'];
-
-          if (token != null && userJson != null) {
-            final user = UserModel.fromJson(userJson is Map<String, dynamic> ? userJson : Map<String, dynamic>.from(userJson));
-            _saveSession(token, user, _userType);
-          } else {
-            _showError('Registro exitoso, pero hubo un problema al obtener tus datos.');
-          }
-        }
+        return true;
       } else {
         _handleApiError(response, 'Error al registrarse');
+        return false;
       }
     } catch (e) {
       _showError('No se pudo completar el registro. Verifica los datos.');
+      return false;
     } finally {
       _isLoading = false;
       update();
@@ -268,22 +261,57 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<bool> verifyEmail(String otp) async {
+  Future<bool> verifyEmail(String email, String otp) async {
     _isLoading = true;
     update();
     try {
-      Response response = await authRepo.verifyEmail(otp);
-      if (response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Correo verificado',
-            backgroundColor: Colors.green, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-        return true;
+      Response response = await authRepo.verifyEmail(email, otp);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final body = response.body;
+        if (body != null) {
+          final String? token = body['data']?['token'] ?? body['token'] ?? body['access_token'];
+          final dynamic userJson = body['user'] ?? body['data']?['user'] ?? body['data'];
+
+          if (token != null && userJson != null) {
+            final user = UserModel.fromJson(userJson is Map<String, dynamic> ? userJson : Map<String, dynamic>.from(userJson));
+            _saveSession(token, user, _userType, navigate: true);
+            Get.snackbar('Éxito', 'Correo verificado y cuenta creada',
+                backgroundColor: Colors.green, colorText: Colors.white,
+                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return true;
+          }
+        }
+        _showError('Hubo un problema al crear la sesión.');
+        return false;
       } else {
-        _handleApiError(response, 'Código inválido');
+        _handleApiError(response, 'Código inválido o caducado');
         return false;
       }
     } catch (e) {
       _showError('Error de conexión');
+      return false;
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<bool> resendVerificationEmail(String email) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await authRepo.resendVerificationEmail(email);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        Get.snackbar('Éxito', 'Código reenviado. Revisa tu correo.',
+            backgroundColor: Colors.green, colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return true;
+      } else {
+        _handleApiError(response, 'No se pudo reenviar el código.');
+        return false;
+      }
+    } catch (e) {
+      _showError('Error de conexión al reenviar el código.');
       return false;
     } finally {
       _isLoading = false;

@@ -61,9 +61,16 @@ class AuthRepo extends GetxService {
     });
   }
 
-  Future<Response> verifyEmail(String otp) async {
+  Future<Response> verifyEmail(String email, String otp) async {
     return await apiClient.postData(AppConstants.VERIFY_EMAIL_URI, {
+      'email': email,
       'otp': otp,
+    });
+  }
+
+  Future<Response> resendVerificationEmail(String email) async {
+    return await apiClient.postData('/api/v1/auth/resend-verification-email', {
+      'email': email,
     });
   }
 }

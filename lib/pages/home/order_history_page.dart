@@ -375,13 +375,6 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                     
                     double deliveryFeeVal =
                         double.tryParse(order.deliveryFee ?? '') ?? 0.0;
-                    final totalVal =
-                        double.tryParse(order.orderAmount ?? '0') ?? 0.0;
-                    
-                    if (deliveryFeeVal == 0 &&
-                        (totalVal - productsSubtotal).abs() > 0.01) {
-                      deliveryFeeVal = totalVal - productsSubtotal;
-                    }
 
                     final zoneLabel = order.zoneName != null
                         ? 'Envío (${order.zoneName})'

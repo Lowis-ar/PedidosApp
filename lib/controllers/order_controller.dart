@@ -37,6 +37,11 @@ class OrderController extends GetxController {
   AddressModel? _selectedAddress;
   AddressModel? get selectedAddress => _selectedAddress;
 
+  void clearSelectedAddress() {
+    _selectedAddress = null;
+    update();
+  }
+
   String? _lastOtp;
   String? get lastOtp => _lastOtp;
 

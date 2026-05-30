@@ -33,9 +33,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   
   // Address fields
   final _addressController = TextEditingController();
+  final _referenceController = TextEditingController();
   final _contactNameController = TextEditingController();
   final _contactPhoneController = TextEditingController();
   String _addressType = 'Home';
+  bool _isAddingNewAddress = false;
 
   int _currentStep = 0;
   bool _cardValid = false;
@@ -63,7 +65,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void initState() {
     super.initState();
-    Get.find<OrderController>().getAddressList();
+    Get.find<OrderController>().getAddressList().then((_) {
+      if (Get.find<OrderController>().addressList.isEmpty) {
+        setState(() => _isAddingNewAddress = true);
+      }
+    });
     Get.find<ZoneController>().getZoneList();
     // Pre-fill contact info from user profile
     final user = Get.find<AuthController>().user;
@@ -79,6 +85,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _cvvController.dispose();
     _cardHolderController.dispose();
     _addressController.dispose();
+    _referenceController.dispose();
     _contactNameController.dispose();
     _contactPhoneController.dispose();
     super.dispose();
@@ -317,80 +324,98 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 );
               }),
               const Divider(height: 24),
-              SmallText(text: "O agrega una nueva dirección", color: Colors.black54),
-              const SizedBox(height: 8),
-            ],
-
-            // Address type selector
-            Row(
-              children: ['Home', 'Work', 'Other'].map((type) {
-                bool sel = _addressType == type;
-                String label = type == 'Home' ? 'Casa' : (type == 'Work' ? 'Trabajo' : 'Otro');
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(label),
-                    selected: sel,
-                    selectedColor: AppColors.mainColor.withValues(alpha: 0.2),
-                    onSelected: (_) => setState(() => _addressType = type),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on)),
-                const SizedBox(width: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.mainColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    onPressed: () async {
-                      final LatLng? result = await Get.to(() => const MapPinPickerView(initialLat: 13.68935, initialLng: -89.18718)); // Default El Salvador or similar
-                      if (result != null) {
-                        setState(() {
-                          _selectedLat = result.latitude;
-                          _selectedLng = result.longitude;
-                        });
-
-                        try {
-                          List<Placemark> placemarks = await placemarkFromCoordinates(result.latitude, result.longitude);
-                          if (placemarks.isNotEmpty) {
-                            String? locality = placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea;
-                            if (locality != null) {
-                               final zoneCtrl = Get.find<ZoneController>();
-                               final matchedZone = zoneCtrl.zoneList.firstWhereOrNull((z) => 
-                                  locality.toLowerCase().contains(z.name.toLowerCase()) || 
-                                  z.name.toLowerCase().contains(locality.toLowerCase())
-                               );
-                               if (matchedZone != null) {
-                                  zoneCtrl.setZoneId(matchedZone.id);
-                                  Get.snackbar('Zona detectada', 'Se ha seleccionado la zona: ${matchedZone.name}', backgroundColor: Colors.green, colorText: Colors.white);
-                               } else {
-                                  Get.snackbar('Sin cobertura', 'Lo sentimos, no hay cobertura en $locality', backgroundColor: Colors.orange, colorText: Colors.white);
-                               }
-                            }
-                          }
-                        } catch(e) {
-                          debugPrint('Error reverse geocoding: $e');
-                        }
-
-                        _calculateDynamicFee();
-                      }
+              if (!_isAddingNewAddress)
+                Center(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isAddingNewAddress = true;
+                        // Deseleccionar dirección previa
+                        orderController.clearSelectedAddress();
+                      });
                     },
-                    icon: const Icon(Icons.map, color: Colors.white),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar nueva dirección'),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
-            const SizedBox(height: 10),
-            _buildCheckoutField(_contactPhoneController, 'Teléfono de contacto', Icons.phone,
-                keyboardType: TextInputType.phone),
+            ],
+
+            if (_isAddingNewAddress) ...[
+              SmallText(text: "Agregar nueva dirección", color: Colors.black54),
+              const SizedBox(height: 8),
+              // Address type selector
+              Row(
+                children: ['Home', 'Work', 'Other'].map((type) {
+                  bool sel = _addressType == type;
+                  String label = type == 'Home' ? 'Casa' : (type == 'Work' ? 'Trabajo' : 'Otro');
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(label),
+                      selected: sel,
+                      selectedColor: AppColors.mainColor.withValues(alpha: 0.2),
+                      onSelected: (_) => setState(() => _addressType = type),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _buildCheckoutField(_addressController, 'Dirección completa', Icons.location_on)),
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.mainColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: IconButton(
+                      onPressed: () async {
+                        final LatLng? result = await Get.to(() => const MapPinPickerView(initialLat: 13.68935, initialLng: -89.18718)); // Default El Salvador or similar
+                        if (result != null) {
+                          setState(() {
+                            _selectedLat = result.latitude;
+                            _selectedLng = result.longitude;
+                          });
+
+                          try {
+                            List<Placemark> placemarks = await placemarkFromCoordinates(result.latitude, result.longitude);
+                            if (placemarks.isNotEmpty) {
+                              String? locality = placemarks.first.locality ?? placemarks.first.subAdministrativeArea ?? placemarks.first.administrativeArea;
+                              if (locality != null) {
+                                 final zoneCtrl = Get.find<ZoneController>();
+                                 final matchedZone = zoneCtrl.zoneList.firstWhereOrNull((z) => 
+                                    locality.toLowerCase().contains(z.name.toLowerCase()) || 
+                                    z.name.toLowerCase().contains(locality.toLowerCase())
+                                 );
+                                 if (matchedZone != null) {
+                                    zoneCtrl.setZoneId(matchedZone.id);
+                                    Get.snackbar('Zona detectada', 'Se ha seleccionado la zona: ${matchedZone.name}', backgroundColor: Colors.green, colorText: Colors.white);
+                                 } else {
+                                    Get.snackbar('Sin cobertura', 'Lo sentimos, no hay cobertura en $locality', backgroundColor: Colors.orange, colorText: Colors.white);
+                                 }
+                              }
+                            }
+                          } catch(e) {
+                            debugPrint('Error reverse geocoding: $e');
+                          }
+
+                          _calculateDynamicFee();
+                        }
+                      },
+                      icon: const Icon(Icons.map, color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              _buildCheckoutField(_referenceController, 'Punto de referencia (opcional)', Icons.map_outlined),
+              const SizedBox(height: 10),
+              _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
+              const SizedBox(height: 10),
+              _buildCheckoutField(_contactPhoneController, 'Teléfono de contacto', Icons.phone,
+                  keyboardType: TextInputType.phone),
+            ],
           ],
         );
       });
@@ -782,11 +807,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // LÓGICA REFORZADA: Si ya hay un ID, NO intentar crear dirección
     if (orderController.selectedAddress != null && orderController.selectedAddress!.id != null) {
       finalAddressId = orderController.selectedAddress!.id;
-    } else if (_addressController.text.isNotEmpty) {
+    } else if (_isAddingNewAddress && _addressController.text.isNotEmpty) {
+      if (_selectedLat == null || _selectedLng == null) {
+        Get.snackbar('Mapa', 'Por favor selecciona la ubicación en el mapa', 
+          backgroundColor: Colors.orange, colorText: Colors.white);
+        return;
+      }
+      
       // Crear nueva dirección SOLO si no hay una seleccionada con ID
       AddressModel newAddress = AddressModel(
         addressType: _addressType,
         address: _addressController.text,
+        references: _referenceController.text.isNotEmpty ? _referenceController.text : null,
         contactPersonName: _contactNameController.text,
         contactPersonNumber: _contactPhoneController.text,
         latitude: _selectedLat?.toString() ?? '0',

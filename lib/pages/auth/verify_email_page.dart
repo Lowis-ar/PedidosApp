@@ -15,6 +15,16 @@ class VerifyEmailPage extends StatefulWidget {
 class _VerifyEmailPageState extends State<VerifyEmailPage> {
   final _otpController = TextEditingController();
 
+  String? email;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Get.arguments != null && Get.arguments['email'] != null) {
+      email = Get.arguments['email'];
+    }
+  }
+
   @override
   void dispose() {
     _otpController.dispose();
@@ -49,7 +59,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
               ),
               SizedBox(height: Dimensions.height10),
               Text(
-                'Hemos enviado un codigo de 6 digitos a tu correo electronico para activar tu cuenta.',
+                'Hemos enviado un código de 6 dígitos a tu correo electrónico para activar tu cuenta.\n(Por favor, revisa también tu bandeja de Spam o Correo no deseado si no lo encuentras).',
                 style: TextStyle(
                   fontFamily: 'Roboto',
                   fontSize: Dimensions.font16,
@@ -90,9 +100,14 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                                 backgroundColor: Colors.redAccent, colorText: Colors.white);
                             return;
                           }
-                          bool success = await authController.verifyEmail(otp);
+                          if (email == null || email!.isEmpty) {
+                            Get.snackbar('Error', 'No se encontró el correo. Vuelve a registrarte.',
+                                backgroundColor: Colors.redAccent, colorText: Colors.white);
+                            return;
+                          }
+                          bool success = await authController.verifyEmail(email!, otp);
                           if (success) {
-                            Get.offAllNamed(RouteHelper.getInitial());
+                            // verifyEmail ya llama a _saveSession y hace la navegación.
                           }
                         },
                   child: AnimatedContainer(
@@ -126,6 +141,44 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                   ),
                 );
               }),
+              SizedBox(height: Dimensions.height30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      if (email != null && email!.isNotEmpty) {
+                        Get.find<AuthController>().resendVerificationEmail(email!);
+                      } else {
+                        Get.snackbar('Error', 'No se encontró el correo. Regístrate de nuevo.',
+                            backgroundColor: Colors.redAccent, colorText: Colors.white);
+                      }
+                    },
+                    child: Text(
+                      'Reenviar código',
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: Dimensions.font16,
+                        color: AppColors.mainColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Get.offAllNamed(RouteHelper.getRegister());
+                    },
+                    child: Text(
+                      'Cambiar correo',
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: Dimensions.font16,
+                        color: AppColors.paraColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

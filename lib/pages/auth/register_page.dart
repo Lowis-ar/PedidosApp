@@ -111,8 +111,33 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                         : () async {
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
-                            String phone = '+503${_phoneController.text.replaceAll(' ', '').trim()}';
+                            final rawPhone = _phoneController.text.replaceAll(' ', '').trim();
+                            if (!RegExp(r'^[2567]\d{7}$').hasMatch(rawPhone)) {
+                              Get.snackbar(
+                                'Teléfono inválido',
+                                'Debe iniciar por 2, 5, 6 o 7 y tener exactamente 8 dígitos.',
+                                backgroundColor: Colors.redAccent,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                                margin: const EdgeInsets.all(16),
+                              );
+                              return;
+                            }
+                            String phone = '+503$rawPhone';
                             final name = _nameController.text.trim();
+                            
+                            if (RegExp(r'[0-9]').hasMatch(name)) {
+                              Get.snackbar(
+                                'Nombre inválido',
+                                'El nombre no debe contener números.',
+                                backgroundColor: Colors.redAccent,
+                                colorText: Colors.white,
+                                snackPosition: SnackPosition.BOTTOM,
+                                margin: const EdgeInsets.all(16),
+                              );
+                              return;
+                            }
+                            
                             if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
                               Get.snackbar(
                                 'Campos requeridos',
@@ -146,9 +171,9 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                               );
                               return;
                             }
-                            await authController.register(name, phone, email, pass);
-                            if (authController.isLoggedIn) {
-                              Get.offAllNamed(RouteHelper.getInitial());
+                            bool success = await authController.register(name, phone, email, pass);
+                            if (success) {
+                              Get.offAllNamed(RouteHelper.getVerifyEmail(), arguments: {'email': email});
                             }
                           },
                     child: AnimatedContainer(
@@ -230,11 +255,25 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _socialIcon(Icons.g_mobiledata_rounded, const Color(0xFFDB4437)),
-                    SizedBox(width: Dimensions.width20),
-                    _socialIcon(Icons.flutter_dash, const Color(0xFF1DA1F2)),
-                    SizedBox(width: Dimensions.width20),
-                    _socialIcon(Icons.facebook_rounded, const Color(0xFF4267B2)),
+                    Container(
+                      width: 45,
+                      height: 45,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade200,
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Image.asset('assets/image/google.png'),
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(height: Dimensions.height30),
