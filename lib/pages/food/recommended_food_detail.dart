@@ -164,48 +164,55 @@ class _RecommendedFoodDetailState extends State<RecommendedFoodDetail> {
                     ),
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.mainColor
-                                    : Colors.grey.shade400,
-                                width: 2,
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.mainColor
+                                      : Colors.grey.shade400,
+                                  width: 2,
+                                ),
                               ),
-                            ),
-                            child: isSelected
-                                ? Center(
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.mainColor,
+                              child: isSelected
+                                  ? Center(
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.mainColor,
+                                        ),
                                       ),
-                                    ),
-                                  )
-                                : null,
-                          ),
-                          SizedBox(width: Dimensions.width10),
-                          Expanded(
-                            child: Text(
-                              variant.name ?? "",
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: Dimensions.font16,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: AppColors.mainBlackColor,
+                                    )
+                                  : null,
+                            ),
+                            SizedBox(width: Dimensions.width10),
+                            Expanded(
+                              child: Text(
+                                variant.name ?? "",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: Dimensions.font16,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: AppColors.mainBlackColor,
+                                ),
                               ),
                             ),
-                          ),
-                          SizedBox(width: Dimensions.width10),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: Dimensions.width10),
                       Text(
                         variant.priceModifier! >= 0
                             ? "+ \$ ${variant.priceModifier!.toStringAsFixed(2)}"
@@ -300,68 +307,66 @@ class _RecommendedFoodDetailState extends State<RecommendedFoodDetail> {
                   ),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Quantity controller instead of checkbox
-                        Row(
-                          children: [
-                            GestureDetector(
-                              onTap: () => controller.setExtraQuantity(extra, false),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: qty > 0 ? AppColors.mainColor : Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Icon(Icons.remove, size: 16, color: Colors.white),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => controller.setExtraQuantity(extra, false),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: qty > 0 ? AppColors.mainColor : Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(4),
                               ),
+                              child: Icon(Icons.remove, size: 16, color: Colors.white),
                             ),
-                            SizedBox(width: Dimensions.width10),
-                            Text(
-                              qty.toString(),
-                              style: TextStyle(
-                                fontSize: Dimensions.font16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.mainBlackColor,
-                              ),
-                            ),
-                            SizedBox(width: Dimensions.width10),
-                            GestureDetector(
-                              onTap: () => controller.setExtraQuantity(extra, true),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.mainColor,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Icon(Icons.add, size: 16, color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: Dimensions.width15),
-                        Expanded(
-                          child: Text(
-                            extra.name ?? "",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                          ),
+                          SizedBox(width: Dimensions.width10),
+                          Text(
+                            qty.toString(),
                             style: TextStyle(
                               fontSize: Dimensions.font16,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                              fontWeight: FontWeight.bold,
                               color: AppColors.mainBlackColor,
                             ),
                           ),
-                        ),
-                        SizedBox(width: Dimensions.width10),
+                          SizedBox(width: Dimensions.width10),
+                          GestureDetector(
+                            onTap: () => controller.setExtraQuantity(extra, true),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.mainColor,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Icon(Icons.add, size: 16, color: Colors.white),
+                            ),
+                          ),
+                          SizedBox(width: Dimensions.width15),
+                          Expanded(
+                            child: Text(
+                              extra.name ?? "",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: Dimensions.font16,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: AppColors.mainBlackColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: Dimensions.width10),
                     Text(
                       "+ \$ ${extra.price!.toStringAsFixed(2)}",
                       style: TextStyle(
                         fontSize: Dimensions.font16,
                         fontWeight: FontWeight.bold,
-                        color: isSelected
-                            ? AppColors.mainColor
-                            : AppColors.paraColor,
+                        color: isSelected ? AppColors.mainColor : AppColors.paraColor,
                       ),
                     ),
                   ],
