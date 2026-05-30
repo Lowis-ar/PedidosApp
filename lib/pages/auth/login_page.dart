@@ -183,14 +183,19 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'Inicia sesion en tu cuenta',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontSize: Dimensions.font16 * 0.85,
-                          color: AppColors.paraColor,
+                      Expanded(
+                        child: Text(
+                          'Inicia sesion en tu cuenta',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: Dimensions.font16 * 0.85,
+                            color: AppColors.paraColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      SizedBox(width: Dimensions.width10),
                       GestureDetector(
                         onTap: () => Get.toNamed(RouteHelper.getForgotPassword()),
                         child: Text(

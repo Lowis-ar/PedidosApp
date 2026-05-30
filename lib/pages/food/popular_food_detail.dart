@@ -115,7 +115,10 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              BigText(text: "Seleccioná una opción", size: Dimensions.font18),
+              Expanded(
+                child: BigText(text: "Seleccioná una opción", size: Dimensions.font18),
+              ),
+              SizedBox(width: Dimensions.width10),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -162,11 +165,8 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
                     ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          // Radio circle
+                      // Radio circle
                           Container(
                             width: 20,
                             height: 20,
@@ -193,18 +193,21 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
                                 : null,
                           ),
                           SizedBox(width: Dimensions.width10),
-                          Text(
-                            variant.name ?? "",
-                            style: TextStyle(
-                              fontSize: Dimensions.font16,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              color: AppColors.mainBlackColor,
+                          Expanded(
+                            child: Text(
+                              variant.name ?? "",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: Dimensions.font16,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: AppColors.mainBlackColor,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                          SizedBox(width: Dimensions.width10),
                       Text(
                         variant.priceModifier! >= 0
                             ? "+ \$ ${variant.priceModifier!.toStringAsFixed(2)}"
@@ -254,7 +257,10 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              BigText(text: "Agregá complementos", size: Dimensions.font18),
+              Expanded(
+                child: BigText(text: "Agregá complementos", size: Dimensions.font18),
+              ),
+              SizedBox(width: Dimensions.width10),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -296,11 +302,8 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        // Quantity controller instead of checkbox
+                    // Quantity controller instead of checkbox
                         Row(
                           children: [
                             GestureDetector(
@@ -338,18 +341,21 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
                           ],
                         ),
                         SizedBox(width: Dimensions.width15),
-                        Text(
-                          extra.name ?? "",
-                          style: TextStyle(
-                            fontSize: Dimensions.font16,
-                            fontWeight: isSelected
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: AppColors.mainBlackColor,
+                        Expanded(
+                          child: Text(
+                            extra.name ?? "",
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: Dimensions.font16,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: AppColors.mainBlackColor,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                        SizedBox(width: Dimensions.width10),
                     Text(
                       "+ \$ ${extra.price!.toStringAsFixed(2)}",
                       style: TextStyle(
