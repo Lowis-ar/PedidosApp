@@ -268,8 +268,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   onTap: () {
                     orderController.selectAddress(addr);
                     _addressController.text = addr.address ?? '';
-                    _contactNameController.text = addr.contactPersonName ?? '';
-                    _contactPhoneController.text = addr.contactPersonNumber ?? '';
+                    if (addr.contactPersonName != null && addr.contactPersonName!.isNotEmpty) {
+                      _contactNameController.text = addr.contactPersonName!;
+                    }
+                    if (addr.contactPersonNumber != null && addr.contactPersonNumber!.isNotEmpty) {
+                      _contactPhoneController.text = addr.contactPersonNumber!;
+                    }
+                    if (addr.latitude != null && addr.longitude != null) {
+                      _selectedLat = double.tryParse(addr.latitude!);
+                      _selectedLng = double.tryParse(addr.longitude!);
+                      _calculateDynamicFee();
+                    }
+                    if (addr.zoneId != null) {
+                      Get.find<ZoneController>().setZoneId(addr.zoneId!);
+                    }
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),

@@ -350,7 +350,10 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(child: BigText(text: "Nueva Orden #${order.id}", size: 16)),
-              BigText(text: "\$${order.deliveryFee}", color: Colors.green),
+              if ((order.deliveryFee ?? 0) > 0)
+                BigText(text: "Ganancia: \$${order.deliveryFee?.toStringAsFixed(2)}", color: Colors.green)
+              else
+                BigText(text: "Total: \$${order.total?.toStringAsFixed(2)}", color: Colors.blueGrey),
             ],
           ),
           const Divider(),

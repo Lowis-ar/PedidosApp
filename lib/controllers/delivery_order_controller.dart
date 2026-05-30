@@ -450,7 +450,6 @@ class DeliveryOrderController extends GetxController {
           snackPosition: SnackPosition.TOP,
         );
         _activeOrder = null;
-        await getOrders();
         return null; // éxito
       } else if (response.statusCode == 422) {
         final msg = response.body is Map

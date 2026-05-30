@@ -333,6 +333,7 @@ class ActiveOrdersView extends StatelessWidget {
                             isSubmitting.value = false;
                             if (errorMsg == null) {
                               Get.back(); // Cierra modal solo en éxito
+                              controller.getOrders(); // Refresh after modal is closed
                             } else {
                               // Error inline — NO cierra el modal
                               otpError.value = errorMsg;
