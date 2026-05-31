@@ -459,11 +459,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
               const SizedBox(height: 10),
               _buildCheckoutField(_referenceController, 'Punto de referencia (opcional)', Icons.map_outlined),
-              const SizedBox(height: 10),
-              _buildCheckoutField(_contactNameController, 'Nombre de contacto', Icons.person),
-              const SizedBox(height: 10),
-              _buildCheckoutField(_contactPhoneController, 'Teléfono de contacto', Icons.phone,
-                  keyboardType: TextInputType.phone),
+              // Campos de contacto eliminados según requerimiento, se usarán los del perfil del usuario.
             ],
           ],
         );
@@ -1163,8 +1159,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Get.back(); // Close dialog
-                Get.back(); // Back to cart/home
+                Get.offAllNamed(RouteHelper.getInitial(pageId: 1));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.mainColor,

@@ -40,7 +40,7 @@ class RouteHelper {
   static const String deliveryOrderDetail = "/delivery-order-detail";
   static const String reviewDelivery = "/review-delivery";
 
-  static String getInitial() => initial;
+  static String getInitial({int pageId = 0}) => '$initial?pageId=$pageId';
   static String getLogin() => login;
   static String getRegister() => register;
   static String getForgotPassword() => forgotPassword;
@@ -63,8 +63,11 @@ class RouteHelper {
   static List<GetPage> routes = [
     GetPage(
       name: initial,
-      page: () => const HomePage(),
-      transition: Transition.fadeIn,
+      page: () {
+        int pageId = Get.parameters['pageId'] != null ? int.parse(Get.parameters['pageId']!) : 0;
+        return HomePage(initialIndex: pageId);
+      },
+      transition: Transition.fade,
     ),
     GetPage(
       name: login,
