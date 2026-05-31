@@ -52,14 +52,60 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Future<void> _calculateDynamicFee() async {
     if (_selectedLat != null && _selectedLng != null) {
       int branchId = Get.find<BranchController>().branchId;
-      double? fee = await Get.find<OrderController>().getShippingFee(_selectedLat!, _selectedLng!, branchId);
-      setState(() {
-        _dynamicDeliveryFee = fee;
-      });
-      if (fee != null) {
-        Get.snackbar('Tarifa calculada', 'Costo de envío dinámico: \$${fee.toStringAsFixed(2)}', backgroundColor: Colors.green, colorText: Colors.white);
+      final response = await Get.find<OrderController>().getShippingFee(_selectedLat!, _selectedLng!, branchId);
+      
+      if (response != null) {
+        bool isSuccess = response['success'] ?? false;
+        String message = response['message'] ?? '';
+        
+        if (isSuccess) {
+          final data = response['data'] ?? {};
+          bool isOutOfZone = data['is_out_of_zone'] ?? false;
+          double? fee = data['fee'] != null ? double.tryParse(data['fee'].toString()) : null;
+          
+          if (isOutOfZone && fee != null) {
+            bool? confirm = await Get.dialog<bool>(
+              AlertDialog(
+                title: const Text('Fuera de Cobertura Principal'),
+                content: Text('Estás fuera de nuestra zona base. Podemos realizar la entrega con cobro extra por distancia. El costo total de envío será de \$${fee.toStringAsFixed(2)}. ¿Deseas continuar?'),
+                actions: [
+                  TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancelar')),
+                  ElevatedButton(onPressed: () => Get.back(result: true), child: const Text('Aceptar')),
+                ],
+              ),
+            );
+            if (confirm == true) {
+              setState(() => _dynamicDeliveryFee = fee);
+            } else {
+              setState(() => _dynamicDeliveryFee = null);
+            }
+          } else if (fee != null) {
+            setState(() => _dynamicDeliveryFee = fee);
+            Get.snackbar('Tarifa calculada', 'Costo de envío: \$${fee.toStringAsFixed(2)}', backgroundColor: Colors.green, colorText: Colors.white);
+          } else {
+            setState(() => _dynamicDeliveryFee = null);
+          }
+        } else {
+          final errors = response['errors'] ?? {};
+          bool isOutOfZone = errors['is_out_of_zone'] ?? false;
+          if (isOutOfZone) {
+            Get.dialog(
+              AlertDialog(
+                title: const Text('Sin Cobertura'),
+                content: Text(message.isNotEmpty ? message : 'El restaurante no tiene cobertura para tu ubicación.'),
+                actions: [
+                  ElevatedButton(onPressed: () => Get.back(), child: const Text('Entendido')),
+                ],
+              ),
+            );
+          } else {
+            Get.snackbar('Error', message.isNotEmpty ? message : 'No se pudo calcular la tarifa', backgroundColor: Colors.orange, colorText: Colors.white);
+          }
+          setState(() => _dynamicDeliveryFee = null);
+        }
       } else {
-        Get.snackbar('Error', 'No se pudo calcular la tarifa, se usará la tarifa base de la zona', backgroundColor: Colors.orange, colorText: Colors.white);
+        setState(() => _dynamicDeliveryFee = null);
+        Get.snackbar('Error', 'No se pudo conectar con el servidor', backgroundColor: Colors.red, colorText: Colors.white);
       }
     }
   }

@@ -134,13 +134,11 @@ class OrderController extends GetxController {
     }
   }
 
-  Future<double?> getShippingFee(double lat, double lng, int branchId) async {
+  Future<Map<String, dynamic>?> getShippingFee(double lat, double lng, int branchId) async {
     try {
       Response response = await orderRepo.getShippingFee(lat, lng, branchId);
-      if (response.statusCode == 200) {
-        if (response.body['fee'] != null) {
-          return double.tryParse(response.body['fee'].toString());
-        }
+      if (response.statusCode == 200 || response.statusCode == 400) {
+        return response.body;
       }
     } catch (e) {
       debugPrint("Error getting shipping fee: $e");
