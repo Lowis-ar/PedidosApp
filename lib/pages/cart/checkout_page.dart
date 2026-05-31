@@ -440,7 +440,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     zoneCtrl.setZoneId(matchedZone.id);
                                     Get.snackbar('Zona detectada', 'Se ha seleccionado la zona: ${matchedZone.name}', backgroundColor: Colors.green, colorText: Colors.white);
                                  } else {
-                                    Get.snackbar('Sin cobertura', 'Lo sentimos, no hay cobertura en $locality', backgroundColor: Colors.orange, colorText: Colors.white);
+                                    // Comentado para evitar confusión, ya que el cálculo dinámico decidirá si hay o no cobertura.
+                                    // Get.snackbar('Sin cobertura', 'Lo sentimos, no hay cobertura en $locality', backgroundColor: Colors.orange, colorText: Colors.white);
                                  }
                               }
                             }
