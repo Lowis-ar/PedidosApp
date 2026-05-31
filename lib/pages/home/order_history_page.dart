@@ -591,17 +591,30 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                       ),
                     ],
                   ),
-                  child: QrImageView(
-                    data: otp,
-                    version: QrVersions.auto,
-                    size: 180,
-                    eyeStyle: QrEyeStyle(
-                      eyeShape: QrEyeShape.square,
-                      color: AppColors.mainColor,
-                    ),
-                    dataModuleStyle: QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
-                      color: AppColors.mainColor,
+                  child: SizedBox(
+                    width: 180,
+                    height: 180,
+                    child: QrImageView(
+                      data: otp,
+                      version: QrVersions.auto,
+                      size: 180,
+                      errorStateBuilder: (cxt, err) {
+                        return const Center(
+                          child: Text(
+                            "No se pudo cargar el QR",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.red, fontSize: 13),
+                          ),
+                        );
+                      },
+                      eyeStyle: QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
+                        color: AppColors.mainColor,
+                      ),
+                      dataModuleStyle: QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: AppColors.mainColor,
+                      ),
                     ),
                   ),
                 ),

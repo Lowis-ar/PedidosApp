@@ -1078,102 +1078,119 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   void _showOtpConfirmation(String otp) {
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.check_circle, color: Colors.green, size: 60),
-              ),
-              const SizedBox(height: 14),
-              const Text('¡Pedido Exitoso!',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 6),
-              Text('Tu código de entrega es:',
-                  style: TextStyle(color: Colors.grey.shade600)),
-              const SizedBox(height: 14),
-              // QR Code
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: AppColors.mainColor.withValues(alpha: 0.3), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.mainColor.withValues(alpha: 0.08),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: QrImageView(
-                  data: otp.isNotEmpty ? otp : '0000',
-                  version: QrVersions.auto,
-                  size: 180,
-                  eyeStyle: QrEyeStyle(
-                    eyeShape: QrEyeShape.square,
-                    color: AppColors.mainColor,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
                   ),
-                  dataModuleStyle: QrDataModuleStyle(
-                    dataModuleShape: QrDataModuleShape.square,
-                    color: AppColors.mainColor,
+                  child: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+                ),
+                const SizedBox(height: 14),
+                const Text('¡Pedido Exitoso!',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 6),
+                Text('Tu código de entrega es:',
+                    style: TextStyle(color: Colors.grey.shade600)),
+                const SizedBox(height: 14),
+                // QR Code
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                        color: AppColors.mainColor.withValues(alpha: 0.3), width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.mainColor.withValues(alpha: 0.08),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Código numérico
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.mainColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.mainColor, width: 2),
-                ),
-                child: Text(otp,
-                    style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
+                  child: SizedBox(
+                    width: 180,
+                    height: 180,
+                    child: QrImageView(
+                      data: otp.isNotEmpty ? otp : '0000',
+                      version: QrVersions.auto,
+                      size: 180,
+                      errorStateBuilder: (cxt, err) {
+                        return const Center(
+                          child: Text(
+                            "No se pudo cargar el QR",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.red, fontSize: 13),
+                          ),
+                        );
+                      },
+                      eyeStyle: QrEyeStyle(
+                        eyeShape: QrEyeShape.square,
                         color: AppColors.mainColor,
-                        letterSpacing: 8)),
-              ),
-              const SizedBox(height: 10),
-              Text('Muéstrale el QR o el código al repartidor',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 4),
-            ],
-          ),
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Get.offAllNamed(RouteHelper.getInitial(pageId: 1));
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.mainColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: const Text('Aceptar',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      ),
+                      dataModuleStyle: QrDataModuleStyle(
+                        dataModuleShape: QrDataModuleShape.square,
+                        color: AppColors.mainColor,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Código numérico
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.mainColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.mainColor, width: 2),
+                  ),
+                  child: Text(otp,
+                      style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.mainColor,
+                          letterSpacing: 8)),
+                ),
+                const SizedBox(height: 10),
+                Text('Muéstrale el QR o el código al repartidor',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 4),
+              ],
             ),
           ),
-        ],
-      ),
-      barrierDismissible: false,
+          actions: [
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  Get.offAllNamed(RouteHelper.getInitial(pageId: 1));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.mainColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Aceptar',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
