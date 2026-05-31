@@ -9,6 +9,7 @@ import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/shimmer_widgets.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../review/review_order_page.dart';
 
@@ -541,83 +542,114 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
     );
   }
 
-  /// Muestra el código OTP en un diálogo grande y permite copiarlo
+  /// Muestra el código OTP en un diálogo grande con QR y permite copiarlo
   void _showOtpDialog(String otp) {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.mainColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.lock_open_rounded,
-                  color: AppColors.mainColor, size: 52),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Código de Entrega',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Muéstraselo al repartidor cuando llegue',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: otp));
-                Get.snackbar(
-                  'Copiado',
-                  'El código PIN fue copiado al portapapeles',
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM,
-                  margin: const EdgeInsets.all(16),
-                  duration: const Duration(seconds: 2),
-                );
-              },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.mainColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: AppColors.mainColor, width: 2),
+                  color: AppColors.mainColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      otp,
-                      style: TextStyle(
-                        fontSize: 38,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.mainColor,
-                        letterSpacing: 10,
-                      ),
+                child: Icon(Icons.lock_open_rounded,
+                    color: AppColors.mainColor, size: 48),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Código de Entrega',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Muéstrale el QR o el código al repartidor',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              // QR Code
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.mainColor.withValues(alpha: 0.3), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.mainColor.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
                     ),
-                    const SizedBox(width: 10),
-                    Icon(Icons.copy_rounded,
-                        color: AppColors.mainColor, size: 20),
                   ],
                 ),
+                child: QrImageView(
+                  data: otp,
+                  version: QrVersions.auto,
+                  size: 180,
+                  eyeStyle: QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: AppColors.mainColor,
+                  ),
+                  dataModuleStyle: QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: AppColors.mainColor,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Toca el código para copiarlo',
-              style:
-                  TextStyle(color: Colors.grey.shade400, fontSize: 11),
-            ),
-          ],
+              const SizedBox(height: 14),
+              // Código numérico (toca para copiar)
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(ClipboardData(text: otp));
+                  Get.snackbar(
+                    'Copiado',
+                    'El código PIN fue copiado al portapapeles',
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                    snackPosition: SnackPosition.BOTTOM,
+                    margin: const EdgeInsets.all(16),
+                    duration: const Duration(seconds: 2),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.mainColor.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.mainColor, width: 2),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        otp,
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.mainColor,
+                          letterSpacing: 10,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(Icons.copy_rounded, color: AppColors.mainColor, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Toca el código para copiarlo',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
+              ),
+              const SizedBox(height: 4),
+            ],
+          ),
         ),
         actions: [
           SizedBox(

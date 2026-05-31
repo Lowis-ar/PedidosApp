@@ -21,6 +21,8 @@ dependencies:
   google_maps_flutter: ^2.17.0
   flutter_dotenv: ^6.0.1
   geocoding: ^4.0.0
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^6.0.0
 
 dev_dependencies:
   flutter_test:

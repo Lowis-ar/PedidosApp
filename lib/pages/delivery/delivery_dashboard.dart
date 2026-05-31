@@ -99,7 +99,7 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
         title: GetBuilder<DeliveryAuthController>(builder: (auth) {
           final dm = auth.deliveryman;
           final branchId = dm?.branchId;
-          String branchName = "Cargando...";
+          String branchName = branchId != null ? "Cargando..." : "";
           try {
             final bc = Get.find<BranchController>();
             if (bc.isLoaded && branchId != null) {
@@ -111,9 +111,10 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           } catch (_) {}
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               BigText(text: dm?.name ?? "Repartidor", size: 18),
-              SmallText(text: branchName, size: 12, color: Colors.grey),
+              if (branchName.isNotEmpty) SmallText(text: branchName, size: 12, color: Colors.grey),
             ],
           );
         }),
@@ -125,6 +126,21 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
               value: auth.deliveryman?.isAvailable ?? false,
               activeTrackColor: AppColors.mainColor,
               onChanged: (val) async {
+                if (!val) {
+                  // Intentando desconectarse
+                  final orderController = Get.find<DeliveryOrderController>();
+                  if (orderController.activeOrdersList.isNotEmpty) {
+                    Get.snackbar(
+                      'No puedes desconectarte',
+                      'Aún tienes pedidos en curso. Complétalos primero.',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                      icon: const Icon(Icons.warning, color: Colors.white),
+                    );
+                    return; // No actualizar el estado
+                  }
+                }
+                
                 await auth.updateAvailability(val);
                 if (val) {
                   Get.find<DeliveryOrderController>().getOrders();

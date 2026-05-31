@@ -271,32 +271,34 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 }),
                 SizedBox(height: Dimensions.height30),
                 // Register link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "No tienes una cuenta? ",
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: Dimensions.font16,
-                        color: AppColors.paraColor,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => Get.toNamed(RouteHelper.getRegister()),
-                      child: Text(
-                        'Crear',
+                if (authController.userType == 'customer')
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "No tienes una cuenta? ",
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: Dimensions.font16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.mainBlackColor,
+                          color: AppColors.paraColor,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: Dimensions.height30),
+                      GestureDetector(
+                        onTap: () => Get.toNamed(RouteHelper.getRegister()),
+                        child: Text(
+                          'Crear',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: Dimensions.font16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.mainBlackColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (authController.userType == 'customer')
+                  SizedBox(height: Dimensions.height30),
               ],
             ),
           ),

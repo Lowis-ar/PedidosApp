@@ -51,6 +51,7 @@ class OrderController extends GetxController {
     String? orderNote,
     double? lat,
     double? lng,
+    String paymentMethod = 'cash_on_delivery',
   }) async {
     _isLoading = true;
     update();
@@ -77,6 +78,7 @@ class OrderController extends GetxController {
       Map<String, dynamic> body = {
         'branch_id': branchId,
         'address_id': addressId,
+        'payment_method': paymentMethod,
         'coupon_code': null,
         'use_loyalty_points': false,
         'notes': mainNote,

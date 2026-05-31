@@ -4,6 +4,7 @@ class DeliveryOrderModel {
   int? id;
   int? userId;
   String? orderStatus;
+  String? paymentMethod;
   double? total;
   double? deliveryFee;
   String? deliveryAddress;
@@ -21,6 +22,7 @@ class DeliveryOrderModel {
     this.id,
     this.userId,
     this.orderStatus,
+    this.paymentMethod,
     this.total,
     this.deliveryFee,
     this.deliveryAddress,
@@ -37,6 +39,7 @@ class DeliveryOrderModel {
     userId = json['user_id'];
 
     orderStatus = (json['order_status'] ?? json['status'])?.toString().toLowerCase();
+    paymentMethod = json['payment_method']?.toString() ?? json['payment_type']?.toString();
     
     final totalRaw = json['total'] ?? json['order_amount'];
     total = totalRaw != null ? double.tryParse(totalRaw.toString()) : null;
@@ -107,6 +110,7 @@ class DeliveryOrderModel {
       'id': id,
       'user_id': userId,
       'order_status': orderStatus,
+      'payment_method': paymentMethod,
       'total': total,
       'delivery_fee': deliveryFee,
       'delivery_address': deliveryAddress,

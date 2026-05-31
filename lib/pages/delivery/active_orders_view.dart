@@ -6,6 +6,7 @@ import 'package:pedidosapp/models/delivery_order_model.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
+import 'qr_scanner_page.dart';
 
 class ActiveOrdersView extends StatelessWidget {
   const ActiveOrdersView({super.key});
@@ -138,6 +139,39 @@ class ActiveOrdersView extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 12),
+                
+                // Forma de pago
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      order.paymentMethod == 'cash_on_delivery' || order.paymentMethod == 'cash' || order.paymentMethod == null
+                          ? Icons.money
+                          : Icons.credit_card,
+                      size: 20,
+                      color: order.paymentMethod == 'cash_on_delivery' || order.paymentMethod == 'cash' || order.paymentMethod == null
+                          ? Colors.green
+                          : Colors.blue,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Forma de pago', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                          Text(
+                            order.paymentMethod == 'cash_on_delivery' || order.paymentMethod == 'cash' || order.paymentMethod == null
+                                ? 'Pago en Efectivo'
+                                : 'Pago con Tarjeta',
+                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 12),
                 // Fila de montos
                 Row(
                   children: [
@@ -259,44 +293,82 @@ class ActiveOrdersView extends StatelessWidget {
                     text: 'Pide al cliente su código de confirmación de 4 dígitos',
                     color: Colors.grey),
                 const SizedBox(height: 24),
-                // Campo OTP
-                TextField(
-                  controller: otpInput,
-                  keyboardType: TextInputType.number,
-                  maxLength: 6,
-                  textAlign: TextAlign.center,
-                  autofocus: true,
-                  onChanged: (_) => otpError.value = '',
-                  style: const TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 16),
-                  decoration: InputDecoration(
-                    counterText: '',
-                    hintText: '0000',
-                    hintStyle: TextStyle(
-                        color: Colors.grey.shade300, letterSpacing: 16),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: otpError.value.isNotEmpty
-                              ? Colors.red
-                              : Colors.grey.shade300),
+                // Campo OTP con botón de cámara
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: otpInput,
+                        keyboardType: TextInputType.number,
+                        maxLength: 6,
+                        textAlign: TextAlign.center,
+                        autofocus: true,
+                        onChanged: (_) => otpError.value = '',
+                        style: const TextStyle(
+                            fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 16),
+                        decoration: InputDecoration(
+                          counterText: '',
+                          hintText: '0000',
+                          hintStyle: TextStyle(
+                              color: Colors.grey.shade300, letterSpacing: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: otpError.value.isNotEmpty
+                                    ? Colors.red
+                                    : Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: otpError.value.isNotEmpty
+                                    ? Colors.red
+                                    : Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: otpError.value.isNotEmpty
+                                    ? Colors.red
+                                    : AppColors.mainColor,
+                                width: 2),
+                          ),
+                        ),
+                      ),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: otpError.value.isNotEmpty
-                              ? Colors.red
-                              : Colors.grey.shade300),
+                    const SizedBox(width: 10),
+                    // Botón escanear QR
+                    GestureDetector(
+                      onTap: () async {
+                        final String? scanned = await Get.to(
+                          () => const QRScannerPage(),
+                          fullscreenDialog: true,
+                        );
+                        if (scanned != null && scanned.isNotEmpty) {
+                          otpInput.text = scanned;
+                          otpError.value = '';
+                        }
+                      },
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.mainColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.mainColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.qr_code_scanner,
+                            color: Colors.white, size: 28),
+                      ),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                          color: otpError.value.isNotEmpty
-                              ? Colors.red
-                              : AppColors.mainColor,
-                          width: 2),
-                    ),
-                  ),
+                  ],
                 ),
                 // Error inline debajo del input
                 if (otpError.value.isNotEmpty)

@@ -6,6 +6,7 @@ import 'package:pedidosapp/models/delivery_order_model.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
+import 'qr_scanner_page.dart';
 
 class DeliveryOrderDetailPage extends StatefulWidget {
   const DeliveryOrderDetailPage({super.key});
@@ -70,9 +71,15 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
                 onMap: () => _openMap(order.customer?.lat, order.customer?.lng),
               ),
               
-              const SizedBox(height: 50),
+              const SizedBox(height: 20),
 
-              // 3. Action Buttons
+              // 3. Payment Method Section
+              _buildSectionTitle("FORMA DE PAGO:"),
+              _buildPaymentMethodCard(order.paymentMethod),
+
+              const SizedBox(height: 30),
+
+              // 4. Action Buttons
               if (order.orderStatus == 'accepted')
                 _actionButton(
                   "MARCAR EN CAMINO",
@@ -136,6 +143,59 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
     );
   }
 
+  Widget _buildPaymentMethodCard(String? paymentMethod) {
+    final bool isCash = paymentMethod == null ||
+        paymentMethod == 'cash_on_delivery' ||
+        paymentMethod == 'cash';
+    final Color bgColor = isCash ? Colors.green.shade50 : Colors.blue.shade50;
+    final Color borderColor =
+        isCash ? Colors.green.shade300 : Colors.blue.shade300;
+    final Color iconColor = isCash ? Colors.green.shade700 : Colors.blue.shade700;
+    final IconData icon = isCash ? Icons.payments_outlined : Icons.credit_card;
+    final String label = isCash ? 'Contra Entrega (Efectivo)' : 'Tarjeta de Crédito/Débito';
+    final String subtitle = isCash
+        ? 'El cliente pagará en efectivo al recibir'
+        : 'El cliente ya pagó con tarjeta';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 26),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: iconColor)),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    style: TextStyle(
+                        fontSize: 12, color: iconColor.withValues(alpha: 0.8))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _actionButton(String label, Color color, VoidCallback onTap) {
     return SizedBox(
       width: double.infinity,
@@ -155,22 +215,68 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
     final otpController = TextEditingController();
     Get.dialog(
       AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const BigText(text: "Código PIN de Entrega"),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-             SmallText(text: "Pide al cliente su código de 4 dígitos"),
+            SmallText(text: "Pide al cliente su código de 4 dígitos", color: Colors.grey),
             const SizedBox(height: 20),
-            TextField(
-              controller: otpController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 10),
-              decoration: const InputDecoration(
-                counterText: "",
-                border: OutlineInputBorder(),
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 10),
+                    decoration: InputDecoration(
+                      counterText: "",
+                      hintText: "0000",
+                      hintStyle: TextStyle(color: Colors.grey.shade300),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Botón escanear QR
+                GestureDetector(
+                  onTap: () async {
+                    final String? scanned = await Get.to(
+                      () => const QRScannerPage(),
+                      fullscreenDialog: true,
+                    );
+                    if (scanned != null && scanned.isNotEmpty) {
+                      otpController.text = scanned;
+                    }
+                  },
+                  child: Container(
+                    width: 54,
+                    height: 54,
+                    decoration: BoxDecoration(
+                      color: AppColors.mainColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.mainColor.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.qr_code_scanner,
+                        color: Colors.white, size: 26),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -184,13 +290,16 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
                 Get.back(); // Cerrar diálogo
                 Get.back(); // Volver al dashboard
               }
-              // Si hay error, el snackbar de éxito no se muestra;
-              // el controller no muestra snackbar de error en 422
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.mainColor,
+              foregroundColor: Colors.white,
+            ),
             child: const Text("VERIFICAR"),
           ),
         ],
       ),
     );
   }
+
 }
