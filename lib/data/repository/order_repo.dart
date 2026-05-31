@@ -23,7 +23,7 @@ class OrderRepo {
   }
 
   Future<Response> getShippingFee(double lat, double lng, int branchId) async {
-    return await apiClient.postData('/shipping/fee', {
+    return await apiClient.postData('/api/v1/shipping/fee', {
       'lat': lat,
       'lng': lng,
       'branch_id': branchId,
