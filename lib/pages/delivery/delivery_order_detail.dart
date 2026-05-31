@@ -213,92 +213,99 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
 
   void _showOTPDialog(BuildContext context, DeliveryOrderController controller) {
     final otpController = TextEditingController();
-    Get.dialog(
-      AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const BigText(text: "Código PIN de Entrega"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SmallText(text: "Pide al cliente su código de 4 dígitos", color: Colors.grey),
-            const SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: otpController,
-                    keyboardType: TextInputType.number,
-                    maxLength: 6,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 10),
-                    decoration: InputDecoration(
-                      counterText: "",
-                      hintText: "0000",
-                      hintStyle: TextStyle(color: Colors.grey.shade300),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const BigText(text: "Código PIN de Entrega"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SmallText(text: "Pide al cliente su código de 4 dígitos", color: Colors.grey),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: otpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 30, fontWeight: FontWeight.bold, letterSpacing: 10),
+                      decoration: InputDecoration(
+                        counterText: "",
+                        hintText: "0000",
+                        hintStyle: TextStyle(color: Colors.grey.shade300),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                // Botón escanear QR
-                GestureDetector(
-                  onTap: () async {
-                    final String? scanned = await Get.to(
-                      () => const QRScannerPage(),
-                      fullscreenDialog: true,
-                    );
-                    if (scanned != null && scanned.isNotEmpty) {
-                      otpController.text = scanned;
-                    }
-                  },
-                  child: Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      color: AppColors.mainColor,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.mainColor.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                  const SizedBox(width: 10),
+                  // Botón escanear QR
+                  GestureDetector(
+                    onTap: () async {
+                      final String? scanned = await Get.to(
+                        () => const QRScannerPage(),
+                        fullscreenDialog: true,
+                      );
+                      if (scanned != null && scanned.isNotEmpty) {
+                        otpController.text = scanned;
+                      }
+                    },
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: AppColors.mainColor,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.mainColor.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.qr_code_scanner,
+                          color: Colors.white, size: 26),
                     ),
-                    child: const Icon(Icons.qr_code_scanner,
-                        color: Colors.white, size: 26),
                   ),
-                ),
-              ],
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text("CANCELAR"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final String? errorMsg =
+                    await controller.verifyDeliveryOtp(order.id!, otpController.text);
+                if (errorMsg == null) {
+                  Navigator.of(dialogContext).pop(); // Cerrar diálogo
+                  Get.back(); // Volver al dashboard
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.mainColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("VERIFICAR"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text("CANCELAR")),
-          ElevatedButton(
-            onPressed: () async {
-              final String? errorMsg =
-                  await controller.verifyDeliveryOtp(order.id!, otpController.text);
-              if (errorMsg == null) {
-                Get.back(); // Cerrar diálogo
-                Get.back(); // Volver al dashboard
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.mainColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text("VERIFICAR"),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
