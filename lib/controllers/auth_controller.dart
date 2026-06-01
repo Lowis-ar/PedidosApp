@@ -20,7 +20,7 @@ class AuthController extends GetxController {
   AuthController({required this.authRepo});
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '256020390313-sbun4qebk189iu16ghhrjp06vji12als.apps.googleusercontent.com',
+    serverClientId: '256020390313-sfud3k6e9f6dv7s9cot784u917c37i0l.apps.googleusercontent.com',
     scopes: ['email'],
   );
 
