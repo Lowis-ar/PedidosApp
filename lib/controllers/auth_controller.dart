@@ -19,7 +19,10 @@ class AuthController extends GetxController {
   final AuthRepo authRepo;
   AuthController({required this.authRepo});
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: '256020390313-sbun4qebk189iu16ghhrjp06vji12als.apps.googleusercontent.com',
+    scopes: ['email'],
+  );
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
