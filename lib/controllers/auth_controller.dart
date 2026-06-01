@@ -8,6 +8,9 @@ import 'package:pedidosapp/models/deliveryman_model.dart';
 import 'package:pedidosapp/utils/app_constants.dart';
 import 'package:pedidosapp/routes/route_helper.dart';
 import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/utils/dimensions.dart';
 
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 import 'package:pedidosapp/helper/dependencies.dart' as dep;
@@ -15,6 +18,8 @@ import 'package:pedidosapp/helper/dependencies.dart' as dep;
 class AuthController extends GetxController {
   final AuthRepo authRepo;
   AuthController({required this.authRepo});
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -150,6 +155,247 @@ class AuthController extends GetxController {
       _isLoading = false;
       update();
     }
+  }
+
+  Future<void> signInWithGoogle() async {
+    _isLoading = true;
+    update();
+
+    try {
+      // Intentar forzar el inicio de sesión y desconectar previa cuenta para asegurar selección limpia de cuenta
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        debugPrint("Error signing out Google before signing in: $e");
+      }
+
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // Cancelado por el usuario
+        _isLoading = false;
+        update();
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        _isLoading = false;
+        update();
+        _showError('No se pudo obtener el ID Token de Google.');
+        return;
+      }
+
+      Response response = await authRepo.googleLogin(idToken);
+      await _handleGoogleLoginResponse(response, idToken);
+    } catch (e) {
+      debugPrint("Error signing in with Google: $e");
+      _showError('Error al iniciar sesión con Google.');
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<void> _handleGoogleLoginResponse(Response response, String idToken) async {
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final body = response.body;
+      if (body != null) {
+        final bool requiresPhone = body['data']?['requires_phone'] ?? body['requires_phone'] ?? false;
+        if (requiresPhone) {
+          _isLoading = false;
+          update();
+          // Abrir cuadro de diálogo premium para registrar teléfono
+          _showPhonePickerDialog(idToken);
+        } else {
+          final String? token = body['data']?['token'] ?? body['token'] ?? body['access_token'];
+          final dynamic userJson = body['user'] ?? body['data']?['user'] ?? body['data'];
+
+          if (token != null && userJson != null) {
+            final userMap = Map<String, dynamic>.from(userJson);
+            final user = UserModel.fromJson(userMap);
+            _saveSession(token, user, 'customer', rawJson: userMap);
+          } else {
+            _showError('El servidor no envió datos válidos');
+          }
+        }
+      }
+    } else {
+      _isLoading = false;
+      update();
+      _handleApiError(response, 'Error de autenticación con Google');
+    }
+  }
+
+  void _showPhonePickerDialog(String idToken) {
+    final TextEditingController phoneController = TextEditingController();
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Dimensions.radius20),
+        ),
+        elevation: 10,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.all(Dimensions.height20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Ilustración de cabecera usando vectores de material design (sin emojis)
+                Container(
+                  padding: EdgeInsets.all(Dimensions.height15),
+                  decoration: BoxDecoration(
+                    color: AppColors.mainColor.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.phone_android_rounded,
+                    size: Dimensions.iconSize24 * 1.5,
+                    color: AppColors.mainColor,
+                  ),
+                ),
+                SizedBox(height: Dimensions.height15),
+                Text(
+                  "Completa tu perfil",
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: Dimensions.font20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.mainBlackColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: Dimensions.height10),
+                Text(
+                  "Necesitamos tu número de teléfono para que el repartidor pueda comunicarse contigo al entregar tu pedido.",
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: Dimensions.font16,
+                    color: AppColors.paraColor,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: Dimensions.height20),
+                // Campo de texto de teléfono premium
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  style: TextStyle(
+                    color: AppColors.mainBlackColor,
+                    fontSize: Dimensions.font16,
+                  ),
+                  decoration: InputDecoration(
+                    prefixIcon: Icon(
+                      Icons.phone_rounded,
+                      color: AppColors.mainColor,
+                    ),
+                    hintText: "71234567",
+                    hintStyle: TextStyle(
+                      color: AppColors.textColor,
+                    ),
+                    labelText: "Número de Teléfono",
+                    labelStyle: TextStyle(
+                      color: AppColors.paraColor,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(Dimensions.radius15),
+                      borderSide: BorderSide(
+                        color: AppColors.mainColor,
+                        width: 2.0,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(Dimensions.radius15),
+                      borderSide: BorderSide(
+                        color: AppColors.textColor,
+                        width: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: Dimensions.height20),
+                // Acciones del modal
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Get.back();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.symmetric(vertical: Dimensions.height15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(Dimensions.radius15),
+                          ),
+                        ),
+                        child: Text(
+                          "Cancelar",
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: Dimensions.font16,
+                            color: AppColors.singColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: Dimensions.width10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final phone = phoneController.text.trim();
+                          if (phone.isEmpty) {
+                            _showError('Por favor ingresa tu número de teléfono.');
+                            return;
+                          }
+                          final cleanPhone = phone.replaceAll(RegExp(r'\s+'), '');
+                          if (cleanPhone.length < 8) {
+                            _showError('Por favor ingresa un número de teléfono válido.');
+                            return;
+                          }
+                          Get.back(); // cerrar diálogo
+                          
+                          _isLoading = true;
+                          update();
+
+                          try {
+                            Response response = await authRepo.googleLogin(idToken, phone: cleanPhone);
+                            await _handleGoogleLoginResponse(response, idToken);
+                          } catch (e) {
+                            _showError('Error al registrar el teléfono.');
+                            _isLoading = false;
+                            update();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.mainColor,
+                          padding: EdgeInsets.symmetric(vertical: Dimensions.height15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(Dimensions.radius15),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: Text(
+                          "Confirmar",
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: Dimensions.font16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
   }
 
   Future<void> getProfile() async {

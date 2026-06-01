@@ -13,6 +13,7 @@ class AppConstants {
   static const String FORGOT_PASSWORD_URI = "/api/v1/auth/forgot-password";
   static const String RESET_PASSWORD_URI = "/api/v1/auth/reset-password";
   static const String VERIFY_EMAIL_URI = "/api/v1/auth/verify-email";
+  static const String GOOGLE_LOGIN_URI = "/api/v1/auth/google-login";
 
   // Product endpoints
   static const String POPULAR_PRODUCT_URI = "/api/v1/products?popular=true";

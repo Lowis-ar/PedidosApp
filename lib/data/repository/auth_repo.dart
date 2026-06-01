@@ -13,6 +13,23 @@ class AuthRepo extends GetxService {
     });
   }
 
+  Future<Response> googleLogin(String idToken, {String? phone}) async {
+    String? formattedPhone;
+    if (phone != null) {
+      formattedPhone = phone.replaceAll(RegExp(r'\s+'), '');
+      if (formattedPhone.length == 8) {
+        formattedPhone = '+503$formattedPhone';
+      }
+    }
+    final Map<String, dynamic> body = {
+      'id_token': idToken,
+    };
+    if (formattedPhone != null) {
+      body['phone'] = formattedPhone;
+    }
+    return await apiClient.postData(AppConstants.GOOGLE_LOGIN_URI, body);
+  }
+
   Future<Response> register(String name, String phone, String email, String password) async {
     String formattedPhone = phone.replaceAll(RegExp(r'\s+'), '');
     if (formattedPhone.length == 8) {

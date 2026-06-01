@@ -297,8 +297,76 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                       ),
                     ],
                   ),
-                if (authController.userType == 'customer')
+                if (authController.userType == 'customer') ...[
+                  SizedBox(height: Dimensions.height20),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Divider(thickness: 1, color: Color(0xFFE0E0E0))),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: Dimensions.width10),
+                          child: Text(
+                            "o",
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              color: AppColors.paraColor,
+                              fontSize: Dimensions.font16 * 0.9,
+                            ),
+                          ),
+                        ),
+                        const Expanded(child: Divider(thickness: 1, color: Color(0xFFE0E0E0))),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: Dimensions.height20),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
+                    child: GestureDetector(
+                      onTap: authController.isLoading
+                          ? null
+                          : () async {
+                              await authController.signInWithGoogle();
+                            },
+                      child: Container(
+                        height: Dimensions.screenHeight / 14,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(Dimensions.radius30),
+                          border: Border.all(color: const Color(0xFFE0E0E0), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withValues(alpha: 0.05),
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/image/google.png',
+                              width: Dimensions.iconSize24,
+                              height: Dimensions.iconSize24,
+                            ),
+                            SizedBox(width: Dimensions.width15),
+                            Text(
+                              "Continuar con Google",
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: Dimensions.font18,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF5F6368),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   SizedBox(height: Dimensions.height30),
+                ],
               ],
             ),
           ),
