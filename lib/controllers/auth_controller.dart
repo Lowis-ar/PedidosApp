@@ -194,7 +194,7 @@ class AuthController extends GetxController {
       await _handleGoogleLoginResponse(response, idToken);
     } catch (e) {
       debugPrint("Error signing in with Google: $e");
-      _showError('Error al iniciar sesión con Google.');
+      _showError('Error al iniciar sesión con Google: $e');
       _isLoading = false;
       update();
     }
