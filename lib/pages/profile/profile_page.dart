@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
@@ -32,34 +33,104 @@ class ProfilePage extends StatelessWidget {
             children: [
               SizedBox(height: Dimensions.height30),
               // Avatar
+              // Avatar
               Center(
-                child: Container(
-                  width: Dimensions.screenHeight * 0.15,
-                  height: Dimensions.screenHeight * 0.15,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.mainColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.mainColor.withValues(alpha: 0.3),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
+                child: Stack(
+                  children: [
+                    Container(
+                      width: Dimensions.screenHeight * 0.15,
+                      height: Dimensions.screenHeight * 0.15,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.mainColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.mainColor.withValues(alpha: 0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      (user.name ?? 'U').substring(0, 1).toUpperCase(),
-                      style: TextStyle(
-                        fontFamily: 'Roboto',
-                        fontSize: Dimensions.font26 * 2,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      child: ClipOval(
+                        child: authController.pickedImage != null
+                            ? Image.file(
+                                File(authController.pickedImage!.path),
+                                width: Dimensions.screenHeight * 0.15,
+                                height: Dimensions.screenHeight * 0.15,
+                                fit: BoxFit.cover,
+                              )
+                            : (user.image != null && user.image!.isNotEmpty)
+                                ? Image.network(
+                                    user.image!,
+                                    width: Dimensions.screenHeight * 0.15,
+                                    height: Dimensions.screenHeight * 0.15,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Text(
+                                          (user.name ?? 'U').substring(0, 1).toUpperCase(),
+                                          style: TextStyle(
+                                            fontFamily: 'Roboto',
+                                            fontSize: Dimensions.font26 * 2,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
+                                    child: Text(
+                                      (user.name ?? 'U').substring(0, 1).toUpperCase(),
+                                      style: TextStyle(
+                                        fontFamily: 'Roboto',
+                                        fontSize: Dimensions.font26 * 2,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: GestureDetector(
+                        onTap: () {
+                          authController.pickImage();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.mainColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (authController.pickedImage != null) ...[
+                SizedBox(height: Dimensions.height10),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    authController.updateProfile(user.name ?? '', user.phone ?? '');
+                  },
+                  icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white),
+                  label: const Text('Guardar Imagen', style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mainColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+              ],
               SizedBox(height: Dimensions.height15),
               Text(
                 user.name ?? '',
@@ -72,7 +143,12 @@ class ProfilePage extends StatelessWidget {
               ),
               SizedBox(height: Dimensions.height30 * 1.5),
               // Info rows
-              _profileRow(Icons.person_outline, user.name ?? 'Sin nombre'),
+              _profileRowEditable(
+                Icons.person_outline,
+                user.name ?? 'Sin nombre',
+                'Editar Nombre',
+                () => _showEditNameDialog(context, authController),
+              ),
               _profileRow(Icons.email_outlined, user.email ?? 'Sin correo'),
               _profileRowEditable(
                 Icons.phone_outlined,
@@ -267,6 +343,42 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  void _showEditNameDialog(BuildContext context, AuthController authController) {
+    final nameController = TextEditingController(text: authController.user?.name);
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Editar Nombre', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: nameController,
+          keyboardType: TextInputType.name,
+          decoration: InputDecoration(
+            labelText: 'Nuevo nombre',
+            prefixIcon: Icon(Icons.person, color: AppColors.mainColor),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                Get.back();
+                authController.updateProfile(nameController.text, authController.user?.phone ?? '');
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),
+            child: const Text('Guardar', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showEditPhoneDialog(BuildContext context, AuthController authController) {
     final phoneController = TextEditingController(text: authController.user?.phone);
     Get.dialog(
@@ -292,7 +404,7 @@ class ProfilePage extends StatelessWidget {
             onPressed: () {
               if (phoneController.text.isNotEmpty) {
                 Get.back();
-                authController.updateProfile(phoneController.text);
+                authController.updateProfile(authController.user?.name ?? '', phoneController.text);
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),

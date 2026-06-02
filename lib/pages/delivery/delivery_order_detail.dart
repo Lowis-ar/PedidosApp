@@ -77,9 +77,15 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
               _buildSectionTitle("FORMA DE PAGO:"),
               _buildPaymentMethodCard(order.paymentMethod),
 
+              const SizedBox(height: 20),
+
+              // 4. Resumen del Pedido (Total e Items)
+              _buildSectionTitle("RESUMEN DEL PEDIDO:"),
+              _buildOrderSummaryCard(order),
+
               const SizedBox(height: 30),
 
-              // 4. Action Buttons
+              // 5. Action Buttons
               if (order.orderStatus == 'accepted')
                 _actionButton(
                   "MARCAR EN CAMINO",
@@ -87,7 +93,7 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
                   () => controller.markAsOnWay(order.id!),
                 ),
               
-              if (order.orderStatus == 'on_the_way' || order.orderStatus == 'picked_up')
+              if (order.orderStatus == 'on_the_way' || order.orderStatus == 'picked_up' || order.orderStatus == 'on_way')
                 _actionButton(
                   "ENTREGAR PEDIDO (OTP)",
                   Colors.green,
@@ -211,6 +217,68 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
     );
   }
 
+  Widget _buildOrderSummaryCard(DeliveryOrderModel order) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Lista de Productos
+          if (order.details != null && order.details!.isNotEmpty)
+            ...order.details!.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  Text(
+                    "${item.quantity}x",
+                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.mainColor),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      item.name ?? "Producto sin nombre",
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  Text(
+                    item.price != null ? "\$${item.price}" : "",
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ))
+          else
+            SmallText(
+              text: "No hay detalles del producto en el servidor",
+              color: Colors.grey,
+            ),
+
+          const Divider(height: 25),
+
+          // Total a Cobrar
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const BigText(text: "Total a Cobrar:", size: 16),
+              BigText(
+                text: order.total != null
+                    ? "\$${order.total!.toStringAsFixed(2)}"
+                    : "N/A",
+                size: 18,
+                color: AppColors.mainColor,
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
   void _showOTPDialog(BuildContext context, DeliveryOrderController controller) {
     final otpController = TextEditingController();
     Get.dialog(
@@ -287,8 +355,17 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
               final String? errorMsg =
                   await controller.verifyDeliveryOtp(order.id!, otpController.text);
               if (errorMsg == null) {
-                Get.back(); // Cerrar diálogo
-                Get.back(); // Volver al dashboard
+                Navigator.pop(context); // Cerrar diálogo
+                Navigator.pop(context); // Volver al dashboard
+              } else {
+                Get.snackbar(
+                  'Error de Verificación',
+                  errorMsg,
+                  backgroundColor: Colors.redAccent,
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM,
+                  margin: const EdgeInsets.all(16),
+                );
               }
             },
             style: ElevatedButton.styleFrom(

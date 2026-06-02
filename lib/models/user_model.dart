@@ -3,6 +3,7 @@ class UserModel {
   String? name;
   String? phone;
   String? email;
+  String? image;
   String? role;
   int? orderCount;
   String? createdAt;
@@ -12,6 +13,7 @@ class UserModel {
     this.name,
     this.phone,
     this.email,
+    this.image,
     this.role,
     this.orderCount,
     this.createdAt,
@@ -23,6 +25,7 @@ class UserModel {
     name = json['name'] ?? json['f_name'];
     phone = json['phone'];
     email = json['email'];
+    image = json['image'] ?? json['image_url'] ?? json['profile_photo'];
     role = json['role'];
     orderCount = json['order_count'];
     createdAt = json['created_at'];
@@ -34,6 +37,7 @@ class UserModel {
       'name': name,
       'phone': phone,
       'email': email,
+      'image': image,
       'role': role,
       'order_count': orderCount,
       'created_at': createdAt,

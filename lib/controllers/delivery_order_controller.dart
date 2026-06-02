@@ -48,12 +48,6 @@ class DeliveryOrderController extends GetxController {
   double get todayEarnings => _todayEarnings;
 
   @override
-  void onInit() {
-    super.onInit();
-    startPolling();
-  }
-
-  @override
   void onClose() {
     _pollingTimer?.cancel();
     super.onClose();

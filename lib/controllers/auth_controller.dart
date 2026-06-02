@@ -11,6 +11,7 @@ import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
 
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 import 'package:pedidosapp/helper/dependencies.dart' as dep;
+import 'package:image_picker/image_picker.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
@@ -18,6 +19,18 @@ class AuthController extends GetxController {
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  XFile? _pickedImage;
+  XFile? get pickedImage => _pickedImage;
+
+  Future<void> pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    if (image != null) {
+      _pickedImage = image;
+      update();
+    }
+  }
 
   String _token = '';
   String get token => _token;
@@ -169,18 +182,35 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> updateProfile(String phone) async {
+  Future<void> updateProfile(String name, String phone) async {
     _isLoading = true;
     update();
     try {
-      Response response = await authRepo.updateProfile({
-        'f_name': _user?.name,
+      Map<String, dynamic> data = {
+        'name': name,
         'phone': phone,
-      });
+      };
+
+      if (_pickedImage != null) {
+        data['image'] = MultipartFile(
+          await _pickedImage!.readAsBytes(),
+          filename: _pickedImage!.name,
+        );
+      }
+
+      Response response = await authRepo.updateProfile(data);
       if (response.statusCode == 200) {
+        _user?.name = name;
         _user?.phone = phone;
+
+        final responseData = response.body['data']?['user'] ?? response.body['user'];
+        if (responseData != null) {
+           _user = UserModel.fromJson(Map<String, dynamic>.from(responseData));
+        }
+
         _storage.write('user', _user?.toJson());
-        Get.snackbar('Éxito', 'Teléfono actualizado',
+        _pickedImage = null; // Clear after success
+        Get.snackbar('Éxito', 'Perfil actualizado',
           backgroundColor: Colors.green, colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
         update();
