@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
@@ -27,11 +28,71 @@ class DeliveryProfilePage extends StatelessWidget {
           child: Column(
             children: [
               // Avatar & Rating
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: AppColors.mainColor.withValues(alpha: 0.1),
-                child: Icon(Icons.person, size: 50, color: AppColors.mainColor),
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundColor: AppColors.mainColor.withValues(alpha: 0.1),
+                    child: ClipOval(
+                      child: auth.pickedImage != null
+                          ? Image.file(
+                              File(auth.pickedImage!.path),
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            )
+                          : (dm.image != null && dm.image!.isNotEmpty)
+                              ? Image.network(
+                                  dm.image!,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(Icons.person, size: 50, color: AppColors.mainColor);
+                                  },
+                                )
+                              : Icon(Icons.person, size: 50, color: AppColors.mainColor),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: () {
+                        auth.pickImage();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: AppColors.mainColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              if (auth.pickedImage != null) ...[
+                const SizedBox(height: 10),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    auth.updateProfile(dm.name ?? '', dm.phone ?? '');
+                  },
+                  icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 18),
+                  label: const Text('GUARDAR IMAGEN', style: TextStyle(color: Colors.white, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mainColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

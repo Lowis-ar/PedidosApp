@@ -3,6 +3,7 @@ class DeliverymanModel {
   String? name;
   String? email;
   String? phone;
+  String? image;
   String? vehicleType;
   String? licensePlate;
   int? branchId;
@@ -16,6 +17,7 @@ class DeliverymanModel {
     this.name = "",
     this.email = "",
     this.phone = "",
+    this.image,
     this.vehicleType = "N/A",
     this.licensePlate = "N/A",
     this.branchId,
@@ -30,6 +32,7 @@ class DeliverymanModel {
     name = json['name'];
     email = json['email'];
     phone = json['phone'];
+    image = json['image'] ?? json['image_url'] ?? json['profile_photo'];
     vehicleType = json['vehicle_type'];
     licensePlate = json['license_plate'];
     branchId = json['branch_id'];
@@ -45,6 +48,7 @@ class DeliverymanModel {
       'name': name,
       'email': email,
       'phone': phone,
+      'image': image,
       'vehicle_type': vehicleType,
       'license_plate': licensePlate,
       'branch_id': branchId,

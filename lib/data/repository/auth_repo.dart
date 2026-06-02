@@ -53,7 +53,7 @@ class AuthRepo extends GetxService {
   }
 
   Future<Response> updateProfile(Map<String, dynamic> data) async {
-    return await apiClient.putData(AppConstants.UPDATE_PROFILE_URI, data);
+    return await apiClient.postData(AppConstants.UPDATE_PROFILE_URI, FormData(data));
   }
 
   Future<Response> changePassword(String currentPassword, String newPassword) async {

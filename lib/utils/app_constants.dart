@@ -52,7 +52,7 @@ class AppConstants {
   static const String DELIVERY_ORDER_LIST_URI = "/api/v1/delivery/orders";
 
   // Storage keys
-  static const String TOKEN = "";
+  static const String TOKEN = "token";
   static const String USER_KEY = "user_data";
   static const String DELIVERY_USER_KEY = "delivery_user_data";
   static const String DELIVERY_TOKEN = "delivery_token";

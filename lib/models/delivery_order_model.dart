@@ -41,10 +41,24 @@ class DeliveryOrderModel {
     orderStatus = (json['order_status'] ?? json['status'])?.toString().toLowerCase();
     paymentMethod = json['payment_method']?.toString() ?? json['payment_type']?.toString();
     
-    final totalRaw = json['total'] ?? json['order_amount'];
-    total = totalRaw != null ? double.tryParse(totalRaw.toString()) : null;
-    
-    deliveryFee = json['delivery_fee'] != null ? double.tryParse(json['delivery_fee'].toString()) ?? 0.0 : 0.0;
+    // Parseo robusto: limpia caracteres no numéricos (comas, $, espacios) antes de parsear
+    final totalRaw = json['order_amount'] ?? json['total'];
+    if (totalRaw != null) {
+      final cleanTotal = totalRaw.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+      total = double.tryParse(cleanTotal);
+    }
+
+    // Extraer la ganancia del repartidor priorizando el nuevo campo del backend.
+    // 'deliveryman_payout' = tarifa fija de zona (lo que cobra el repartidor).
+    // 'delivery_fee' = lo que paga el cliente (puede ser $0 si aplicó promo de envío gratis).
+    // Ambos campos son independientes: los descuentos los absorbe el restaurante.
+    final feeRaw = json['deliveryman_payout'] ?? json['delivery_fee'] ?? json['shipping_fee'];
+    if (feeRaw != null) {
+      final cleanFee = feeRaw.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+      deliveryFee = double.tryParse(cleanFee) ?? 0.0;
+    } else {
+      deliveryFee = 0.0;
+    }
 
     restaurant = json['branch'] != null
         ? Restaurant.fromJson(json['branch'])
@@ -141,7 +155,8 @@ class DeliveryOrderDetail {
     foodId = json['product_id'] ?? json['food_id']; 
     name = json['product_name'] ?? json['name'];
     quantity = json['quantity'];
-    price = json['price']?.toString();
+    // Soporta tanto 'unit_price' como 'price' según lo que devuelva el backend
+    price = json['unit_price']?.toString() ?? json['price']?.toString();
     img = json['product_image'] ?? json['img'];
   }
 

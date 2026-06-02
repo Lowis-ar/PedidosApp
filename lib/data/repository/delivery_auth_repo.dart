@@ -18,7 +18,7 @@ class DeliveryAuthRepo {
   }
 
   Future<Response> updateProfile(Map<String, dynamic> data) async {
-    return await apiClient.putData(AppConstants.DELIVERY_UPDATE_PROFILE_URI, data);
+    return await apiClient.postData(AppConstants.DELIVERY_UPDATE_PROFILE_URI, FormData(data));
   }
 
   Future<Response> logout() async {
