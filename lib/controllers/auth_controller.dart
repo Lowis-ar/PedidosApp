@@ -16,6 +16,7 @@ import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 import 'package:pedidosapp/helper/dependencies.dart' as dep;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'dart:io';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
@@ -34,16 +35,26 @@ class AuthController extends GetxController {
 
   Future<void> pickImage() async {
     final ImagePicker picker = ImagePicker();
+    debugPrint("[AuthController] Launching ImagePicker...");
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (image != null) {
+      debugPrint("[AuthController] Image picked: ${image.path}, launching image cropper...");
       final XFile? cropped = await _cropImage(image.path);
       if (cropped != null) {
+        debugPrint("[AuthController] Image crop completed: ${cropped.path}");
         _pickedImage = cropped;
         update();
         if (_user != null) {
+          debugPrint("[AuthController] Triggering updateProfile automatic upload...");
           await updateProfile(_user!.name ?? '', _user!.phone ?? '');
+        } else {
+          debugPrint("[AuthController] User is null, cannot upload profile picture.");
         }
+      } else {
+        debugPrint("[AuthController] Image crop cancelled by user.");
       }
+    } else {
+      debugPrint("[AuthController] Image picking cancelled by user.");
     }
   }
 
@@ -477,10 +488,17 @@ class AuthController extends GetxController {
       };
 
       if (_pickedImage != null) {
-        data['image'] = MultipartFile(
-          await _pickedImage!.readAsBytes(),
-          filename: _pickedImage!.name,
-        );
+        debugPrint("[AuthController] Profile update image file path: ${_pickedImage!.path}");
+        final file = File(_pickedImage!.path);
+        if (await file.exists()) {
+          debugPrint("[AuthController] Profile image file exists, size: ${await file.length()} bytes");
+          data['image'] = MultipartFile(
+            file,
+            filename: _pickedImage!.name,
+          );
+        } else {
+          debugPrint("[AuthController] Warning: Profile image file does not exist at path!");
+        }
       }
 
       Response response = await authRepo.updateProfile(data);

@@ -9,6 +9,7 @@ import 'delivery_order_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:pedidosapp/utils/colors.dart';
+import 'dart:io';
 
 class DeliveryAuthController extends GetxController {
   final DeliveryAuthRepo deliveryAuthRepo;
@@ -22,16 +23,26 @@ class DeliveryAuthController extends GetxController {
 
   Future<void> pickImage() async {
     final ImagePicker picker = ImagePicker();
+    debugPrint("[DeliveryAuthController] Launching ImagePicker...");
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (image != null) {
+      debugPrint("[DeliveryAuthController] Image picked: ${image.path}, launching image cropper...");
       final XFile? cropped = await _cropImage(image.path);
       if (cropped != null) {
+        debugPrint("[DeliveryAuthController] Image crop completed: ${cropped.path}");
         _pickedImage = cropped;
         update();
         if (_deliveryman != null) {
+          debugPrint("[DeliveryAuthController] Triggering updateProfile automatic upload...");
           await updateProfile(_deliveryman!.name ?? '', _deliveryman!.phone ?? '');
+        } else {
+          debugPrint("[DeliveryAuthController] Deliveryman is null, cannot upload profile picture.");
         }
+      } else {
+        debugPrint("[DeliveryAuthController] Image crop cancelled by user.");
       }
+    } else {
+      debugPrint("[DeliveryAuthController] Image picking cancelled by user.");
     }
   }
 
@@ -195,10 +206,17 @@ class DeliveryAuthController extends GetxController {
       Map<String, dynamic> data = {'name': name, 'phone': phone};
       
       if (_pickedImage != null) {
-        data['image'] = MultipartFile(
-          await _pickedImage!.readAsBytes(),
-          filename: _pickedImage!.name,
-        );
+        debugPrint("[DeliveryAuthController] Profile update image file path: ${_pickedImage!.path}");
+        final file = File(_pickedImage!.path);
+        if (await file.exists()) {
+          debugPrint("[DeliveryAuthController] Profile image file exists, size: ${await file.length()} bytes");
+          data['image'] = MultipartFile(
+            file,
+            filename: _pickedImage!.name,
+          );
+        } else {
+          debugPrint("[DeliveryAuthController] Warning: Profile image file does not exist at path!");
+        }
       }
 
       Response response = await deliveryAuthRepo.updateProfile(data);
