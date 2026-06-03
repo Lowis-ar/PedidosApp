@@ -92,7 +92,11 @@ class ApiClient extends GetConnect implements GetxService {
 
   Future<Response> postData(String uri, dynamic body, {bool handleError = true}) async {
     try {
-      final Response response = await post(uri, body, headers: _mainHeaders);
+      final Map<String, String> headers = Map<String, String>.from(_mainHeaders);
+      if (body is FormData) {
+        headers.remove('Content-Type');
+      }
+      final Response response = await post(uri, body, headers: headers);
       _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
@@ -103,7 +107,11 @@ class ApiClient extends GetConnect implements GetxService {
 
   Future<Response> putData(String uri, dynamic body, {bool handleError = true}) async {
     try {
-      final Response response = await put(uri, body, headers: _mainHeaders);
+      final Map<String, String> headers = Map<String, String>.from(_mainHeaders);
+      if (body is FormData) {
+        headers.remove('Content-Type');
+      }
+      final Response response = await put(uri, body, headers: headers);
       _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {

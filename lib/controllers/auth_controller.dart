@@ -15,6 +15,7 @@ import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
 import 'package:pedidosapp/helper/dependencies.dart' as dep;
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
@@ -35,9 +36,44 @@ class AuthController extends GetxController {
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (image != null) {
-      _pickedImage = image;
-      update();
+      final XFile? cropped = await _cropImage(image.path);
+      if (cropped != null) {
+        _pickedImage = cropped;
+        update();
+        if (_user != null) {
+          await updateProfile(_user!.name ?? '', _user!.phone ?? '');
+        }
+      }
     }
+  }
+
+  Future<XFile?> _cropImage(String path) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: path,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Recortar Imagen',
+          toolbarColor: AppColors.mainColor,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          aspectRatioPresets: [
+            CropAspectRatioPreset.square,
+          ],
+        ),
+        IOSUiSettings(
+          title: 'Recortar Imagen',
+          aspectRatioLockEnabled: true,
+          aspectRatioPresets: [
+            CropAspectRatioPreset.square,
+          ],
+        ),
+      ],
+    );
+    if (croppedFile != null) {
+      return XFile(croppedFile.path);
+    }
+    return null;
   }
 
   String _token = '';

@@ -78,21 +78,6 @@ class DeliveryProfilePage extends StatelessWidget {
                   ),
                 ],
               ),
-              if (auth.pickedImage != null) ...[
-                const SizedBox(height: 10),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    auth.updateProfile(dm.name ?? '', dm.phone ?? '');
-                  },
-                  icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white, size: 18),
-                  label: const Text('GUARDAR IMAGEN', style: TextStyle(color: Colors.white, fontSize: 12)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mainColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                ),
-              ],
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

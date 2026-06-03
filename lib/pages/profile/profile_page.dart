@@ -117,20 +117,6 @@ class ProfilePage extends StatelessWidget {
                   ],
                 ),
               ),
-              if (authController.pickedImage != null) ...[
-                SizedBox(height: Dimensions.height10),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    authController.updateProfile(user.name ?? '', user.phone ?? '');
-                  },
-                  icon: const Icon(Icons.cloud_upload_outlined, color: Colors.white),
-                  label: const Text('Guardar Imagen', style: TextStyle(color: Colors.white)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.mainColor,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                ),
-              ],
               SizedBox(height: Dimensions.height15),
               Text(
                 user.name ?? '',
