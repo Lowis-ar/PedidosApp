@@ -32,7 +32,20 @@ class DeliverymanModel {
     name = json['name'];
     email = json['email'];
     phone = json['phone'];
-    image = json['image'] ?? json['image_url'] ?? json['profile_photo'];
+    // Prioritize absolute URLs starting with http/https over relative paths
+    final String? rawImage = json['image']?.toString();
+    final String? imageUrl = json['image_url']?.toString();
+    final String? profilePhoto = json['profile_photo']?.toString();
+
+    if (imageUrl != null && imageUrl.startsWith('http')) {
+      image = imageUrl;
+    } else if (profilePhoto != null && profilePhoto.startsWith('http')) {
+      image = profilePhoto;
+    } else if (rawImage != null && rawImage.startsWith('http')) {
+      image = rawImage;
+    } else {
+      image = rawImage ?? imageUrl ?? profilePhoto;
+    }
     vehicleType = json['vehicle_type'];
     licensePlate = json['license_plate'];
     branchId = json['branch_id'];

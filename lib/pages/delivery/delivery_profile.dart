@@ -19,7 +19,11 @@ class DeliveryProfilePage extends StatelessWidget {
         elevation: 0,
         backgroundColor: Colors.white,
       ),
-      body: GetBuilder<DeliveryAuthController>(builder: (auth) {
+      body: GetBuilder<DeliveryAuthController>(
+        initState: (_) {
+          Get.find<DeliveryAuthController>().getProfile();
+        },
+        builder: (auth) {
         if (auth.deliveryman == null) return const Center(child: CircularProgressIndicator());
         
         var dm = auth.deliveryman!;

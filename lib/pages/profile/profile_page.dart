@@ -22,7 +22,11 @@ class ProfilePage extends StatelessWidget {
         centerTitle: true,
         elevation: 0,
       ),
-      body: GetBuilder<AuthController>(builder: (authController) {
+      body: GetBuilder<AuthController>(
+        initState: (_) {
+          Get.find<AuthController>().getProfile();
+        },
+        builder: (authController) {
         final user = authController.user;
         if (user == null) {
           return const Center(child: Text('No se pudo cargar la informacion del usuario'));

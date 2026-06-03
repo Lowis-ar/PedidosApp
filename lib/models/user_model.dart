@@ -25,7 +25,20 @@ class UserModel {
     name = json['name'] ?? json['f_name'];
     phone = json['phone'];
     email = json['email'];
-    image = json['image'] ?? json['image_url'] ?? json['profile_photo'];
+    // Prioritize absolute URLs starting with http/https over relative paths
+    final String? imageUrl = json['image_url']?.toString();
+    final String? profilePhoto = json['profile_photo']?.toString();
+    final String? rawImage = json['image']?.toString();
+
+    if (imageUrl != null && imageUrl.startsWith('http')) {
+      image = imageUrl;
+    } else if (profilePhoto != null && profilePhoto.startsWith('http')) {
+      image = profilePhoto;
+    } else if (rawImage != null && rawImage.startsWith('http')) {
+      image = rawImage;
+    } else {
+      image = imageUrl ?? profilePhoto ?? rawImage;
+    }
     role = json['role'];
     orderCount = json['order_count'];
     createdAt = json['created_at'];

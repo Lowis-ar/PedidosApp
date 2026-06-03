@@ -466,7 +466,7 @@ class AuthController extends GetxController {
       Response response = await authRepo.getProfile();
       if (response.statusCode == 200) {
         final body = response.body;
-        final dynamic userData = body['data'] ?? body;
+        final dynamic userData = body['data']?['user'] ?? body['user'] ?? body['data'] ?? body;
         if (userData != null) {
           _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
           _storage.write('user', _user!.toJson());
@@ -503,20 +503,11 @@ class AuthController extends GetxController {
 
       Response response = await authRepo.updateProfile(data);
       if (response.statusCode == 200) {
-        _user?.name = name;
-        _user?.phone = phone;
-
-        final responseData = response.body['data']?['user'] ?? response.body['user'];
-        if (responseData != null) {
-           _user = UserModel.fromJson(Map<String, dynamic>.from(responseData));
-        }
-
-        _storage.write('user', _user?.toJson());
+        await getProfile();
         _pickedImage = null; // Clear after success
         Get.snackbar('Éxito', 'Perfil actualizado',
           backgroundColor: Colors.green, colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-        update();
       } else {
         _handleApiError(response, 'No se pudo actualizar el perfil');
       }
