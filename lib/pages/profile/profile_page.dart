@@ -15,9 +15,14 @@ class ProfilePage extends StatelessWidget {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: AppColors.mainColor,
-        title: const Text(
-          'Perfil',
-          style: TextStyle(fontFamily: 'Roboto', color: Colors.white, fontWeight: FontWeight.w500),
+        title: SizedBox(
+          height: 40.0,
+          child: Image.asset(
+            'assets/image/logo.png',
+            fit: BoxFit.contain,
+            color: Colors.white,
+            colorBlendMode: BlendMode.srcIn,
+          ),
         ),
         centerTitle: true,
         elevation: 0,

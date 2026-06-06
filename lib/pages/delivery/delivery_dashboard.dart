@@ -96,6 +96,14 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset(
+            'assets/image/logo.png',
+            fit: BoxFit.contain,
+            height: 40.0,
+          ),
+        ),
         title: GetBuilder<DeliveryAuthController>(builder: (auth) {
           final dm = auth.deliveryman;
           final branchId = dm?.branchId;
@@ -159,7 +167,15 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.cloud_off, size: 100, color: Colors.grey.shade300),
+                SizedBox(
+                  height: 80.0,
+                  child: Image.asset(
+                    'assets/image/logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Icon(Icons.cloud_off, size: 80, color: Colors.grey.shade300),
                 BigText(text: "Estás desconectado", color: Colors.grey),
                 SmallText(text: "Conéctate para recibir pedidos", color: Colors.grey),
               ],

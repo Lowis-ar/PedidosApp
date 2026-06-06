@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -149,15 +150,32 @@ class _FoodPageBodyState extends State<FoodPageBody> {
                         child: Row(
                           children: [
                             // Image section
-                            Container(
-                              width: Dimensions.listViewImgSize,
-                              height: Dimensions.listViewImgSize,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(Dimensions.radius20),
-                                color: Colors.white38,
-                                image: DecorationImage(
-                                  fit: BoxFit.cover,
-                                  image: NetworkImage(product.img ?? ""),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(Dimensions.radius20),
+                              child: CachedNetworkImage(
+                                imageUrl: product.img ?? "",
+                                width: Dimensions.listViewImgSize,
+                                height: Dimensions.listViewImgSize,
+                                fit: BoxFit.cover,
+                                memCacheWidth: 300,
+                                placeholder: (context, url) => Container(
+                                  width: Dimensions.listViewImgSize,
+                                  height: Dimensions.listViewImgSize,
+                                  color: Colors.grey.shade200,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.mainColor,
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: Dimensions.listViewImgSize,
+                                  height: Dimensions.listViewImgSize,
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Icon(Icons.broken_image, color: Colors.grey),
+                                  ),
                                 ),
                               ),
                             ),
@@ -261,9 +279,21 @@ class _FoodPageBodyState extends State<FoodPageBody> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(Dimensions.radius30),
                 color: index.isEven ? const Color(0xFF69c5df) : const Color(0xFF9294cc),
-                image: DecorationImage(
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(Dimensions.radius30),
+                child: CachedNetworkImage(
+                  imageUrl: popularProduct.img ?? "",
                   fit: BoxFit.cover,
-                  image: NetworkImage(popularProduct.img ?? ""),
+                  width: double.infinity,
+                  height: double.infinity,
+                  memCacheWidth: 600,
+                  placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                  errorWidget: (context, url, error) => const Center(
+                    child: Icon(Icons.error, color: Colors.white),
+                  ),
                 ),
               ),
             ),

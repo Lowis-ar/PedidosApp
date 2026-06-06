@@ -56,6 +56,14 @@ class _MainFoodPageState extends State<MainFoodPage> {
                     ),
                   );
                 }),
+                // Logo centrado
+                SizedBox(
+                  height: 36.0,
+                  child: Image.asset(
+                    'assets/image/logo.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
                 Center(
                   child: GestureDetector(
                     onTap: () {

@@ -5,7 +5,6 @@ import 'package:pedidosapp/controllers/order_controller.dart';
 import 'package:pedidosapp/controllers/review_controller.dart';
 import 'package:pedidosapp/models/order_model.dart';
 import 'package:pedidosapp/utils/colors.dart';
-import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/shimmer_widgets.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
@@ -64,10 +63,13 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          title: BigText(
-              text: "Mis Pedidos",
-              color: AppColors.mainBlackColor,
-              size: Dimensions.font20),
+          title: SizedBox(
+            height: 40.0,
+            child: Image.asset(
+              'assets/image/logo.png',
+              fit: BoxFit.contain,
+            ),
+          ),
           centerTitle: true,
           automaticallyImplyLeading: false,
           bottom: TabBar(

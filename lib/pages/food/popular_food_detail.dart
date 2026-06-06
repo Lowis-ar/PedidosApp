@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
@@ -530,13 +531,26 @@ class _PopularFoodDetailState extends State<PopularFoodDetail> {
           Positioned(
             left: 0,
             right: 0,
-            child: Container(
+            child: SizedBox(
               width: double.maxFinite,
               height: Dimensions.popularFoodImgSize,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: NetworkImage(product.img ?? ""),
+              child: CachedNetworkImage(
+                imageUrl: product.img ?? "",
+                fit: BoxFit.cover,
+                width: double.maxFinite,
+                height: Dimensions.popularFoodImgSize,
+                placeholder: (context, url) => Container(
+                  width: double.maxFinite,
+                  height: Dimensions.popularFoodImgSize,
+                  color: Colors.grey.shade300,
+                ),
+                errorWidget: (context, url, error) => Container(
+                  width: double.maxFinite,
+                  height: Dimensions.popularFoodImgSize,
+                  color: Colors.grey.shade300,
+                  child: const Center(
+                    child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                  ),
                 ),
               ),
             ),
