@@ -9,6 +9,7 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/popular_product_controller.dart';
 import '../../controllers/recommended_product_controller.dart';
 import '../../controllers/review_controller.dart';
+import '../../controllers/auth_controller.dart';
 
 class HomePage extends StatefulWidget {
   final int initialIndex;
@@ -25,6 +26,12 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    
+    // Force AuthController initialization to load token
+    if (Get.isRegistered<AuthController>()) {
+      Get.find<AuthController>();
+    }
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (Get.isRegistered<CartController>()) {
         Get.find<CartController>().getCartData();

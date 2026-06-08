@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/data/repository/order_repo.dart';
 import 'package:pedidosapp/models/order_model.dart';
+import 'package:pedidosapp/models/payment_card_model.dart';
 import 'package:pedidosapp/models/cart_model.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
@@ -39,6 +40,22 @@ class OrderController extends GetxController {
 
   void clearSelectedAddress() {
     _selectedAddress = null;
+    update();
+  }
+
+  List<PaymentCardModel> _cardList = [];
+  List<PaymentCardModel> get cardList => _cardList;
+
+  PaymentCardModel? _selectedCard;
+  PaymentCardModel? get selectedCard => _selectedCard;
+
+  void selectCard(PaymentCardModel card) {
+    _selectedCard = card;
+    update();
+  }
+
+  void clearSelectedCard() {
+    _selectedCard = null;
     update();
   }
 
@@ -152,6 +169,7 @@ class OrderController extends GetxController {
 
     try {
       Response response = await orderRepo.getOrderList();
+      debugPrint("getOrderList status: ${response.statusCode}");
       if (response.statusCode == 200) {
         _orderList = [];
         final body = response.body;
@@ -162,9 +180,13 @@ class OrderController extends GetxController {
             _orderList.add(OrderModel.fromJson(o));
           }
         }
+      } else {
+        debugPrint("Error loading orders status: ${response.statusCode} - ${response.statusText}");
+        _showError("Error del servidor (${response.statusCode}): ${response.statusText}");
       }
     } catch (e) {
-      debugPrint("Error loading orders: $e");
+      debugPrint("Exception loading orders: $e");
+      _showError("Excepción al cargar pedidos: $e");
     } finally {
       _isLoading = false;
       update();
@@ -263,6 +285,72 @@ class OrderController extends GetxController {
   void selectAddress(AddressModel address) {
     _selectedAddress = address;
     update();
+  }
+
+  // Card methods
+  Future<void> getPaymentCards() async {
+    try {
+      Response response = await orderRepo.getPaymentCards();
+      if (response.statusCode == 200) {
+        _cardList = [];
+        final body = response.body;
+        var cards = body['cards'] ?? body['data'];
+        if (cards != null && cards is List) {
+          for (var c in cards) {
+            _cardList.add(PaymentCardModel.fromJson(c));
+          }
+        }
+        if (_cardList.isNotEmpty && _selectedCard == null) {
+          _selectedCard = _cardList.first;
+        }
+        update();
+      }
+    } catch (e) {
+      debugPrint("Error loading payment cards: $e");
+    }
+  }
+
+  Future<bool> addPaymentCard(PaymentCardModel card) async {
+    _isLoading = true;
+    update();
+    try {
+      Response response = await orderRepo.addPaymentCard(card.toJson());
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        await getPaymentCards();
+        if (response.body != null && response.body['data'] != null) {
+          final createdCard = PaymentCardModel.fromJson(response.body['data']);
+          _selectedCard = _cardList.firstWhereOrNull((c) => c.id == createdCard.id) ?? _cardList.first;
+        }
+        Get.snackbar('Éxito', 'Tarjeta agregada', 
+          backgroundColor: Colors.green, colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        return true;
+      } else {
+        _handleError(response, 'No se pudo agregar la tarjeta');
+        return false;
+      }
+    } catch (e) {
+      _showError('Error al agregar la tarjeta');
+      return false;
+    } finally {
+      _isLoading = false;
+      update();
+    }
+  }
+
+  Future<void> deletePaymentCard(int cardId) async {
+    try {
+      Response response = await orderRepo.deletePaymentCard(cardId);
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        _cardList.removeWhere((c) => c.id == cardId);
+        if (_selectedCard?.id == cardId) {
+          _selectedCard = _cardList.isNotEmpty ? _cardList.first : null;
+        }
+        update();
+      }
+    } catch (e) {
+      debugPrint("Error deleting card: $e");
+    }
   }
 
   void _handleError(Response response, String fallback) {

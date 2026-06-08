@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
@@ -114,6 +115,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   onTap: authController.isLoading
                       ? null
                       : () async {
+                          HapticFeedback.lightImpact();
                           final otp = _otpController.text.trim();
                           final pass = _passwordController.text.trim();
                           if (otp.length != 6 || pass.isEmpty) {

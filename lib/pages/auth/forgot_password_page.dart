@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
@@ -82,6 +83,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   onTap: authController.isLoading
                       ? null
                       : () async {
+                          HapticFeedback.lightImpact();
                           final email = _emailController.text.trim();
                           if (email.isEmpty) {
                             Get.snackbar('Aviso', 'Ingresa tu correo',

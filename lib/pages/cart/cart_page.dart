@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
@@ -270,6 +271,7 @@ class CartPage extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   final authController = Get.find<AuthController>();
                   if (!authController.isLoggedIn) {
                     Get.snackbar(

@@ -12,7 +12,17 @@ class ApiClient extends GetConnect implements GetxService {
   ApiClient({required this.appBaseUrl}) {
     baseUrl = appBaseUrl;
     timeout = const Duration(seconds: 30);
-    token = '';
+    
+    // Auto-load token from storage if available
+    final String? deliveryToken = _storage.read<String>(AppConstants.DELIVERY_TOKEN);
+    final String? customerToken = _storage.read<String>(AppConstants.TOKEN) ?? _storage.read<String>('token');
+    if (deliveryToken != null && deliveryToken.isNotEmpty) {
+      token = deliveryToken;
+    } else if (customerToken != null && customerToken.isNotEmpty) {
+      token = customerToken;
+    } else {
+      token = '';
+    }
   }
 
   Map<String, String> get _mainHeaders => {

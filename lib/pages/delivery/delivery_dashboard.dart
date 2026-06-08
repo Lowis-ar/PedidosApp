@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
@@ -410,7 +411,10 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
             child: ElevatedButton(
               onPressed: atLimit
                   ? null
-                  : () => Get.find<DeliveryOrderController>().acceptOrder(order.id!),
+                  : () {
+                      HapticFeedback.lightImpact();
+                      Get.find<DeliveryOrderController>().acceptOrder(order.id!);
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: atLimit ? Colors.grey.shade300 : AppColors.mainColor,
                 disabledBackgroundColor: Colors.grey.shade300,

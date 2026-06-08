@@ -63,7 +63,7 @@ class OrderModel {
       }
     }
     
-    otp = json['otp'];
+    otp = json['otp']?.toString();
     createdAt = json['created_at'];
     deliveredAt = json['delivered_at'];
     deliveredAtIso = json['delivered_at_iso'];

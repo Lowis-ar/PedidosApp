@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
 import 'package:pedidosapp/routes/route_helper.dart';
@@ -121,7 +122,10 @@ class DeliveryProfilePage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => _showChangePasswordDialog(context, auth),
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _showChangePasswordDialog(context, auth);
+                  },
                   icon: Icon(Icons.lock_outline, color: AppColors.mainColor),
                   label: Text("CAMBIAR CONTRASEÑA", style: TextStyle(color: AppColors.mainColor)),
                   style: OutlinedButton.styleFrom(
@@ -138,6 +142,7 @@ class DeliveryProfilePage extends StatelessWidget {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () {
+                    HapticFeedback.lightImpact();
                     auth.logout();
                     Get.offAllNamed(RouteHelper.getLogin());
                   },
@@ -272,6 +277,7 @@ class DeliveryProfilePage extends StatelessWidget {
           TextButton(onPressed: () => Get.back(), child: const Text("Cancelar")),
           ElevatedButton(
             onPressed: () async {
+              HapticFeedback.lightImpact();
               if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
                 Get.snackbar('Error', 'Todos los campos son obligatorios',
                     backgroundColor: Colors.redAccent, colorText: Colors.white);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
@@ -109,6 +110,7 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                     onTap: authController.isLoading
                         ? null
                         : () async {
+                            HapticFeedback.lightImpact();
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
                             final rawPhone = _phoneController.text.replaceAll(' ', '').trim();

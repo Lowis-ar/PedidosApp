@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
@@ -6,6 +7,7 @@ import 'package:pedidosapp/widgets/app_icon.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/expandable_text_widget.dart';
 import 'package:pedidosapp/widgets/review_widgets.dart';
+import 'package:pedidosapp/helper/cart_animation_helper.dart';
 
 import '../../controllers/cart_controller.dart';
 import '../../controllers/popular_product_controller.dart';
@@ -26,6 +28,8 @@ class RecommendedFoodDetail extends StatefulWidget {
 class _RecommendedFoodDetailState extends State<RecommendedFoodDetail> {
   ProductModel? _detailedProduct;
   bool _isLoading = true;
+  final GlobalKey _cartKey = GlobalKey();
+  final GlobalKey _addButtonKey = GlobalKey();
 
   @override
   void initState() {
@@ -525,6 +529,7 @@ class _RecommendedFoodDetailState extends State<RecommendedFoodDetail> {
                 ),
                 GetBuilder<PopularProductController>(builder: (controller) {
                   return GestureDetector(
+                    key: _cartKey,
                     onTap: () {
                       if (controller.totalItems >= 1) {
                         Get.toNamed(RouteHelper.getCartPage());
@@ -701,7 +706,38 @@ class _RecommendedFoodDetailState extends State<RecommendedFoodDetail> {
                   ),
                   Flexible(
                     child: GestureDetector(
-                      onTap: () => controller.addItem(activeProduct),
+                      key: _addButtonKey,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        CartAnimationHelper.runAddToCartAnimation(
+                          context: context,
+                          fromKey: _addButtonKey,
+                          toKey: _cartKey,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: AppColors.mainColor,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.mainColor.withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          onComplete: () {
+                            controller.addItem(activeProduct);
+                          },
+                        );
+                      },
                       child: Container(
                         padding: EdgeInsets.all(Dimensions.height15),
                         decoration: BoxDecoration(

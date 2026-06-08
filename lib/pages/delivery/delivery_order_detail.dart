@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
@@ -84,14 +85,20 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
                 _actionButton(
                   "MARCAR EN CAMINO",
                   AppColors.mainColor,
-                  () => controller.markAsOnWay(order.id!),
+                  () {
+                    HapticFeedback.lightImpact();
+                    controller.markAsOnWay(order.id!);
+                  },
                 ),
               
               if (order.orderStatus == 'on_the_way' || order.orderStatus == 'picked_up')
                 _actionButton(
                   "ENTREGAR PEDIDO (OTP)",
                   Colors.green,
-                  () => _showOTPDialog(context, controller),
+                  () {
+                    HapticFeedback.lightImpact();
+                    _showOTPDialog(context, controller);
+                  },
                 ),
             ],
           ),
@@ -253,6 +260,7 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
                   // Botón escanear QR
                   GestureDetector(
                     onTap: () async {
+                      HapticFeedback.lightImpact();
                       final String? scanned = await Get.to(
                         () => const QRScannerPage(),
                         fullscreenDialog: true,
@@ -290,10 +298,13 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
             ),
             ElevatedButton(
               onPressed: () async {
+                HapticFeedback.lightImpact();
                 final String? errorMsg =
                     await controller.verifyDeliveryOtp(order.id!, otpController.text);
                 if (errorMsg == null) {
-                  Navigator.of(dialogContext).pop(); // Cerrar diálogo
+                  if (dialogContext.mounted) {
+                    Navigator.of(dialogContext).pop(); // Cerrar diálogo
+                  }
                   Get.back(); // Volver al dashboard
                 }
               },

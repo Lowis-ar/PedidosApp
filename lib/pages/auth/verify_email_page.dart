@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
@@ -94,6 +95,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                   onTap: authController.isLoading
                       ? null
                       : () async {
+                          HapticFeedback.lightImpact();
                           final otp = _otpController.text.trim();
                           if (otp.length != 6) {
                             Get.snackbar('Aviso', 'Ingresa el codigo de 6 digitos',

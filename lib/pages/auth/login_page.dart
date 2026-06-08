@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
@@ -218,6 +219,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                     onTap: authController.isLoading
                         ? null
                         : () async {
+                            HapticFeedback.lightImpact();
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
                             if (email.isEmpty || pass.isEmpty) {

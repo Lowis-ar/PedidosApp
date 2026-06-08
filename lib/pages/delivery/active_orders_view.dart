@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
@@ -215,7 +216,10 @@ class ActiveOrdersView extends StatelessWidget {
                   ? ElevatedButton.icon(
                       onPressed: controller.isLoading
                           ? null
-                          : () => controller.markAsOnWay(order.id!),
+                          : () {
+                              HapticFeedback.lightImpact();
+                              controller.markAsOnWay(order.id!);
+                            },
                       icon: const Icon(Icons.delivery_dining),
                       label: const Text('SALIR A ENTREGAR',
                           style: TextStyle(fontWeight: FontWeight.bold)),
@@ -229,7 +233,10 @@ class ActiveOrdersView extends StatelessWidget {
                       ),
                     )
                   : ElevatedButton.icon(
-                      onPressed: () => _showOTPModal(context, order, controller),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _showOTPModal(context, order, controller);
+                      },
                       icon: const Icon(Icons.verified),
                       label: const Text('CONFIRMAR ENTREGA',
                           style: TextStyle(fontWeight: FontWeight.bold)),
@@ -341,6 +348,7 @@ class ActiveOrdersView extends StatelessWidget {
                     // Botón escanear QR
                     GestureDetector(
                       onTap: () async {
+                        HapticFeedback.lightImpact();
                         final String? scanned = await Get.to(
                           () => const QRScannerPage(),
                           fullscreenDialog: true,
@@ -394,6 +402,7 @@ class ActiveOrdersView extends StatelessWidget {
                     onPressed: isSubmitting.value
                         ? null
                         : () async {
+                            HapticFeedback.lightImpact();
                             if (otpInput.text.length < 4) {
                               otpError.value = 'Ingresa el código de al menos 4 dígitos';
                               return;
@@ -404,7 +413,9 @@ class ActiveOrdersView extends StatelessWidget {
                                 .verifyDeliveryOtp(order.id!, otpInput.text);
                             isSubmitting.value = false;
                             if (errorMsg == null) {
-                              Navigator.pop(context); // Cierra modal solo en éxito
+                              if (context.mounted) {
+                                Navigator.pop(context); // Cierra modal solo en éxito
+                              }
                               controller.getOrders(); // Refresh after modal is closed
                             } else {
                               // Error inline — NO cierra el modal

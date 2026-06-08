@@ -43,6 +43,19 @@ class OrderRepo {
     return await apiClient.deleteData("${AppConstants.ADDRESSES_URI}/$addressId");
   }
 
+  // Card endpoints
+  Future<Response> getPaymentCards() async {
+    return await apiClient.getData('/api/v1/payment-cards');
+  }
+
+  Future<Response> addPaymentCard(Map<String, dynamic> body) async {
+    return await apiClient.postData('/api/v1/payment-cards', body);
+  }
+
+  Future<Response> deletePaymentCard(int cardId) async {
+    return await apiClient.deleteData('/api/v1/payment-cards/$cardId');
+  }
+
   Future<Response> submitReview(int orderId, Map<String, dynamic> body) async {
     return await apiClient.postData(
         "${AppConstants.ORDER_DETAIL_URI}$orderId/review", body);

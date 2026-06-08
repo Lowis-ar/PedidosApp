@@ -6,6 +6,7 @@ import '../../controllers/cart_controller.dart';
 import '../../controllers/order_controller.dart';
 import '../../controllers/zone_controller.dart';
 import '../../models/order_model.dart';
+import '../../models/payment_card_model.dart';
 import '../../models/zone_model.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
@@ -40,6 +41,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _contactPhoneController = TextEditingController();
   String _addressType = 'Home';
   bool _isAddingNewAddress = false;
+  bool _isAddingNewCard = false;
 
   int _currentStep = 0;
   bool _cardValid = false;
@@ -119,6 +121,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
         setState(() => _isAddingNewAddress = true);
       }
     });
+    Get.find<OrderController>().getPaymentCards().then((_) {
+      if (Get.find<OrderController>().cardList.isEmpty) {
+        setState(() => _isAddingNewCard = true);
+      }
+    });
     Get.find<ZoneController>().getZoneList();
     // Pre-fill contact info from user profile
     final user = Get.find<AuthController>().user;
@@ -143,7 +150,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // Luhn algorithm for card validation
   bool _validateCardNumber(String number) {
     String cleaned = number.replaceAll(RegExp(r'\s|-'), '');
-    if (cleaned.length < 13 || cleaned.length > 19) return false;
+    if (cleaned.length != 16) return false;
     if (!RegExp(r'^[0-9]+$').hasMatch(cleaned)) return false;
 
     int sum = 0;
@@ -379,8 +386,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     onPressed: () {
                       setState(() {
                         _isAddingNewAddress = true;
-                        // Deseleccionar dirección previa
+                        // Deseleccionar dirección previa y limpiar textfields
                         orderController.clearSelectedAddress();
+                        _addressController.clear();
+                        _referenceController.clear();
+                        _selectedLat = null;
+                        _selectedLng = null;
+                        _dynamicDeliveryFee = null;
                       });
                     },
                     icon: const Icon(Icons.add),
@@ -469,255 +481,412 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Widget _buildPaymentStep() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Payment method selector
-        const Text('Selecciona tu método de pago', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-        const SizedBox(height: 12),
-        // Cash on delivery option
-        GestureDetector(
-          onTap: () => setState(() => _paymentMethod = 'cash_on_delivery'),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _paymentMethod == 'cash_on_delivery'
-                  ? AppColors.mainColor.withValues(alpha: 0.08)
-                  : Colors.white,
-              border: Border.all(
-                color: _paymentMethod == 'cash_on_delivery'
-                    ? AppColors.mainColor
-                    : Colors.grey.shade300,
-                width: _paymentMethod == 'cash_on_delivery' ? 2 : 1,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: _paymentMethod == 'cash_on_delivery'
-                      ? AppColors.mainColor.withValues(alpha: 0.08)
-                      : Colors.grey.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _paymentMethod == 'cash_on_delivery'
-                        ? AppColors.mainColor.withValues(alpha: 0.15)
-                        : Colors.grey.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.payments_outlined,
-                    color: _paymentMethod == 'cash_on_delivery'
-                        ? AppColors.mainColor
-                        : Colors.grey,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Contra Entrega',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      Text('Paga en efectivo al recibir tu pedido',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                if (_paymentMethod == 'cash_on_delivery')
-                  Icon(Icons.check_circle, color: AppColors.mainColor, size: 24),
-              ],
-            ),
-          ),
-        ),
-        // Card payment option
-        GestureDetector(
-          onTap: () => setState(() => _paymentMethod = 'card'),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: _paymentMethod == 'card'
-                  ? AppColors.mainColor.withValues(alpha: 0.08)
-                  : Colors.white,
-              border: Border.all(
-                color: _paymentMethod == 'card'
-                    ? AppColors.mainColor
-                    : Colors.grey.shade300,
-                width: _paymentMethod == 'card' ? 2 : 1,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: _paymentMethod == 'card'
-                      ? AppColors.mainColor.withValues(alpha: 0.08)
-                      : Colors.grey.withValues(alpha: 0.06),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: _paymentMethod == 'card'
-                        ? AppColors.mainColor.withValues(alpha: 0.15)
-                        : Colors.grey.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.credit_card,
-                    color: _paymentMethod == 'card' ? AppColors.mainColor : Colors.grey,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Tarjeta de Crédito / Débito',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      Text('Visa, Mastercard, Amex',
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                if (_paymentMethod == 'card')
-                  Icon(Icons.check_circle, color: AppColors.mainColor, size: 24),
-              ],
-            ),
-          ),
-        ),
-        // Card details (only visible when card is selected)
-        if (_paymentMethod == 'card') ...[
-          const Divider(height: 8),
+    return GetBuilder<OrderController>(builder: (orderController) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Payment method selector
+          const Text('Selecciona tu método de pago', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           const SizedBox(height: 12),
-          // Card visual
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: _cardType == 'Visa'
-                    ? [const Color(0xFF1A1F71), const Color(0xFF2D3494)]
-                    : _cardType == 'Mastercard'
-                        ? [const Color(0xFFEB001B), const Color(0xFFF79E1B)]
-                        : [Colors.grey.shade800, Colors.grey.shade600],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          // Cash on delivery option
+          GestureDetector(
+            onTap: () => setState(() => _paymentMethod = 'cash_on_delivery'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _paymentMethod == 'cash_on_delivery'
+                    ? AppColors.mainColor.withValues(alpha: 0.08)
+                    : Colors.white,
+                border: Border.all(
+                  color: _paymentMethod == 'cash_on_delivery'
+                      ? AppColors.mainColor
+                      : Colors.grey.shade300,
+                  width: _paymentMethod == 'cash_on_delivery' ? 2 : 1,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: _paymentMethod == 'cash_on_delivery'
+                        ? AppColors.mainColor.withValues(alpha: 0.08)
+                        : Colors.grey.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                        _cardType.isEmpty ? 'TARJETA' : _cardType.toUpperCase(),
-                        style: const TextStyle(
-                            color: Colors.white70, fontSize: 14, letterSpacing: 2)),
-                    Icon(
-                      _cardValid ? Icons.check_circle : Icons.credit_card,
-                      color: _cardValid ? Colors.greenAccent : Colors.white54,
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _paymentMethod == 'cash_on_delivery'
+                          ? AppColors.mainColor.withValues(alpha: 0.15)
+                          : Colors.grey.shade100,
+                      shape: BoxShape.circle,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  _cardNumberController.text.isEmpty
-                      ? '•••• •••• •••• ••••'
-                      : _formatCardDisplay(_cardNumberController.text),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      letterSpacing: 3,
-                      fontFamily: 'Roboto'),
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _cardHolderController.text.isEmpty
-                          ? 'NOMBRE DEL TITULAR'
-                          : _cardHolderController.text.toUpperCase(),
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 12, letterSpacing: 1),
+                    child: Icon(
+                      Icons.payments_outlined,
+                      color: _paymentMethod == 'cash_on_delivery'
+                          ? AppColors.mainColor
+                          : Colors.grey,
+                      size: 26,
                     ),
-                    Text(
-                      _expiryController.text.isEmpty
-                          ? 'MM/YY'
-                          : _expiryController.text,
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 12, letterSpacing: 1),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Contra Entrega',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text('Paga en efectivo al recibir tu pedido',
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  if (_paymentMethod == 'cash_on_delivery')
+                    Icon(Icons.check_circle, color: AppColors.mainColor, size: 24),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildCheckoutField(_cardNumberController, 'Número de tarjeta', Icons.credit_card,
-              keyboardType: TextInputType.number,
-              onChanged: _onCardNumberChanged,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(16)
-              ]),
-          if (_cardNumberController.text.isNotEmpty && !_cardValid)
-            Padding(
-              padding: const EdgeInsets.only(left: 12, top: 4),
-              child: Text('Número de tarjeta inválido',
-                  style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
+          // Card payment option
+          GestureDetector(
+            onTap: () => setState(() => _paymentMethod = 'card'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _paymentMethod == 'card'
+                    ? AppColors.mainColor.withValues(alpha: 0.08)
+                    : Colors.white,
+                border: Border.all(
+                  color: _paymentMethod == 'card'
+                      ? AppColors.mainColor
+                      : Colors.grey.shade300,
+                  width: _paymentMethod == 'card' ? 2 : 1,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: _paymentMethod == 'card'
+                        ? AppColors.mainColor.withValues(alpha: 0.08)
+                        : Colors.grey.withValues(alpha: 0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _paymentMethod == 'card'
+                          ? AppColors.mainColor.withValues(alpha: 0.15)
+                          : Colors.grey.shade100,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.credit_card,
+                      color: _paymentMethod == 'card' ? AppColors.mainColor : Colors.grey,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Tarjeta de Crédito / Débito',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text('Visa, Mastercard, Amex',
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  if (_paymentMethod == 'card')
+                    Icon(Icons.check_circle, color: AppColors.mainColor, size: 24),
+                ],
+              ),
             ),
-          const SizedBox(height: 10),
-          _buildCheckoutField(
-              _cardHolderController, 'Nombre del titular', Icons.person_outline),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _buildCheckoutField(_expiryController, 'MM/YY', Icons.calendar_today,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                      _ExpiryFormatter()
-                    ]),
+          ),
+          // Card details
+          if (_paymentMethod == 'card') ...[
+            const Divider(height: 8),
+            const SizedBox(height: 12),
+
+            // If we have saved cards and we are NOT adding a new card, list them
+            if (orderController.cardList.isNotEmpty && !_isAddingNewCard) ...[
+              const Text("Tarjetas guardadas", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: Colors.black54)),
+              const SizedBox(height: 8),
+              ...orderController.cardList.map((card) {
+                bool isSelected = orderController.selectedCard?.id == card.id;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppColors.mainColor.withValues(alpha: 0.08) : Colors.white,
+                    border: Border.all(
+                      color: isSelected ? AppColors.mainColor : Colors.grey.shade300,
+                      width: isSelected ? 2 : 1,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.credit_card,
+                            color: isSelected ? AppColors.mainColor : Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${card.cardType} •••• ${card.lastFour}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                                Text(
+                                  card.cardHolder ?? '',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Delete button
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                            onPressed: () async {
+                              bool? confirm = await Get.dialog<bool>(
+                                AlertDialog(
+                                  title: const Text('Eliminar Tarjeta'),
+                                  content: const Text('¿Estás seguro de que deseas eliminar esta tarjeta guardada?'),
+                                  actions: [
+                                    TextButton(onPressed: () => Get.back(result: false), child: const Text('Cancelar')),
+                                    ElevatedButton(
+                                      onPressed: () => Get.back(result: true),
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                                      child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true && card.id != null) {
+                                orderController.deletePaymentCard(card.id!);
+                              }
+                            },
+                          ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              orderController.selectCard(card);
+                              _cvvController.clear();
+                            },
+                            child: Icon(
+                              isSelected ? Icons.check_circle : Icons.radio_button_off,
+                              color: isSelected ? AppColors.mainColor : Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (isSelected) ...[
+                        const Divider(height: 16),
+                        Row(
+                          children: [
+                            const Text('Ingresa el CVV: ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 80,
+                              height: 40,
+                              child: TextField(
+                                controller: _cvvController,
+                                keyboardType: TextInputType.number,
+                                obscureText: true,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                  LengthLimitingTextInputFormatter(3)
+                                ],
+                                decoration: InputDecoration(
+                                  hintText: 'CVV',
+                                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: Colors.grey.shade300),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
+              const SizedBox(height: 12),
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isAddingNewCard = true;
+                      orderController.clearSelectedCard();
+                      _cardNumberController.clear();
+                      _cardHolderController.clear();
+                      _expiryController.clear();
+                      _cvvController.clear();
+                      _cardValid = false;
+                      _cardType = '';
+                    });
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Agregar nueva tarjeta'),
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildCheckoutField(_cvvController, 'CVV', Icons.lock,
-                    keyboardType: TextInputType.number,
-                    obscure: true,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(3)
-                    ]),
+            ] else ...[
+              // Card visual
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _cardType == 'Visa'
+                        ? [const Color(0xFF1A1F71), const Color(0xFF2D3494)]
+                        : _cardType == 'Mastercard'
+                            ? [const Color(0xFFEB001B), const Color(0xFFF79E1B)]
+                            : [Colors.grey.shade800, Colors.grey.shade600],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black26, blurRadius: 10, offset: const Offset(0, 4))
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                            _cardType.isEmpty ? 'TARJETA' : _cardType.toUpperCase(),
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 14, letterSpacing: 2)),
+                        Icon(
+                          _cardValid ? Icons.check_circle : Icons.credit_card,
+                          color: _cardValid ? Colors.greenAccent : Colors.white54,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      _cardNumberController.text.isEmpty
+                          ? '•••• •••• •••• ••••'
+                          : _formatCardDisplay(_cardNumberController.text),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          letterSpacing: 3,
+                          fontFamily: 'Roboto'),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _cardHolderController.text.isEmpty
+                              ? 'NOMBRE DEL TITULAR'
+                              : _cardHolderController.text.toUpperCase(),
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12, letterSpacing: 1),
+                        ),
+                        Text(
+                          _expiryController.text.isEmpty
+                              ? 'MM/YY'
+                              : _expiryController.text,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 12, letterSpacing: 1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 16),
+              _buildCheckoutField(_cardNumberController, 'Número de tarjeta', Icons.credit_card,
+                  keyboardType: TextInputType.number,
+                  onChanged: _onCardNumberChanged,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(16)
+                  ]),
+              if (_cardNumberController.text.isNotEmpty && !_cardValid)
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 4),
+                  child: Text('Número de tarjeta inválido',
+                      style: TextStyle(color: Colors.red.shade400, fontSize: 12)),
+                ),
+              const SizedBox(height: 10),
+              _buildCheckoutField(
+                  _cardHolderController, 'Nombre del titular', Icons.person_outline),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildCheckoutField(_expiryController, 'MM/YY', Icons.calendar_today,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(4),
+                          _ExpiryFormatter()
+                        ]),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildCheckoutField(_cvvController, 'CVV', Icons.lock,
+                        keyboardType: TextInputType.number,
+                        obscure: true,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(3)
+                        ]),
+                  ),
+                ],
+              ),
+              if (orderController.cardList.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isAddingNewCard = false;
+                        if (orderController.cardList.isNotEmpty) {
+                          orderController.selectCard(orderController.cardList.first);
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Ver tarjetas guardadas'),
+                  ),
+                ),
+              ],
             ],
-          ),
+          ],
         ],
-      ],
-    );
+      );
+    });
   }
 
   Widget _buildConfirmStep() {
@@ -902,9 +1071,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 Text(
                   _paymentMethod == 'cash_on_delivery'
                       ? 'Contra Entrega (Efectivo)'
-                      : (_cardType.isNotEmpty
-                          ? '$_cardType •••• ${_cardNumberController.text.substring(_cardNumberController.text.length > 4 ? _cardNumberController.text.length - 4 : 0)}'
-                          : 'Tarjeta de Crédito/Débito'),
+                      : (Get.find<OrderController>().selectedCard != null
+                          ? '${Get.find<OrderController>().selectedCard!.cardType} •••• ${Get.find<OrderController>().selectedCard!.lastFour}'
+                          : (_cardType.isNotEmpty
+                              ? '$_cardType •••• ${_cardNumberController.text.substring(_cardNumberController.text.length > 4 ? _cardNumberController.text.length - 4 : 0)}'
+                              : 'Tarjeta de Crédito/Débito')),
                   style: const TextStyle(fontSize: 14),
                 ),
               ],
@@ -919,7 +1090,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   });
 }
 
-  void _onStepContinue() {
+  void _onStepContinue() async {
+    HapticFeedback.lightImpact();
     if (_currentStep == 0) {
       // Validate address
       if (_addressController.text.isEmpty) {
@@ -948,69 +1120,96 @@ class _CheckoutPageState extends State<CheckoutPage> {
     } else if (_currentStep == 1) {
       // Validate payment
       if (_paymentMethod == 'card') {
-        if (!_cardValid) {
-          Get.snackbar('Tarjeta inválida', 'Ingresa un número de tarjeta válido',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-          return;
-        }
-        if (_cardHolderController.text.isEmpty) {
-          Get.snackbar('Datos incompletos', 'Ingresa el nombre del titular',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-          return;
-        }
-        if (_expiryController.text.length < 5) {
-          Get.snackbar('Datos incompletos', 'Ingresa la fecha de expiración',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-          return;
-        } else {
-          // Validate MM/YY
-          List<String> parts = _expiryController.text.split('/');
-          if (parts.length == 2) {
-            int? month = int.tryParse(parts[0]);
-            int? year = int.tryParse(parts[1]);
-
-            if (month == null || month < 1 || month > 12) {
-              Get.snackbar('Expiración inválida', 'El mes debe estar entre 01 y 12',
-                backgroundColor: Colors.redAccent, colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-              return;
-            }
-
-            final now = DateTime.now();
-            final currentYear = now.year % 100;
-            final currentMonth = now.month;
-
-            if (year == null || year < currentYear) {
-              Get.snackbar('Tarjeta expirada', 'La tarjeta ya venció (año inválido)',
-                backgroundColor: Colors.redAccent, colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-              return;
-            }
-
-            if (year == currentYear && month < currentMonth) {
-              Get.snackbar('Tarjeta expirada', 'La tarjeta venció en el mes $month/$year',
-                backgroundColor: Colors.redAccent, colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-              return;
-            }
-          } else {
-            Get.snackbar('Datos inválidos', 'El formato debe ser MM/YY',
+        final orderController = Get.find<OrderController>();
+        if (!_isAddingNewCard && orderController.selectedCard != null) {
+          // Validating CVV for saved card
+          if (_cvvController.text.length < 3) {
+            Get.snackbar('Datos incompletos', 'Ingresa el CVV de la tarjeta',
               backgroundColor: Colors.redAccent, colorText: Colors.white,
               snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
             return;
           }
-        }
-        if (_cvvController.text.length < 3) {
-          Get.snackbar('Datos incompletos', 'Ingresa el CVV',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
-          return;
+        } else {
+          // Validating new card fields
+          if (!_cardValid) {
+            Get.snackbar('Tarjeta inválida', 'Ingresa un número de tarjeta válido',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          }
+          if (_cardHolderController.text.isEmpty) {
+            Get.snackbar('Datos incompletos', 'Ingresa el nombre del titular',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          }
+          if (_expiryController.text.length < 5) {
+            Get.snackbar('Datos incompletos', 'Ingresa la fecha de expiración',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          } else {
+            // Validate MM/YY
+            List<String> parts = _expiryController.text.split('/');
+            if (parts.length == 2) {
+              int? month = int.tryParse(parts[0]);
+              int? year = int.tryParse(parts[1]);
+
+              if (month == null || month < 1 || month > 12) {
+                Get.snackbar('Expiración inválida', 'El mes debe estar entre 01 y 12',
+                  backgroundColor: Colors.redAccent, colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+                return;
+              }
+
+              final now = DateTime.now();
+              final currentYear = now.year % 100;
+              final currentMonth = now.month;
+
+              if (year == null || year < currentYear) {
+                Get.snackbar('Tarjeta expirada', 'La tarjeta ya venció (año inválido)',
+                  backgroundColor: Colors.redAccent, colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+                return;
+              }
+
+              if (year == currentYear && month < currentMonth) {
+                Get.snackbar('Tarjeta expirada', 'La tarjeta venció en el mes $month/$year',
+                  backgroundColor: Colors.redAccent, colorText: Colors.white,
+                  snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+                return;
+              }
+            } else {
+              Get.snackbar('Datos inválidos', 'El formato debe ser MM/YY',
+                backgroundColor: Colors.redAccent, colorText: Colors.white,
+                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+              return;
+            }
+          }
+          if (_cvvController.text.length < 3) {
+            Get.snackbar('Datos incompletos', 'Ingresa el CVV',
+              backgroundColor: Colors.redAccent, colorText: Colors.white,
+              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            return;
+          }
+
+          // Save new card to backend
+          PaymentCardModel newCard = PaymentCardModel(
+            cardHolder: _cardHolderController.text,
+            cardNumber: _cardNumberController.text.replaceAll(RegExp(r'\s|-'), ''),
+            expiryDate: _expiryController.text,
+            cardType: _cardType,
+          );
+
+          bool saveSuccess = await orderController.addPaymentCard(newCard);
+          if (!saveSuccess) {
+            return; // Stop if saving card fails
+          }
+          setState(() {
+            _isAddingNewCard = false;
+          });
         }
       }
-      // cash_on_delivery: no card validation needed
       setState(() => _currentStep = 2);
     } else if (_currentStep == 2) {
       _placeOrder();

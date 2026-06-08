@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 
@@ -155,7 +156,10 @@ class ProfilePage extends StatelessWidget {
               SizedBox(height: Dimensions.height20),
               // Change password button
               GestureDetector(
-                onTap: () => _showChangePasswordDialog(context, authController),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showChangePasswordDialog(context, authController);
+                },
                 child: Container(
                   margin: EdgeInsets.symmetric(horizontal: Dimensions.width20),
                   padding: EdgeInsets.symmetric(
@@ -191,6 +195,7 @@ class ProfilePage extends StatelessWidget {
               // Logout button
               GestureDetector(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   Get.defaultDialog(
                     title: 'Cerrar sesion',
                     middleText: 'Seguro que deseas cerrar sesion?',
@@ -200,6 +205,7 @@ class ProfilePage extends StatelessWidget {
                     buttonColor: AppColors.mainColor,
                     cancelTextColor: AppColors.mainBlackColor,
                     onConfirm: () {
+                      HapticFeedback.lightImpact();
                       Get.back(); // Cerramos el modal primero
                       authController.logout(); // El controlador ya se encarga de redirigir al login
                     },
@@ -469,6 +475,7 @@ class ProfilePage extends StatelessWidget {
           TextButton(onPressed: () => Get.back(), child: const Text('Cancelar')),
           ElevatedButton(
             onPressed: () {
+              HapticFeedback.lightImpact();
               if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
                 Get.snackbar('Error', 'Todos los campos son obligatorios',
                     backgroundColor: Colors.redAccent, colorText: Colors.white);
