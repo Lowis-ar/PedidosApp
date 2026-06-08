@@ -23,12 +23,16 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadOrders();
+    });
   }
 
-  Future<void> _loadOrders() async {
+  Future<void> _loadOrders({bool force = false}) async {
     final orderCtrl = Get.find<OrderController>();
-    await orderCtrl.getOrderList();
+    if (force || orderCtrl.orderList.isEmpty) {
+      await orderCtrl.getOrderList();
+    }
 
     // Update pending reviews & maybe show floating banner
     if (Get.isRegistered<ReviewController>()) {
@@ -118,7 +122,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
     }
 
     return RefreshIndicator(
-      onRefresh: _loadOrders,
+      onRefresh: () => _loadOrders(force: true),
       color: AppColors.mainColor,
       child: Obx(() {
         final reviewCtrl = Get.isRegistered<ReviewController>()
