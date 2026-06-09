@@ -18,15 +18,20 @@ class RecommendedProductController extends GetxController{
 
   Future<void> getRecommendedProductList() async {
     debugPrint("Fetching recommended products...");
-    Response response = await recommendedProductRepo.getRecommendedProductList();
-    debugPrint("Recommended products response: ${response.statusCode} - ${response.body}");
-    if (response.statusCode == 200) {
-      _recommendedProductList = [];
-      _recommendedProductList.addAll(Product.fromJson(response.body).products);
+    try {
+      Response response = await recommendedProductRepo.getRecommendedProductList();
+      debugPrint("Recommended products response: ${response.statusCode} - ${response.body}");
+      if (response.statusCode == 200) {
+        _recommendedProductList = [];
+        _recommendedProductList.addAll(Product.fromJson(response.body).products);
+      } else {
+        debugPrint("Failed to load recommended products: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("Exception loading recommended products: $e");
+    } finally {
       _isLoaded = true;
       update();
-    } else {
-      debugPrint("Failed to load recommended products: ${response.statusCode}");
     }
   }
 }

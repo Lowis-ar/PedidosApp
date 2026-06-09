@@ -88,15 +88,20 @@ class PopularProductController extends GetxController {
 
   Future<void> getPopularProductList() async {
     debugPrint("Fetching popular products...");
-    Response response = await popularProductRepo.getPopularProductList();
-    debugPrint("Popular products response: ${response.statusCode} - ${response.body}");
-    if (response.statusCode == 200) {
-      _popularProductList = [];
-      _popularProductList.addAll(Product.fromJson(response.body).products);
+    try {
+      Response response = await popularProductRepo.getPopularProductList();
+      debugPrint("Popular products response: ${response.statusCode} - ${response.body}");
+      if (response.statusCode == 200) {
+        _popularProductList = [];
+        _popularProductList.addAll(Product.fromJson(response.body).products);
+      } else {
+        debugPrint("Failed to load popular products: ${response.statusCode}");
+      }
+    } catch (e) {
+      debugPrint("Exception loading popular products: $e");
+    } finally {
       _isLoaded = true;
       update();
-    } else {
-      debugPrint("Failed to load popular products: ${response.statusCode}");
     }
   }
 
