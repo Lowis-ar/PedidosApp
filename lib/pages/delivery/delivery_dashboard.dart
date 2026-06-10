@@ -11,6 +11,7 @@ import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 
 class DeliveryDashboard extends StatefulWidget {
   const DeliveryDashboard({super.key});
@@ -60,15 +61,8 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           // Pedido listo para tomar — actualizar lista de disponibles
           if (isAvailable) {
             Get.find<DeliveryOrderController>().getOrders(showLoading: false);
-            Get.snackbar(
-              '¡Nuevo pedido disponible!',
-              'Hay un pedido listo para ser tomado',
-              backgroundColor: Colors.orange,
-              colorText: Colors.white,
-              snackPosition: SnackPosition.TOP,
-              duration: const Duration(seconds: 5),
-              icon: const Icon(Icons.delivery_dining, color: Colors.white),
-            );
+            AppSnackbar.info('¡Nuevo pedido disponible!', 'Hay un pedido listo para ser tomado',
+                duration: const Duration(seconds: 5));
           }
         } else if (type == 'new_order' || type == 'assigned') {
           // Pedido asignado al repartidor
@@ -76,14 +70,7 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
           Get.find<DeliveryOrderController>().getOrders(showLoading: false);
         } else if (type == 'on_way') {
           // Confirmación visual: pedido en camino
-          Get.snackbar(
-            'Pedido en camino',
-            'Ya estás en camino con el pedido',
-            backgroundColor: Colors.blue,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.TOP,
-            icon: const Icon(Icons.directions_bike, color: Colors.white),
-          );
+          AppSnackbar.info('Pedido en camino', 'Ya estás en camino con el pedido');
           Get.find<DeliveryOrderController>().getOrders(showLoading: false);
         }
       });
@@ -139,13 +126,8 @@ class _DeliveryDashboardState extends State<DeliveryDashboard> {
                   // Intentando desconectarse
                   final orderController = Get.find<DeliveryOrderController>();
                   if (orderController.activeOrdersList.isNotEmpty) {
-                    Get.snackbar(
-                      'No puedes desconectarte',
-                      'Aún tienes pedidos en curso. Complétalos primero.',
-                      backgroundColor: Colors.red,
-                      colorText: Colors.white,
-                      icon: const Icon(Icons.warning, color: Colors.white),
-                    );
+                    AppSnackbar.warning('No puedes desconectarte',
+                        'Aún tienes pedidos en curso. Complétalos primero.');
                     return; // No actualizar el estado
                   }
                 }

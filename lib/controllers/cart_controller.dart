@@ -5,6 +5,7 @@ import 'package:pedidosapp/models/product_model.dart';
 import '../data/repository/cart_repo.dart';
 import '../models/cart_model.dart';
 import '../utils/colors.dart';
+import '../utils/app_snackbar.dart';
 
 class CartController extends GetxController{
   final CartRepo cartRepo;
@@ -98,12 +99,7 @@ class CartController extends GetxController{
           );
         });
       } else {
-        Get.snackbar(
-          "Cantidad",
-          "Debes agregar al menos un producto",
-          backgroundColor: AppColors.mainColor,
-          colorText: Colors.white,
-        );
+        AppSnackbar.info('Cantidad', 'Debes agregar al menos un producto');
       }
     }
     cartRepo.addToCartList(getItems);

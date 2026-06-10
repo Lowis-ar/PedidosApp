@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'delivery_auth_controller.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 
 class DeliveryOrderController extends GetxController {
   final DeliveryOrderRepo orderRepo;
@@ -117,8 +118,7 @@ class DeliveryOrderController extends GetxController {
           final msg = respAvail.body is Map
               ? (respAvail.body['message'] ?? 'No tienes disponibilidad activa')
               : 'No tienes disponibilidad activa';
-          Get.snackbar('Sin disponibilidad', msg.toString(),
-              backgroundColor: Colors.orange, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+          AppSnackbar.warning('Sin disponibilidad', msg.toString());
         }
       } else {
         _availableOrdersError = true;
@@ -206,8 +206,7 @@ class DeliveryOrderController extends GetxController {
       _historyError = true;
       _hasError = true;
       if (showLoading) {
-        Get.snackbar('Error de conexión', 'No se pudo cargar los pedidos. Verifica tu conexión.',
-            backgroundColor: Colors.red.shade600, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
+        AppSnackbar.error('Error de conexión', 'No se pudo cargar los pedidos. Verifica tu conexión.');
       }
     } finally {
       _isLoading = false;
@@ -283,12 +282,9 @@ class DeliveryOrderController extends GetxController {
   Future<void> acceptOrder(int orderId) async {
     // ─── 1. Verificar límite de 3 pedidos activos ──────────────────────────
     if (_activeOrdersList.length >= 3) {
-      Get.snackbar(
+      AppSnackbar.warning(
         'Límite alcanzado',
         'Ya tienes 3 pedidos en curso. Completa uno antes de aceptar otro.',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 4),
       );
       return;
@@ -317,12 +313,9 @@ class DeliveryOrderController extends GetxController {
             );
             // Aviso informativo si está muy lejos (>5 km), pero no bloquea
             if (distanceInMeters > 5000) {
-              Get.snackbar(
+              AppSnackbar.info(
                 'Aviso de distancia',
                 'Estás a ${(distanceInMeters / 1000).toStringAsFixed(1)} km del restaurante.',
-                backgroundColor: Colors.orange.shade700,
-                colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM,
                 duration: const Duration(seconds: 3),
               );
             }
@@ -340,9 +333,8 @@ class DeliveryOrderController extends GetxController {
     try {
       Response response = await orderRepo.acceptOrder(orderId);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Get.snackbar('¡Pedido aceptado!', 'El pedido #$orderId fue aceptado exitosamente.',
-            backgroundColor: Colors.green, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM);
+        AppSnackbar.success('¡Pedido aceptado!', 'El pedido #$orderId fue aceptado exitosamente.',
+            duration: const Duration(seconds: 3));
         await getOrders();
       } else {
         // Extraer el mensaje real del servidor
@@ -364,22 +356,31 @@ class DeliveryOrderController extends GetxController {
           }
         } else if (response.body is String && (response.body as String).isNotEmpty) {
           serverMessage = response.body as String;
+        } else if (response.statusText != null) {
+          serverMessage = response.statusText!;
         }
+
+        String lowerMsg = serverMessage.toLowerCase();
+        if (lowerMsg.contains('exception') || 
+            lowerMsg.contains('sql') || 
+            lowerMsg.contains('server') || 
+            lowerMsg.contains('connection') || 
+            lowerMsg.contains('timeout') ||
+            lowerMsg.contains('error') && serverMessage.contains('errno') || 
+            response.statusCode == 500 || response.statusCode == 503) {
+          serverMessage = 'Ocurrió un error inesperado, intenta nuevamente.';
+        }
+
         debugPrint('[acceptOrder] Error ${response.statusCode}: $serverMessage');
-        Get.snackbar(
+        AppSnackbar.error(
           'No se pudo aceptar',
           serverMessage,
-          backgroundColor: Colors.red.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 5),
         );
       }
     } catch (e) {
       debugPrint('Error en acceptOrder: $e');
-      Get.snackbar('Error de conexión', 'No se pudo conectar con el servidor.',
-          backgroundColor: Colors.red.shade600, colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM);
+      AppSnackbar.error('Error de conexión', 'No se pudo conectar con el servidor.');
     } finally {
       _isLoading = false;
       update();
@@ -393,35 +394,19 @@ class DeliveryOrderController extends GetxController {
     try {
       Response response = await orderRepo.updateOrderStatus(orderId, 'on_way');
       if (response.statusCode == 200) {
-        Get.snackbar(
-          '¡En Camino!',
-          'El estado ha cambiado a: En camino',
-          backgroundColor: Colors.blue,
-          colorText: Colors.white,
-        );
+        AppSnackbar.info('¡En Camino!', 'El estado ha cambiado a: En camino');
         await getOrders();
       } else if (response.statusCode == 422) {
         final msg = response.body is Map
             ? (response.body['message'] ?? 'Estado inválido para este pedido')
             : 'Estado inválido para este pedido';
-        Get.snackbar('Error de estado', msg.toString(),
-            backgroundColor: Colors.orange, colorText: Colors.white);
+        AppSnackbar.warning('Error de estado', msg.toString());
       } else {
-        Get.snackbar(
-          'Error del servidor',
-          'No se pudo actualizar el estado. Intenta de nuevo.',
-          backgroundColor: Colors.red.shade700,
-          colorText: Colors.white,
-        );
+        AppSnackbar.error('Error del servidor', 'No se pudo actualizar el estado. Intenta de nuevo.');
       }
     } catch (e) {
       debugPrint("Error in markAsOnWay: $e");
-      Get.snackbar(
-        'Error de conexión',
-        'No se pudo conectar con el servidor.',
-        backgroundColor: Colors.red.shade600,
-        colorText: Colors.white,
-      );
+      AppSnackbar.error('Error de conexión', 'No se pudo conectar con el servidor.');
     } finally {
       _isLoading = false;
       update();
@@ -436,12 +421,9 @@ class DeliveryOrderController extends GetxController {
     try {
       Response response = await orderRepo.verifyOtp(orderId, otpCode);
       if (response.statusCode == 200) {
-        Get.snackbar(
+        AppSnackbar.success(
           '¡Pedido Entregado!',
           'La entrega fue confirmada correctamente.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
         );
         _activeOrder = null;
         return null; // éxito

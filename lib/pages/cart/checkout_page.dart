@@ -19,6 +19,7 @@ import '../../controllers/branch_controller.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../routes/route_helper.dart';
+import '../../utils/app_snackbar.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -84,7 +85,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             }
           } else if (fee != null) {
             setState(() => _dynamicDeliveryFee = fee);
-            Get.snackbar('Tarifa calculada', 'Costo de envío: \$${fee.toStringAsFixed(2)}', backgroundColor: Colors.green, colorText: Colors.white);
+          AppSnackbar.success('Tarifa calculada', 'Costo de envío: \$${fee.toStringAsFixed(2)}');
           } else {
             setState(() => _dynamicDeliveryFee = null);
           }
@@ -102,13 +103,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
             );
           } else {
-            Get.snackbar('Error', message.isNotEmpty ? message : 'No se pudo calcular la tarifa', backgroundColor: Colors.orange, colorText: Colors.white);
+            AppSnackbar.warning('Error', message.isNotEmpty ? message : 'No se pudo calcular la tarifa');
           }
           setState(() => _dynamicDeliveryFee = null);
         }
       } else {
         setState(() => _dynamicDeliveryFee = null);
-        Get.snackbar('Error', 'No se pudo conectar con el servidor', backgroundColor: Colors.red, colorText: Colors.white);
+        AppSnackbar.error('Error', 'No se pudo conectar con el servidor');
       }
     }
   }
@@ -451,7 +452,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                  );
                                  if (matchedZone != null) {
                                     zoneCtrl.setZoneId(matchedZone.id);
-                                    Get.snackbar('Zona detectada', 'Se ha seleccionado la zona: ${matchedZone.name}', backgroundColor: Colors.green, colorText: Colors.white);
+                                    AppSnackbar.info('Zona detectada', 'Se ha seleccionado la zona: ${matchedZone.name}');
                                  } else {
                                     // Comentado para evitar confusión, ya que el cálculo dinámico decidirá si hay o no cobertura.
                                     // Get.snackbar('Sin cobertura', 'Lo sentimos, no hay cobertura en $locality', backgroundColor: Colors.orange, colorText: Colors.white);
@@ -1097,22 +1098,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (_addressController.text.isEmpty) {
         final selected = Get.find<OrderController>().selectedAddress;
         if (selected == null) {
-          Get.snackbar('Dirección requerida', 'Selecciona o ingresa una dirección de entrega',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          AppSnackbar.warning('Dirección requerida', 'Selecciona o ingresa una dirección de entrega');
           return;
         }
       } else {
         if (Get.find<ZoneController>().selectedZoneId == -1) {
-          Get.snackbar('Zona requerida', 'Selecciona una zona que corresponda a tu dirección',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          AppSnackbar.warning('Zona requerida', 'Selecciona una zona que corresponda a tu dirección');
           return;
         }
         if (_selectedLat == null || _selectedLng == null) {
-          Get.snackbar('Ubicación requerida', 'Usa el botón de mapa para seleccionar la ubicación exacta de entrega',
-            backgroundColor: Colors.redAccent, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+          AppSnackbar.warning('Ubicación requerida', 'Usa el botón de mapa para seleccionar la ubicación exacta de entrega');
           return;
         }
       }
@@ -1124,29 +1119,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
         if (!_isAddingNewCard && orderController.selectedCard != null) {
           // Validating CVV for saved card
           if (_cvvController.text.length < 3) {
-            Get.snackbar('Datos incompletos', 'Ingresa el CVV de la tarjeta',
-              backgroundColor: Colors.redAccent, colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            AppSnackbar.warning('Datos incompletos', 'Ingresa el CVV de la tarjeta');
             return;
           }
         } else {
           // Validating new card fields
           if (!_cardValid) {
-            Get.snackbar('Tarjeta inválida', 'Ingresa un número de tarjeta válido',
-              backgroundColor: Colors.redAccent, colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            AppSnackbar.warning('Tarjeta inválida', 'Ingresa un número de tarjeta válido');
             return;
           }
           if (_cardHolderController.text.isEmpty) {
-            Get.snackbar('Datos incompletos', 'Ingresa el nombre del titular',
-              backgroundColor: Colors.redAccent, colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            AppSnackbar.warning('Datos incompletos', 'Ingresa el nombre del titular');
             return;
           }
           if (_expiryController.text.length < 5) {
-            Get.snackbar('Datos incompletos', 'Ingresa la fecha de expiración',
-              backgroundColor: Colors.redAccent, colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            AppSnackbar.warning('Datos incompletos', 'Ingresa la fecha de expiración');
             return;
           } else {
             // Validate MM/YY
@@ -1156,9 +1143,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               int? year = int.tryParse(parts[1]);
 
               if (month == null || month < 1 || month > 12) {
-                Get.snackbar('Expiración inválida', 'El mes debe estar entre 01 y 12',
-                  backgroundColor: Colors.redAccent, colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+                AppSnackbar.warning('Expiración inválida', 'El mes debe estar entre 01 y 12');
                 return;
               }
 
@@ -1167,29 +1152,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
               final currentMonth = now.month;
 
               if (year == null || year < currentYear) {
-                Get.snackbar('Tarjeta expirada', 'La tarjeta ya venció (año inválido)',
-                  backgroundColor: Colors.redAccent, colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+                AppSnackbar.warning('Tarjeta expirada', 'La tarjeta ya venció (año inválido)');
                 return;
               }
 
               if (year == currentYear && month < currentMonth) {
-                Get.snackbar('Tarjeta expirada', 'La tarjeta venció en el mes $month/$year',
-                  backgroundColor: Colors.redAccent, colorText: Colors.white,
-                  snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+                AppSnackbar.warning('Tarjeta expirada', 'La tarjeta venció en el mes $month/$year');
                 return;
               }
             } else {
-              Get.snackbar('Datos inválidos', 'El formato debe ser MM/YY',
-                backgroundColor: Colors.redAccent, colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+              AppSnackbar.warning('Datos inválidos', 'El formato debe ser MM/YY');
               return;
             }
           }
           if (_cvvController.text.length < 3) {
-            Get.snackbar('Datos incompletos', 'Ingresa el CVV',
-              backgroundColor: Colors.redAccent, colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            AppSnackbar.warning('Datos incompletos', 'Ingresa el CVV');
             return;
           }
 
@@ -1227,8 +1204,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       finalAddressId = orderController.selectedAddress!.id;
     } else if (_isAddingNewAddress && _addressController.text.isNotEmpty) {
       if (_selectedLat == null || _selectedLng == null) {
-        Get.snackbar('Mapa', 'Por favor selecciona la ubicación en el mapa', 
-          backgroundColor: Colors.orange, colorText: Colors.white);
+        AppSnackbar.warning('Mapa', 'Por favor selecciona la ubicación en el mapa');
         return;
       }
       
@@ -1253,9 +1229,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     if (finalAddressId == null) {
-      Get.snackbar('Error', 'Por favor selecciona o ingresa una dirección de entrega', 
-        backgroundColor: Colors.redAccent, colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+      AppSnackbar.error('Error', 'Por favor selecciona o ingresa una dirección de entrega');
       return;
     }
 

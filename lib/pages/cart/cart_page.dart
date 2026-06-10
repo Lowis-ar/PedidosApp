@@ -11,6 +11,7 @@ import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../widgets/big_text.dart';
 import '../../widgets/small_text.dart';
+import '../../utils/app_snackbar.dart';
 
 class CartPage extends StatelessWidget {
   final bool showHeader;
@@ -274,14 +275,7 @@ class CartPage extends StatelessWidget {
                   HapticFeedback.lightImpact();
                   final authController = Get.find<AuthController>();
                   if (!authController.isLoggedIn) {
-                    Get.snackbar(
-                      'Inicia sesion',
-                      'Debes iniciar sesion para realizar un pedido',
-                      backgroundColor: AppColors.mainColor,
-                      colorText: Colors.white,
-                      snackPosition: SnackPosition.BOTTOM,
-                      margin: const EdgeInsets.all(16),
-                    );
+                    AppSnackbar.info('Inicia sesión', 'Debes iniciar sesión para realizar un pedido');
                     return;
                   }
                   Get.toNamed(RouteHelper.checkout);

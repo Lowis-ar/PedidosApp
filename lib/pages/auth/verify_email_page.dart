@@ -5,6 +5,7 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../utils/app_snackbar.dart';
 
 class VerifyEmailPage extends StatefulWidget {
   const VerifyEmailPage({super.key});
@@ -98,13 +99,11 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                           HapticFeedback.lightImpact();
                           final otp = _otpController.text.trim();
                           if (otp.length != 6) {
-                            Get.snackbar('Aviso', 'Ingresa el codigo de 6 digitos',
-                                backgroundColor: Colors.redAccent, colorText: Colors.white);
+                            AppSnackbar.warning('Aviso', 'Ingresa el código de 6 dígitos');
                             return;
                           }
                           if (email == null || email!.isEmpty) {
-                            Get.snackbar('Error', 'No se encontró el correo. Vuelve a registrarte.',
-                                backgroundColor: Colors.redAccent, colorText: Colors.white);
+                            AppSnackbar.error('Error', 'No se encontró el correo. Vuelve a registrarte.');
                             return;
                           }
                           bool success = await authController.verifyEmail(email!, otp);
@@ -152,8 +151,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                       if (email != null && email!.isNotEmpty) {
                         Get.find<AuthController>().resendVerificationEmail(email!);
                       } else {
-                        Get.snackbar('Error', 'No se encontró el correo. Regístrate de nuevo.',
-                            backgroundColor: Colors.redAccent, colorText: Colors.white);
+                        AppSnackbar.error('Error', 'No se encontró el correo. Regístrate de nuevo.');
                       }
                     },
                     child: Text(

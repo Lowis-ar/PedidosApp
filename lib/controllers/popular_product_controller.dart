@@ -6,6 +6,7 @@ import '../data/repository/popular_product_repo.dart';
 import '../models/cart_model.dart';
 import '../models/product_model.dart';
 import '../utils/colors.dart';
+import '../utils/app_snackbar.dart';
 
 class PopularProductController extends GetxController {
   final PopularProductRepo popularProductRepo;
@@ -70,8 +71,7 @@ class PopularProductController extends GetxController {
       if (current < 10) {
         _extraQuantities[extra.id!] = current + 1;
       } else {
-        Get.snackbar("Extras", "Máximo 10 unidades por extra",
-            backgroundColor: AppColors.mainColor, colorText: Colors.white);
+        AppSnackbar.info('Extras', 'Máximo 10 unidades por extra');
       }
     } else {
       if (current > 0) {
@@ -116,12 +116,10 @@ class PopularProductController extends GetxController {
 
   int checkQuantity(int quantity) {
     if (quantity < 1) {
-      Get.snackbar("Cantidad", "La cantidad mínima es 1",
-          backgroundColor: AppColors.mainColor, colorText: Colors.white);
+      AppSnackbar.info('Cantidad', 'La cantidad mínima es 1');
       return 1;
     } else if (quantity > 20) {
-      Get.snackbar("Cantidad", "No puedes agregar más de 20 unidades",
-          backgroundColor: AppColors.mainColor, colorText: Colors.white);
+      AppSnackbar.info('Cantidad', 'No puedes agregar más de 20 unidades');
       return 20;
     } else {
       return quantity;

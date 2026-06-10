@@ -7,6 +7,7 @@ import 'package:pedidosapp/routes/route_helper.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/widgets/big_text.dart';
 import 'package:pedidosapp/widgets/small_text.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 
 class DeliveryProfilePage extends StatelessWidget {
   const DeliveryProfilePage({super.key});
@@ -278,11 +279,10 @@ class DeliveryProfilePage extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               HapticFeedback.lightImpact();
-              if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
-                Get.snackbar('Error', 'Todos los campos son obligatorios',
-                    backgroundColor: Colors.redAccent, colorText: Colors.white);
-                return;
-              }
+                if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
+                  AppSnackbar.warning('Error', 'Todos los campos son obligatorios');
+                  return;
+                }
               Get.back();
               // Use the delivery auth repo for password change
               try {
@@ -291,15 +291,12 @@ class DeliveryProfilePage extends StatelessWidget {
                   'new_password': newPassController.text,
                 });
                 if (response.statusCode == 200) {
-                  Get.snackbar('Éxito', 'Contraseña actualizada',
-                    backgroundColor: Colors.green, colorText: Colors.white);
+                  AppSnackbar.success('Éxito', 'Contraseña actualizada');
                 } else {
-                  Get.snackbar('Error', 'No se pudo cambiar la contraseña',
-                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                  AppSnackbar.error('Error', 'No se pudo cambiar la contraseña');
                 }
               } catch (e) {
-                Get.snackbar('Error', 'Error de conexión',
-                  backgroundColor: Colors.redAccent, colorText: Colors.white);
+                AppSnackbar.error('Error', 'Error de conexión');
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.mainColor),

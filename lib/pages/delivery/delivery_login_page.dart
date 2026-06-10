@@ -4,6 +4,7 @@ import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
 import 'package:pedidosapp/routes/route_helper.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 
 class DeliveryLoginPage extends StatefulWidget {
   const DeliveryLoginPage({super.key});
@@ -75,7 +76,7 @@ class _DeliveryLoginPageState extends State<DeliveryLoginPage> {
                         String email = _emailController.text.trim();
                         String password = _passwordController.text.trim();
                         if (email.isEmpty || password.isEmpty) {
-                          Get.snackbar('Campos requeridos', 'Ingresa tus credenciales');
+                          AppSnackbar.warning('Campos requeridos', 'Ingresa tus credenciales');
                           return;
                         }
                         await authController.login(email, password);

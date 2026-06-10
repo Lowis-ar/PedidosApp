@@ -9,6 +9,7 @@ import 'delivery_order_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 import 'dart:io';
 
 class DeliveryAuthController extends GetxController {
@@ -169,14 +170,23 @@ class DeliveryAuthController extends GetxController {
 
   Future<void> updateAvailability(bool available) async {
     try {
-      Response response = await deliveryAuthRepo.updateProfile({'is_available': available});
+      final data = {
+        'is_available': available ? 1 : 0,
+        'is_active': available ? 1 : 0,
+      };
+      
+      Response response = await deliveryAuthRepo.updateProfile(data);
       if (response.statusCode == 200) {
         _deliveryman?.isAvailable = available;
         _storage.write(AppConstants.DELIVERY_USER_KEY, _deliveryman?.toJson());
         update();
+      } else {
+        debugPrint('Error toggle status: ${response.body}');
+        _handleApiError(response, 'No se pudo cambiar el estado.');
       }
     } catch (e) {
-      _showError('No se pudo actualizar el estado');
+      debugPrint('Exception toggle status: $e');
+      _showError('Error de conexión');
     }
   }
 
@@ -203,28 +213,16 @@ class DeliveryAuthController extends GetxController {
     _isLoading = true;
     update();
     try {
-      Map<String, dynamic> data = {'name': name, 'phone': phone};
-      
-      if (_pickedImage != null) {
-        debugPrint("[DeliveryAuthController] Profile update image file path: ${_pickedImage!.path}");
-        final file = File(_pickedImage!.path);
-        if (await file.exists()) {
-          debugPrint("[DeliveryAuthController] Profile image file exists, size: ${await file.length()} bytes");
-          data['image'] = MultipartFile(
-            file,
-            filename: _pickedImage!.name,
-          );
-        } else {
-          debugPrint("[DeliveryAuthController] Warning: Profile image file does not exist at path!");
-        }
-      }
+      final Map<String, dynamic> data = {'name': name, 'phone': phone};
 
       Response response = await deliveryAuthRepo.updateProfile(data);
       if (response.statusCode == 200) {
         await getProfile();
-        _pickedImage = null; // Clear after success
+        _pickedImage = null;
         Get.back();
-        Get.snackbar('Éxito', 'Perfil actualizado');
+        AppSnackbar.success('Éxito', 'Perfil actualizado');
+      } else {
+        _showError('No se pudo actualizar el perfil. Intenta de nuevo.');
       }
     } catch (e) {
       _showError('Error al actualizar');
@@ -260,11 +258,26 @@ class DeliveryAuthController extends GetxController {
     String message = fallback;
     if (response.body != null && response.body is Map) {
       message = response.body['message'] ?? fallback;
+    } else if (response.statusText != null) {
+      if (message == fallback) {
+        message = response.statusText!;
+      }
     }
+
+    String lowerMsg = message.toLowerCase();
+    if (lowerMsg.contains('exception') || 
+        lowerMsg.contains('sql') || 
+        lowerMsg.contains('server') || 
+        lowerMsg.contains('connection') || 
+        lowerMsg.contains('timeout') ||
+        lowerMsg.contains('error') && message.contains('errno')) {
+      message = 'Ocurrió un error inesperado, intenta nuevamente.';
+    }
+
     _showError(message);
   }
 
   void _showError(String message) {
-    Get.snackbar('Aviso', message, backgroundColor: Colors.redAccent, colorText: Colors.white);
+    AppSnackbar.error('Aviso', message);
   }
 }

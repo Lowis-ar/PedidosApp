@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../utils/app_constants.dart';
+import '../../../utils/app_snackbar.dart';
 
 class ApiClient extends GetConnect implements GetxService {
   late String token;
@@ -53,14 +54,8 @@ class ApiClient extends GetConnect implements GetxService {
       _storage.remove(AppConstants.TOKEN);
       token = '';
 
-      Get.snackbar(
-        'Sesión expirada',
-        'Por favor vuelve a iniciar sesión',
-        backgroundColor: Colors.red.shade600,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 3),
-      );
+      AppSnackbar.error('Sesión expirada', 'Por favor vuelve a iniciar sesión',
+          duration: const Duration(seconds: 3));
 
       Future.delayed(const Duration(milliseconds: 500), () {
         if (isDeliveryToken) {
@@ -71,18 +66,7 @@ class ApiClient extends GetConnect implements GetxService {
         isLoggingOut = false; // Reset para futuras sesiones
       });
     } else if ((response.statusCode == 500 || response.statusCode == 503) && handleError) {
-      Get.snackbar(
-        'Error del servidor',
-        'Ocurrió un error inesperado. Intenta de nuevo.',
-        backgroundColor: Colors.red.shade700,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 4),
-        mainButton: TextButton(
-          onPressed: () => Get.back(),
-          child: const Text('OK', style: TextStyle(color: Colors.white)),
-        ),
-      );
+      AppSnackbar.error('Error del servidor', 'Ocurrió un error inesperado. Intenta de nuevo.');
     }
   }
 

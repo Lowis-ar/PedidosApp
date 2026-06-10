@@ -5,6 +5,7 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../utils/app_snackbar.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -86,8 +87,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           HapticFeedback.lightImpact();
                           final email = _emailController.text.trim();
                           if (email.isEmpty) {
-                            Get.snackbar('Aviso', 'Ingresa tu correo',
-                                backgroundColor: Colors.redAccent, colorText: Colors.white);
+                            AppSnackbar.warning('Aviso', 'Ingresa tu correo');
                             return;
                           }
                           bool success = await authController.forgotPassword(email);

@@ -5,6 +5,7 @@ import '../../controllers/auth_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../utils/app_snackbar.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   final String email;
@@ -119,8 +120,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           final otp = _otpController.text.trim();
                           final pass = _passwordController.text.trim();
                           if (otp.length != 6 || pass.isEmpty) {
-                            Get.snackbar('Aviso', 'Ingresa el codigo valido y la contrasena',
-                                backgroundColor: Colors.redAccent, colorText: Colors.white);
+                            AppSnackbar.warning('Aviso', 'Ingresa el código válido y la contraseña');
                             return;
                           }
                           bool success = await authController.resetPassword(widget.email, otp, pass);

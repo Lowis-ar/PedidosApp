@@ -6,6 +6,7 @@ import '../../controllers/auth_controller.dart';
 
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
+import '../../utils/app_snackbar.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -477,18 +478,15 @@ class ProfilePage extends StatelessWidget {
             onPressed: () {
               HapticFeedback.lightImpact();
               if (currentPassController.text.isEmpty || newPassController.text.isEmpty) {
-                Get.snackbar('Error', 'Todos los campos son obligatorios',
-                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                AppSnackbar.warning('Error', 'Todos los campos son obligatorios');
                 return;
               }
               if (newPassController.text != confirmPassController.text) {
-                Get.snackbar('Error', 'Las contraseñas no coinciden',
-                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                AppSnackbar.warning('Error', 'Las contraseñas no coinciden');
                 return;
               }
               if (newPassController.text.length < 6) {
-                Get.snackbar('Error', 'La contraseña debe tener al menos 6 caracteres',
-                    backgroundColor: Colors.redAccent, colorText: Colors.white);
+                AppSnackbar.warning('Error', 'La contraseña debe tener al menos 6 caracteres');
                 return;
               }
               Get.back();

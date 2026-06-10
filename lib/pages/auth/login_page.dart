@@ -6,6 +6,7 @@ import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 import '../../widgets/shimmer_widgets.dart';
+import '../../utils/app_snackbar.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -223,11 +224,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                             final email = _emailController.text.trim();
                             final pass = _passwordController.text.trim();
                             if (email.isEmpty || pass.isEmpty) {
-                              Get.snackbar('Campos requeridos', 'Ingresa correo y contrasena',
-                                  backgroundColor: Colors.redAccent,
-                                  colorText: Colors.white,
-                                  snackPosition: SnackPosition.BOTTOM,
-                                  margin: const EdgeInsets.all(16));
+                              AppSnackbar.warning('Campos requeridos', 'Ingresa correo y contraseña');
                               return;
                             }
                             await authController.login(email, pass);

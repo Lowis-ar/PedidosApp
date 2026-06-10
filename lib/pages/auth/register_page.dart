@@ -6,6 +6,7 @@ import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
 import '../../widgets/shimmer_widgets.dart';
+import '../../utils/app_snackbar.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -115,62 +116,29 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                             final pass = _passwordController.text.trim();
                             final rawPhone = _phoneController.text.replaceAll(' ', '').trim();
                             if (!RegExp(r'^[2567]\d{7}$').hasMatch(rawPhone)) {
-                              Get.snackbar(
-                                'Teléfono inválido',
-                                'Debe iniciar por 2, 5, 6 o 7 y tener exactamente 8 dígitos.',
-                                backgroundColor: Colors.redAccent,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.BOTTOM,
-                                margin: const EdgeInsets.all(16),
-                              );
+                              AppSnackbar.warning('Teléfono inválido',
+                                  'Debe iniciar por 2, 5, 6 o 7 y tener exactamente 8 dígitos.');
                               return;
                             }
                             String phone = '+503$rawPhone';
                             final name = _nameController.text.trim();
                             
                             if (RegExp(r'[0-9]').hasMatch(name)) {
-                              Get.snackbar(
-                                'Nombre inválido',
-                                'El nombre no debe contener números.',
-                                backgroundColor: Colors.redAccent,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.BOTTOM,
-                                margin: const EdgeInsets.all(16),
-                              );
+                              AppSnackbar.warning('Nombre inválido', 'El nombre no debe contener números.');
                               return;
                             }
                             
                             if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
-                              Get.snackbar(
-                                'Campos requeridos',
-                                'Todos los campos son obligatorios',
-                                backgroundColor: Colors.redAccent,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.BOTTOM,
-                                margin: const EdgeInsets.all(16),
-                              );
+                              AppSnackbar.warning('Campos requeridos', 'Todos los campos son obligatorios');
                               return;
                             }
                             if (!GetUtils.isEmail(email)) {
-                              Get.snackbar(
-                                'Correo inválido',
-                                'Ingresa un correo electrónico válido.',
-                                backgroundColor: Colors.redAccent,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.BOTTOM,
-                                margin: const EdgeInsets.all(16),
-                              );
+                              AppSnackbar.warning('Correo inválido', 'Ingresa un correo electrónico válido.');
                               return;
                             }
                             if (pass.length < 8 || !pass.contains(RegExp(r'[0-9]'))) {
-                              Get.snackbar(
-                                'Contraseña inválida',
-                                'Debe tener al menos 8 caracteres y un número.',
-                                backgroundColor: Colors.redAccent,
-                                colorText: Colors.white,
-                                snackPosition: SnackPosition.BOTTOM,
-                                margin: const EdgeInsets.all(16),
-                              );
+                              AppSnackbar.warning('Contraseña inválida',
+                                  'Debe tener al menos 8 caracteres y un número.');
                               return;
                             }
                             bool success = await authController.register(name, phone, email, pass);

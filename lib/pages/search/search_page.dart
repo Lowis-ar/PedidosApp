@@ -7,6 +7,7 @@ import '../../utils/dimensions.dart';
 import '../../widgets/big_text.dart';
 import '../../widgets/small_text.dart';
 import '../../routes/route_helper.dart';
+import '../../utils/app_snackbar.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -173,14 +174,9 @@ class _SearchPageState extends State<SearchPage> {
                                     GestureDetector(
                                       onTap: () {
                                         searchController.addToCart(product);
-                                        Get.snackbar(
-                                          "Agregado", 
-                                          "${product.name} al carrito",
-                                          backgroundColor: AppColors.mainColor,
-                                          colorText: Colors.white,
-                                          duration: const Duration(seconds: 1),
-                                          snackPosition: SnackPosition.BOTTOM,
-                                        );
+                                        AppSnackbar.success('Agregado',
+                                            '${product.name} al carrito',
+                                            duration: const Duration(seconds: 1));
                                       },
                                       child: Container(
                                         padding: const EdgeInsets.all(8),

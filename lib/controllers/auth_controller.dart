@@ -10,6 +10,7 @@ import 'package:pedidosapp/routes/route_helper.dart';
 import 'package:pedidosapp/controllers/delivery_auth_controller.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:pedidosapp/utils/colors.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 
 import 'package:pedidosapp/controllers/delivery_order_controller.dart';
@@ -254,7 +255,7 @@ class AuthController extends GetxController {
       await _handleGoogleLoginResponse(response, idToken);
     } catch (e) {
       debugPrint("Error signing in with Google: $e");
-      _showError('Error al iniciar sesión con Google: $e');
+      _showError('Ocurrió un error al iniciar sesión con Google.');
       _isLoading = false;
       update();
     }
@@ -505,9 +506,7 @@ class AuthController extends GetxController {
       if (response.statusCode == 200) {
         await getProfile();
         _pickedImage = null; // Clear after success
-        Get.snackbar('Éxito', 'Perfil actualizado',
-          backgroundColor: Colors.green, colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Perfil actualizado');
       } else {
         _handleApiError(response, 'No se pudo actualizar el perfil');
       }
@@ -525,9 +524,7 @@ class AuthController extends GetxController {
     try {
       Response response = await authRepo.changePassword(currentPassword, newPassword);
       if (response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Contraseña actualizada',
-          backgroundColor: Colors.green, colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Contraseña actualizada');
       } else {
         _handleApiError(response, 'No se pudo cambiar la contraseña');
       }
@@ -545,9 +542,7 @@ class AuthController extends GetxController {
     try {
       Response response = await authRepo.forgotPassword(email);
       if (response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Código enviado a tu correo',
-            backgroundColor: Colors.green, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Código enviado a tu correo');
         return true;
       } else {
         _handleApiError(response, 'No se pudo enviar el código');
@@ -568,9 +563,7 @@ class AuthController extends GetxController {
     try {
       Response response = await authRepo.resetPassword(email, otp, password);
       if (response.statusCode == 200) {
-        Get.snackbar('Éxito', 'Contraseña restablecida correctamente',
-            backgroundColor: Colors.green, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Contraseña restablecida correctamente');
         return true;
       } else {
         _handleApiError(response, 'No se pudo restablecer la contraseña');
@@ -599,9 +592,7 @@ class AuthController extends GetxController {
           if (token != null && userJson != null) {
             final user = UserModel.fromJson(userJson is Map<String, dynamic> ? userJson : Map<String, dynamic>.from(userJson));
             _saveSession(token, user, _userType, navigate: true);
-            Get.snackbar('Éxito', 'Correo verificado y cuenta creada',
-                backgroundColor: Colors.green, colorText: Colors.white,
-                snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+            AppSnackbar.success('Éxito', 'Correo verificado y cuenta creada');
             return true;
           }
         }
@@ -626,9 +617,7 @@ class AuthController extends GetxController {
     try {
       Response response = await authRepo.resendVerificationEmail(email);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        Get.snackbar('Éxito', 'Código reenviado. Revisa tu correo.',
-            backgroundColor: Colors.green, colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Código reenviado. Revisa tu correo.');
         return true;
       } else {
         _handleApiError(response, 'No se pudo reenviar el código.');
@@ -660,18 +649,22 @@ class AuthController extends GetxController {
     } else if (response.statusText != null) {
       message = response.statusText!;
     }
+    
+    String lowerMsg = message.toLowerCase();
+    if (lowerMsg.contains('exception') || 
+        lowerMsg.contains('sql') || 
+        lowerMsg.contains('server') || 
+        lowerMsg.contains('connection') || 
+        lowerMsg.contains('timeout') ||
+        lowerMsg.contains('error') && message.contains('errno')) {
+      message = 'Ocurrió un error inesperado, intenta nuevamente.';
+    }
+
     _showError(message);
   }
 
   void _showError(String message) {
-    Get.snackbar(
-      'Aviso',
-      message,
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-    );
+    AppSnackbar.error('Aviso', message);
   }
 
   void logout() async {

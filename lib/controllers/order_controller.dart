@@ -6,6 +6,7 @@ import 'package:pedidosapp/models/payment_card_model.dart';
 import 'package:pedidosapp/models/cart_model.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 
 class OrderController extends GetxController {
   final OrderRepo orderRepo;
@@ -125,15 +126,8 @@ class OrderController extends GetxController {
         
         // Solo mostrar Snackbar si NO hay OTP (el diálogo de OTP se muestra desde checkout_page)
         if (_lastOtp == null) {
-          Get.snackbar(
-            '¡Pedido realizado!',
-            'Tu pedido ha sido creado con éxito.',
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
-            margin: const EdgeInsets.all(16),
-            duration: const Duration(seconds: 4),
-          );
+          AppSnackbar.success('¡Pedido realizado!', 'Tu pedido ha sido creado con éxito.',
+              duration: const Duration(seconds: 4));
         }
         
         await getOrderList();
@@ -182,11 +176,11 @@ class OrderController extends GetxController {
         }
       } else {
         debugPrint("Error loading orders status: ${response.statusCode} - ${response.statusText}");
-        _showError("Error del servidor (${response.statusCode}): ${response.statusText}");
+        _handleError(response, "No se pudieron cargar los pedidos. Intenta nuevamente.");
       }
     } catch (e) {
       debugPrint("Exception loading orders: $e");
-      _showError("Excepción al cargar pedidos: $e");
+      _showError("Ocurrió un error inesperado al cargar los pedidos.");
     } finally {
       _isLoading = false;
       update();
@@ -200,14 +194,7 @@ class OrderController extends GetxController {
     try {
       Response response = await orderRepo.cancelOrder(orderId);
       if (response.statusCode == 200) {
-        Get.snackbar(
-          'Pedido cancelado',
-          'El pedido ha sido cancelado exitosamente',
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-        );
+        AppSnackbar.warning('Pedido cancelado', 'El pedido ha sido cancelado exitosamente');
         await getOrderList();
       } else {
         _handleError(response, 'No se pudo cancelar el pedido');
@@ -250,9 +237,7 @@ class OrderController extends GetxController {
       Response response = await orderRepo.addAddress(address.toJson());
       if (response.statusCode == 201 || response.statusCode == 200) {
         await getAddressList();
-        Get.snackbar('Éxito', 'Dirección agregada', 
-          backgroundColor: Colors.green, colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Dirección agregada');
         return true;
       } else {
         _handleError(response, 'No se pudo agregar la dirección');
@@ -321,9 +306,7 @@ class OrderController extends GetxController {
           final createdCard = PaymentCardModel.fromJson(response.body['data']);
           _selectedCard = _cardList.firstWhereOrNull((c) => c.id == createdCard.id) ?? _cardList.first;
         }
-        Get.snackbar('Éxito', 'Tarjeta agregada', 
-          backgroundColor: Colors.green, colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM, margin: const EdgeInsets.all(16));
+        AppSnackbar.success('Éxito', 'Tarjeta agregada');
         return true;
       } else {
         _handleError(response, 'No se pudo agregar la tarjeta');
@@ -374,18 +357,27 @@ class OrderController extends GetxController {
           message = "$message: ${errMsgs.join(' | ')}";
         }
       }
+    } else if (response.statusText != null) {
+      // Si la API no retornó body o message explícito, usamos statusText como fallback base
+      if (message == fallback) {
+         message = response.statusText!;
+      }
     }
+    
+    String lowerMsg = message.toLowerCase();
+    if (lowerMsg.contains('exception') || 
+        lowerMsg.contains('sql') || 
+        lowerMsg.contains('server') || 
+        lowerMsg.contains('connection') || 
+        lowerMsg.contains('timeout') ||
+        lowerMsg.contains('error') && message.contains('errno')) {
+      message = 'Ocurrió un error inesperado, intenta nuevamente.';
+    }
+
     _showError(message);
   }
 
   void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      backgroundColor: Colors.redAccent,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
-      margin: const EdgeInsets.all(16),
-    );
+    AppSnackbar.error('Error', message);
   }
 }

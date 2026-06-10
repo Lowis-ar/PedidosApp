@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../data/repository/order_repo.dart';
 import '../models/order_model.dart';
+import 'package:pedidosapp/utils/app_snackbar.dart';
 
 /// Controls the pending-review lifecycle.
 /// - Detects orders that need a review (delivered < 24h ago, not yet reviewed).
@@ -99,31 +100,32 @@ class ReviewController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Remove from pending list
         pendingReviews.removeWhere((o) => o.id == orderId);
-        Get.snackbar(
-          '¡Gracias! 🙏',
-          'Tu reseña ha sido enviada.',
-          backgroundColor: Colors.green.shade600,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(14),
-          duration: const Duration(seconds: 3),
-        );
+        AppSnackbar.success('¡Gracias!', 'Tu reseña ha sido enviada.',
+            duration: const Duration(seconds: 3));
         return true;
       } else {
-        final msg = response.body?['message'] ?? 'No se pudo enviar la reseña.';
-        Get.snackbar('Error', msg,
-            backgroundColor: Colors.redAccent,
-            colorText: Colors.white,
-            snackPosition: SnackPosition.BOTTOM,
-            margin: const EdgeInsets.all(14));
+        String msg = 'No se pudo enviar la reseña.';
+        if (response.body != null && response.body is Map) {
+          msg = response.body['message'] ?? msg;
+        } else if (response.statusText != null) {
+          msg = response.statusText!;
+        }
+
+        String lowerMsg = msg.toLowerCase();
+        if (lowerMsg.contains('exception') || 
+            lowerMsg.contains('sql') || 
+            lowerMsg.contains('server') || 
+            lowerMsg.contains('connection') || 
+            lowerMsg.contains('timeout') ||
+            lowerMsg.contains('error') && msg.contains('errno')) {
+          msg = 'Ocurrió un error inesperado, intenta nuevamente.';
+        }
+
+        AppSnackbar.error('Error', msg);
         return false;
       }
     } catch (e) {
-      Get.snackbar('Error de conexión', 'Inténtalo de nuevo.',
-          backgroundColor: Colors.redAccent,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(14));
+      AppSnackbar.error('Error de conexión', 'Inténtalo de nuevo.');
       return false;
     } finally {
       _isSubmitting = false;
