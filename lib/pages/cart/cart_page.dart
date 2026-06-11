@@ -4,9 +4,9 @@ import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 import 'package:pedidosapp/widgets/app_icon.dart';
-import 'package:pedidosapp/widgets/shimmer_widgets.dart';
 
 import '../../controllers/auth_controller.dart';
+import '../../controllers/branch_controller.dart';
 import '../../routes/route_helper.dart';
 import '../../utils/colors.dart';
 import '../../widgets/big_text.dart';
@@ -278,6 +278,9 @@ class CartPage extends StatelessWidget {
                     AppSnackbar.info('Inicia sesión', 'Debes iniciar sesión para realizar un pedido');
                     return;
                   }
+                  // Verificar horario de atención
+                  final branchController = Get.find<BranchController>();
+                  if (!branchController.checkBranchOpen()) return;
                   Get.toNamed(RouteHelper.checkout);
                 },
                 child: Container(

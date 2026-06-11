@@ -202,4 +202,139 @@ class BranchController extends GetxController {
       ),
     );
   }
+
+  /// Returns true if the current branch is open, false if closed.
+  /// Shows an informational dialog when closed.
+  bool checkBranchOpen() {
+    try {
+      final branch = _branchList.firstWhere((b) => b.id == _branchId);
+      if (!branch.isOpenNow) {
+        _showClosedBranchDialog(branch);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      // Branch not found in list, allow (will be validated server-side)
+      return true;
+    }
+  }
+
+  void _showClosedBranchDialog(Branch branch) {
+    final context = Get.overlayContext;
+    if (context == null) return;
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.access_time_rounded,
+                color: Colors.orange.shade700, size: 28),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Sucursal cerrada',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'La sucursal $_branchName se encuentra cerrada en este momento.',
+                style: const TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Horarios de atención:',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87),
+              ),
+              const SizedBox(height: 8),
+              if (branch.schedule != null)
+                ...branch.schedule!.regular.map(
+                  (day) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 85,
+                          child: Text(
+                            day.dayName,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: day.isClosed ? Colors.red.shade400 : Colors.black87,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            day.isClosed
+                                ? 'Cerrado'
+                                : day.shifts.map((s) => '${s.openTime ?? ""} - ${s.closeTime ?? ""}').join(', '),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: day.isClosed ? Colors.red.shade400 : Colors.black54,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              // Show upcoming special days if any
+              if (branch.schedule != null && branch.schedule!.special.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Divider(),
+                const SizedBox(height: 4),
+                const Text(
+                  'Horarios especiales:',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
+                const SizedBox(height: 8),
+                ...branch.schedule!.special.take(5).map(
+                  (special) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          special.isClosed ? Icons.event_busy : Icons.event_available,
+                          size: 16,
+                          color: special.isClosed ? Colors.red.shade400 : Colors.green.shade600,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '${special.label ?? special.date}: ${special.isClosed ? "Cerrado" : special.shifts.map((s) => "${s.openTime ?? ""} - ${s.closeTime ?? ""}").join(", ")}',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.mainColor,
+            ),
+            child: const Text('Entendido',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 }
