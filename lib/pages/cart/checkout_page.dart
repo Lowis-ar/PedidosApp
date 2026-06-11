@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/cart_controller.dart';
 import '../../controllers/order_controller.dart';
+import '../../controllers/coupon_controller.dart';
 import '../../controllers/zone_controller.dart';
 import '../../models/order_model.dart';
 import '../../models/payment_card_model.dart';
@@ -34,6 +35,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
   final _cardHolderController = TextEditingController();
+  final _couponController = TextEditingController();
   
   // Address fields
   final _addressController = TextEditingController();
@@ -128,6 +130,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
     });
     Get.find<ZoneController>().getZoneList();
+    // Clear any previously applied coupon to avoid stale state if cart was modified
+    Get.find<CouponController>().removeCoupon(showSnackbar: false);
+    // Pre-load user coupons for the coupon selector
+    Get.find<CouponController>().getUserCoupons();
     // Pre-fill contact info from user profile
     final user = Get.find<AuthController>().user;
     _contactNameController.text = user?.name ?? '';
@@ -141,6 +147,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     _expiryController.dispose();
     _cvvController.dispose();
     _cardHolderController.dispose();
+    _couponController.dispose();
     _addressController.dispose();
     _referenceController.dispose();
     _contactNameController.dispose();
@@ -893,6 +900,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget _buildConfirmStep() {
     return GetBuilder<CartController>(builder: (cartController) {
       return GetBuilder<ZoneController>(builder: (zoneController) {
+        return GetBuilder<CouponController>(builder: (couponController) {
         var cartList = cartController.getItems;
         double subtotal = 0;
         for (var item in cartList) {
@@ -906,7 +914,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
           deliveryFee = double.tryParse(selectedZone.deliveryFee) ?? 0;
         }
 
-        double total = subtotal + deliveryFee;
+        // Apply coupon discount
+        double couponDiscount = couponController.discountAmount;
+        // For free_delivery coupons, zero out delivery fee
+        if (couponController.hasCouponApplied && couponController.appliedCoupon?.coupon?.type == 'free_delivery') {
+          couponDiscount = deliveryFee;
+        }
+        double total = subtotal + deliveryFee - couponDiscount;
+        if (total < 0) total = 0;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1017,6 +1032,25 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       Text('\$${deliveryFee.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
                     ],
                   ),
+                  // Coupon discount row
+                  if (couponController.hasCouponApplied) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.local_offer, color: Colors.green.shade600, size: 16),
+                            const SizedBox(width: 4),
+                            Text('Cupón (${couponController.appliedCouponCode})',
+                                style: TextStyle(fontSize: 14, color: Colors.green.shade700)),
+                          ],
+                        ),
+                        Text('-\$${couponDiscount.toStringAsFixed(2)}',
+                            style: TextStyle(fontSize: 14, color: Colors.green.shade700, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ],
                   const Divider(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1029,6 +1063,174 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ],
               ),
             ),
+          const SizedBox(height: 16),
+          // ── Coupon section ────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: couponController.hasCouponApplied ? Colors.green.shade300 : Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: couponController.hasCouponApplied
+                      ? Colors.green.withValues(alpha: 0.08)
+                      : Colors.grey.withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.confirmation_number_outlined,
+                        color: couponController.hasCouponApplied ? Colors.green.shade600 : AppColors.mainColor, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Cupón de Descuento',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: couponController.hasCouponApplied ? Colors.green.shade700 : Colors.black87,
+                        )),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (couponController.hasCouponApplied) ...[
+                  // Applied coupon badge
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green.shade600, size: 22),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(couponController.appliedCouponCode ?? '',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green.shade800)),
+                              Text(couponController.appliedCoupon?.message ?? '',
+                                  style: TextStyle(fontSize: 12, color: Colors.green.shade600)),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            couponController.removeCoupon();
+                            _couponController.clear();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(Icons.close, color: Colors.red.shade400, size: 18),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  // Coupon input
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextField(
+                            controller: _couponController,
+                            textCapitalization: TextCapitalization.characters,
+                            decoration: InputDecoration(
+                              hintText: 'Ingresa tu código',
+                              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                              prefixIcon: Icon(Icons.local_offer_outlined, color: AppColors.mainColor, size: 20),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: couponController.isValidating
+                              ? null
+                              : () {
+                                  int branchId = Get.find<BranchController>().branchId;
+                                  couponController.validateCoupon(
+                                    _couponController.text,
+                                    subtotal,
+                                    branchId,
+                                  );
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.mainColor,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                          ),
+                          child: couponController.isValidating
+                              ? const SizedBox(
+                                  width: 20, height: 20,
+                                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const Text('Aplicar',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // My coupons button
+                  if (couponController.userCoupons.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: () => _showUserCouponsSheet(couponController),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: AppColors.mainColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.mainColor.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.card_giftcard, color: AppColors.mainColor, size: 18),
+                            const SizedBox(width: 8),
+                            Text('Mis Cupones (${couponController.userCoupons.length})',
+                                style: TextStyle(color: AppColors.mainColor, fontWeight: FontWeight.w600, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
           const SizedBox(height: 12),
           // Address summary
           Container(
@@ -1089,7 +1291,114 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
     });
   });
+  });
 }
+
+  void _showUserCouponsSheet(CouponController couponController) {
+    Get.bottomSheet(
+      Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.card_giftcard, color: AppColors.mainColor),
+                  const SizedBox(width: 10),
+                  const Text('Mis Cupones Disponibles',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                ],
+              ),
+            ),
+            const Divider(height: 0),
+            Flexible(
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: couponController.userCoupons.length,
+                itemBuilder: (context, index) {
+                  final coupon = couponController.userCoupons[index];
+                  return GestureDetector(
+                    onTap: () {
+                      _couponController.text = coupon.code ?? '';
+                      Get.back();
+                      // Auto-validate
+                      int branchId = Get.find<BranchController>().branchId;
+                      final cartController = Get.find<CartController>();
+                      double subtotal = 0;
+                      for (var item in cartController.getItems) {
+                        subtotal += ((item.price ?? 0) * (item.quantity ?? 0)) + (item.extrasPrice ?? 0);
+                      }
+                      couponController.validateCoupon(coupon.code ?? '', subtotal, branchId);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.mainColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.mainColor.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.mainColor.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              coupon.type == 'free_delivery'
+                                  ? Icons.local_shipping_outlined
+                                  : Icons.local_offer,
+                              color: AppColors.mainColor,
+                              size: 22,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(coupon.code ?? '',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1)),
+                                const SizedBox(height: 2),
+                                Text(coupon.typeLabel,
+                                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                if (coupon.minOrderAmount != null && coupon.minOrderAmount! > 0)
+                                  Text('Mínimo: \$${coupon.minOrderAmount!.toStringAsFixed(2)}',
+                                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios, color: AppColors.mainColor, size: 16),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
 
   void _onStepContinue() async {
     HapticFeedback.lightImpact();
@@ -1236,6 +1545,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // PETICIÓN DIRECTA AL PEDIDO
     debugPrint("Enviando pedido con address_id: $finalAddressId");
 
+    // Get coupon code if applied
+    final couponCode = Get.find<CouponController>().appliedCouponCode;
+
     bool success = await orderController.placeOrder(
       cartItems: cartController.getItems,
       addressId: finalAddressId,
@@ -1243,6 +1555,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       lat: _selectedLat,
       lng: _selectedLng,
       paymentMethod: _paymentMethod,
+      couponCode: couponCode,
     );
 
     if (success) {

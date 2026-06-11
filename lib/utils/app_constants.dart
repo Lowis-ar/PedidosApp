@@ -37,6 +37,14 @@ class AppConstants {
   static const String ORDER_DETAIL_URI = "/api/v1/orders/";
   static const String CANCEL_ORDER_URI = "/api/v1/orders/";
 
+  // Coupon endpoints
+  static const String VALIDATE_COUPON_URI = "/api/v1/coupons/validate";
+
+  // Loyalty endpoints
+  static const String LOYALTY_PROFILE_URI = "/api/v1/loyalty/profile";
+  static const String LOYALTY_TRANSACTIONS_URI = "/api/v1/loyalty/transactions";
+  static const String LOYALTY_COUPONS_URI = "/api/v1/loyalty/coupons";
+
   // Delivery endpoints
   static const String DELIVERY_LOGIN_URI = "/api/v1/delivery/auth/login";
   static const String DELIVERY_LOGOUT_URI = "/api/v1/delivery/auth/logout";

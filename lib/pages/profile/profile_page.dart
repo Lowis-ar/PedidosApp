@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
+import '../../controllers/coupon_controller.dart';
 
 import '../../utils/colors.dart';
 import '../../utils/dimensions.dart';
@@ -155,6 +156,75 @@ class ProfilePage extends StatelessWidget {
               ),
 
               SizedBox(height: Dimensions.height20),
+              // Loyalty program card
+              GetBuilder<CouponController>(
+                initState: (_) {
+                  Get.find<CouponController>().getLoyaltyProfile();
+                },
+                builder: (couponController) {
+                  final profile = couponController.loyaltyProfile;
+                  return GestureDetector(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Get.toNamed('/loyalty');
+                    },
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: Dimensions.width20),
+                      padding: EdgeInsets.all(Dimensions.width15),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.mainColor, AppColors.mainColor.withValues(alpha: 0.7)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(Dimensions.radius15),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.mainColor.withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.stars_rounded, color: Colors.white, size: 28),
+                          ),
+                          SizedBox(width: Dimensions.width15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Programa de Fidelidad',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    )),
+                                const SizedBox(height: 2),
+                                Text(
+                                  profile != null
+                                      ? '${profile.loyaltyPoints} puntos disponibles'
+                                      : 'Ver tus puntos y recompensas',
+                                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: Dimensions.height15),
               // Change password button
               GestureDetector(
                 onTap: () {

@@ -70,6 +70,7 @@ class OrderController extends GetxController {
     double? lat,
     double? lng,
     String paymentMethod = 'cash_on_delivery',
+    String? couponCode,
   }) async {
     _isLoading = true;
     update();
@@ -97,7 +98,7 @@ class OrderController extends GetxController {
         'branch_id': branchId,
         'address_id': addressId,
         'payment_method': paymentMethod,
-        'coupon_code': null,
+        'coupon_code': couponCode,
         'use_loyalty_points': false,
         'notes': mainNote,
         'items': cartItems.map((item) {

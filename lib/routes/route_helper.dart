@@ -10,6 +10,7 @@ import '../pages/food/popular_food_detail.dart';
 import '../pages/food/recommended_food_detail.dart';
 import '../pages/home/home_page.dart';
 import '../pages/profile/profile_page.dart';
+import '../pages/profile/loyalty_page.dart';
 import '../pages/search/search_page.dart';
 import '../pages/delivery/delivery_login_page.dart';
 import '../pages/delivery/delivery_dashboard.dart';
@@ -31,6 +32,7 @@ class RouteHelper {
   static const String checkout = "/checkout";
   static const String profilePage = "/profile";
   static const String searchPage = "/search";
+  static const String loyalty = "/loyalty";
 
   // Delivery routes
   static const String deliveryLogin = "/delivery-login";
@@ -52,6 +54,7 @@ class RouteHelper {
   static String getCheckout() => checkout;
   static String getProfilePage() => profilePage;
   static String getSearchPage() => searchPage;
+  static String getLoyalty() => loyalty;
 
   static String getDeliveryLogin() => deliveryLogin;
   static String getDeliveryDashboard() => deliveryDashboard;
@@ -132,6 +135,11 @@ class RouteHelper {
       name: searchPage,
       page: () => const SearchPage(),
       transition: Transition.downToUp,
+    ),
+    GetPage(
+      name: loyalty,
+      page: () => const LoyaltyPage(),
+      transition: Transition.rightToLeftWithFade,
     ),
     // Delivery Pages
     GetPage(
