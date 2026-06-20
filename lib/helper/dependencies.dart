@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:pedidosapp/controllers/auth_controller.dart';
 import 'package:pedidosapp/controllers/popular_product_controller.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
@@ -29,9 +30,22 @@ import '../utils/app_constants.dart';
 
 Future<void> init() async {
   await GetStorage.init();
+  const secureStorage = FlutterSecureStorage();
+  
+  final String? deliveryToken = await secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
+  final String? customerToken = await secureStorage.read(key: AppConstants.TOKEN) ?? await secureStorage.read(key: 'token');
+  
+  String initialToken = '';
+  if (deliveryToken != null && deliveryToken.isNotEmpty) {
+      initialToken = deliveryToken;
+  } else if (customerToken != null && customerToken.isNotEmpty) {
+      initialToken = customerToken;
+  }
 
   // Api Client
-  Get.lazyPut(() => ApiClient(appBaseUrl: AppConstants.BASE_URL), fenix: true);
+  final apiClient = ApiClient(appBaseUrl: AppConstants.BASE_URL);
+  apiClient.updateToken(initialToken);
+  Get.lazyPut(() => apiClient, fenix: true);
 
   // Repos
   Get.lazyPut(() => AuthRepo(apiClient: Get.find<ApiClient>()), fenix: true);

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
@@ -90,7 +91,9 @@ class PopularProductController extends GetxController {
     debugPrint("Fetching popular products...");
     try {
       Response response = await popularProductRepo.getPopularProductList();
-      debugPrint("Popular products response: ${response.statusCode} - ${response.body}");
+      if (kDebugMode) {
+        debugPrint("Popular products response: ${response.statusCode} - ${response.body}");
+      }
       if (response.statusCode == 200) {
         _popularProductList = [];
         _popularProductList.addAll(Product.fromJson(response.body).products);

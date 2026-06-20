@@ -227,6 +227,10 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                               AppSnackbar.warning('Campos requeridos', 'Ingresa correo y contraseña');
                               return;
                             }
+                            if (!GetUtils.isEmail(email)) {
+                              AppSnackbar.warning('Correo inválido', 'El formato del correo electrónico no es válido.');
+                              return;
+                            }
                             await authController.login(email, pass);
                             // La redirección ahora la maneja internamente _saveSession
                           },

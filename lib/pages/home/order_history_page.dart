@@ -394,6 +394,12 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                         const SizedBox(height: 4),
                         _breakdownRow(zoneLabel,
                             '\$${deliveryFeeVal.toStringAsFixed(2)}'),
+                        if ((double.tryParse(order.discountAmount ?? '0') ?? 0.0) > 0) ...[
+                          const SizedBox(height: 4),
+                          _breakdownRow('Descuento Cupón',
+                              '-\$${(double.tryParse(order.discountAmount ?? '0') ?? 0.0).toStringAsFixed(2)}',
+                              color: Colors.green),
+                        ],
                         const SizedBox(height: 6),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -535,15 +541,20 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
   }
 
   /// Helper para filas de desglose (subtotal, envío)
-  Widget _breakdownRow(String label, String value) {
+  Widget _breakdownRow(String label, String value, {Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: Colors.black87)),
         Text(value,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700,
-                fontWeight: FontWeight.w500)),
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: color ?? Colors.black87)),
       ],
     );
   }

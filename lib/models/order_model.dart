@@ -2,6 +2,7 @@ class OrderModel {
   int? id;
   int? userId;
   String? orderAmount;
+  String? discountAmount;
   String? deliveryFee;
   String? subtotal;
   String? zoneName;
@@ -21,6 +22,7 @@ class OrderModel {
     this.id,
     this.userId,
     this.orderAmount,
+    this.discountAmount,
     this.deliveryFee,
     this.subtotal,
     this.zoneName,
@@ -41,6 +43,7 @@ class OrderModel {
     id = json['id'];
     userId = json['user_id'];
     orderAmount = json['order_amount']?.toString() ?? json['total']?.toString();
+    discountAmount = json['discount_amount']?.toString() ?? '0';
     deliveryFee = json['delivery_fee']?.toString() ?? json['shipping_fee']?.toString();
     subtotal = json['subtotal']?.toString() ?? json['products_amount']?.toString();
     // Nombre de zona — puede venir como objeto o string directo

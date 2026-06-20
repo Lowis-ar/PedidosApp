@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 
 import '../data/repository/delivery_order_repo.dart';
 import '../models/delivery_order_model.dart';
@@ -162,7 +164,9 @@ class DeliveryOrderController extends GetxController {
         
         _historyError = !historyParsed;
         if (!historyParsed) {
-          debugPrint('[History] Formato desconocido: ${body.runtimeType} keys=${body is Map ? body.keys.toList() : 'list'}');
+          if (kDebugMode) {
+            debugPrint('[History] Formato desconocido: ${body.runtimeType} keys=${body is Map ? body.keys.toList() : 'list'}');
+          }
         }
       } else {
         _historyError = true;
@@ -255,15 +259,34 @@ class DeliveryOrderController extends GetxController {
           _totalEarnings = data['total_earnings'] != null ? double.tryParse(data['total_earnings'].toString()) ?? 0.0 : 0.0;
           _todayEarnings = data['today_earnings'] != null ? double.tryParse(data['today_earnings'].toString()) ?? 0.0 : 0.0;
           var rawOrders = data['orders'];
+          if (rawOrders is Map && rawOrders.containsKey('data')) {
+            rawOrders = rawOrders['data'];
+          }
           if (rawOrders is List) {
-            _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
+            final List<DeliveryOrderModel> parsedOrders = [];
+            for (var o in rawOrders) {
+              try {
+                parsedOrders.add(DeliveryOrderModel.fromJson(o));
+              } catch (e) {
+                debugPrint('Error parsing order in getHistory: $e');
+              }
+            }
+            _historyOrders = parsedOrders;
           }
           historyParsed = true;
         } else if (body is Map && body['data'] is List) {
-          _historyOrders = (body['data'] as List).map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          final List<DeliveryOrderModel> parsedOrders = [];
+          for (var o in body['data'] as List) {
+            try { parsedOrders.add(DeliveryOrderModel.fromJson(o)); } catch (e) { debugPrint('Error: $e'); }
+          }
+          _historyOrders = parsedOrders;
           historyParsed = true;
         } else if (body is List) {
-          _historyOrders = (body as List).map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          final List<DeliveryOrderModel> parsedOrders = [];
+          for (var o in body) {
+            try { parsedOrders.add(DeliveryOrderModel.fromJson(o)); } catch (e) { debugPrint('Error: $e'); }
+          }
+          _historyOrders = parsedOrders;
           historyParsed = true;
         }
         

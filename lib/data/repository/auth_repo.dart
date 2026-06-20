@@ -13,6 +13,10 @@ class AuthRepo extends GetxService {
     });
   }
 
+  Future<Response> logout() async {
+    return await apiClient.postData('/api/v1/auth/logout', {});
+  }
+
   Future<Response> googleLogin(String idToken, {String? phone}) async {
     String? formattedPhone;
     if (phone != null) {

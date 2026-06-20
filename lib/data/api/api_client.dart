@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../utils/app_constants.dart';
 import '../../../utils/app_snackbar.dart';
 
@@ -13,17 +14,7 @@ class ApiClient extends GetConnect implements GetxService {
   ApiClient({required this.appBaseUrl}) {
     baseUrl = appBaseUrl;
     timeout = const Duration(seconds: 30);
-    
-    // Auto-load token from storage if available
-    final String? deliveryToken = _storage.read<String>(AppConstants.DELIVERY_TOKEN);
-    final String? customerToken = _storage.read<String>(AppConstants.TOKEN) ?? _storage.read<String>('token');
-    if (deliveryToken != null && deliveryToken.isNotEmpty) {
-      token = deliveryToken;
-    } else if (customerToken != null && customerToken.isNotEmpty) {
-      token = customerToken;
-    } else {
-      token = '';
-    }
+    token = '';
   }
 
   Map<String, String> get _mainHeaders => {
@@ -38,20 +29,21 @@ class ApiClient extends GetConnect implements GetxService {
 
   /// Maneja respuestas con código 401 (token expirado) y 500 (error servidor).
   /// Redirige al login correcto según el tipo de token activo.
-  void _handleHttpError(Response response, {bool handleError = true}) {
+  void _handleHttpError(Response response, {bool handleError = true}) async {
     if (isLoggingOut) return;
 
     if (response.statusCode == 401) {
       if (token.isEmpty) return; // Ya estaba deslogueado
       isLoggingOut = true;
 
-      final bool isDeliveryToken =
-          _storage.read<String>(AppConstants.DELIVERY_TOKEN) != null &&
-          _storage.read<String>(AppConstants.DELIVERY_TOKEN)!.isNotEmpty;
+      const secureStorage = FlutterSecureStorage();
+      final String? deliveryTokenStr = await secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
+      final bool isDeliveryToken = deliveryTokenStr != null && deliveryTokenStr.isNotEmpty;
 
       // Limpiar tokens
-      _storage.remove(AppConstants.DELIVERY_TOKEN);
-      _storage.remove(AppConstants.TOKEN);
+      await secureStorage.delete(key: AppConstants.DELIVERY_TOKEN);
+      await secureStorage.delete(key: AppConstants.TOKEN);
+      await secureStorage.delete(key: 'token');
       token = '';
 
       AppSnackbar.error('Sesión expirada', 'Por favor vuelve a iniciar sesión',

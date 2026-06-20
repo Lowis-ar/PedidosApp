@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 import '../data/api/api_client.dart';
 import '../data/repository/auth_repo.dart';
 import 'package:pedidosapp/models/user_model.dart';
@@ -98,6 +100,7 @@ class AuthController extends GetxController {
   String get userType => _userType;
 
   final _storage = GetStorage();
+  final _secureStorage = const FlutterSecureStorage();
 
   bool get isLoggedIn => _token.isNotEmpty;
 
@@ -109,16 +112,22 @@ class AuthController extends GetxController {
     _loadToken();
   }
 
-  void _loadToken() {
-    final saved = _storage.read<String>('token');
+  Future<void> _loadToken() async {
+    final saved = await _secureStorage.read(key: 'token') ?? await _secureStorage.read(key: AppConstants.TOKEN);
     if (saved != null && saved.isNotEmpty) {
       _token = saved;
       Get.find<ApiClient>().updateToken(_token);
-      _userType = _storage.read<String>('user_type') ?? 'customer';
-      final userData = _storage.read('user');
-      if (userData != null) {
-        _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
+      _userType = await _secureStorage.read(key: 'user_type') ?? 'customer';
+      final userDataStr = await _secureStorage.read(key: 'user');
+      if (userDataStr != null) {
+        try {
+          final userData = jsonDecode(userDataStr);
+          _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
+        } catch (e) {
+          debugPrint('Error decoding user: $e');
+        }
       }
+      update();
     }
   }
 
@@ -127,13 +136,14 @@ class AuthController extends GetxController {
     update();
   }
 
-  void _saveSession(String token, UserModel user, String type, {Map<String, dynamic>? rawJson, bool navigate = true}) {
+  Future<void> _saveSession(String token, UserModel user, String type, {Map<String, dynamic>? rawJson, bool navigate = true}) async {
     _token = token;
     _user = user;
     _userType = type;
-    _storage.write('token', token);
-    _storage.write('user', user.toJson());
-    _storage.write('user_type', type);
+    await _secureStorage.write(key: 'token', value: token);
+    await _secureStorage.write(key: AppConstants.TOKEN, value: token);
+    await _secureStorage.write(key: 'user', value: jsonEncode(user.toJson()));
+    await _secureStorage.write(key: 'user_type', value: type);
     Get.find<ApiClient>().updateToken(token);
 
     if (navigate) {
@@ -667,15 +677,21 @@ class AuthController extends GetxController {
     AppSnackbar.error('Aviso', message);
   }
 
-  void logout() async {
+  Future<void> logout() async {
     Get.find<ApiClient>().isLoggingOut = true;
     if (Get.isRegistered<DeliveryOrderController>()) {
       Get.find<DeliveryOrderController>().stopPolling();
     }
 
+    try {
+      await authRepo.logout();
+    } catch (e) {
+      debugPrint("Error on server logout: $e");
+    }
+
     _token = '';
     _user = null;
-    _storage.erase();
+    await _secureStorage.deleteAll();
     
     // Limpieza total de controladores de la memoria (sin destruir el enrutador)
     Get.deleteAll(force: true);
@@ -685,10 +701,8 @@ class AuthController extends GetxController {
 
     Get.offAllNamed(RouteHelper.getLogin());
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (Get.isRegistered<ApiClient>()) {
-        Get.find<ApiClient>().isLoggingOut = false;
-      }
-    });
+    if (Get.isRegistered<ApiClient>()) {
+      Get.find<ApiClient>().isLoggingOut = false;
+    }
   }
 }

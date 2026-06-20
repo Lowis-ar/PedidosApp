@@ -8,16 +8,9 @@ import 'package:pedidosapp/controllers/recommended_product_controller.dart';
 import 'package:pedidosapp/routes/route_helper.dart';
 import 'helper/dependencies.dart' as dep;
 
-class MyHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  }
-}
+
 
 Future<void> main() async {
-  HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   await dep.init();
 

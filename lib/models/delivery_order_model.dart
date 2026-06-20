@@ -6,6 +6,7 @@ class DeliveryOrderModel {
   String? orderStatus;
   String? paymentMethod;
   double? total;
+  double? discountAmount;
   double? deliveryFee;
   String? deliveryAddress;
   String? addressReferences;
@@ -24,6 +25,7 @@ class DeliveryOrderModel {
     this.orderStatus,
     this.paymentMethod,
     this.total,
+    this.discountAmount,
     this.deliveryFee,
     this.deliveryAddress,
     this.addressReferences,
@@ -46,6 +48,14 @@ class DeliveryOrderModel {
     if (totalRaw != null) {
       final cleanTotal = totalRaw.toString().replaceAll(RegExp(r'[^0-9.]'), '');
       total = double.tryParse(cleanTotal);
+    }
+
+    final discountRaw = json['discount_amount'];
+    if (discountRaw != null) {
+      final cleanDiscount = discountRaw.toString().replaceAll(RegExp(r'[^0-9.]'), '');
+      discountAmount = double.tryParse(cleanDiscount) ?? 0.0;
+    } else {
+      discountAmount = 0.0;
     }
 
     // Extraer la ganancia del repartidor priorizando el nuevo campo del backend.

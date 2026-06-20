@@ -77,6 +77,7 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
               // 3. Payment Method Section
               _buildSectionTitle("FORMA DE PAGO:"),
               _buildPaymentMethodCard(order.paymentMethod),
+              _buildPaymentBreakdown(order),
 
               const SizedBox(height: 30),
 
@@ -133,8 +134,13 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
             children: [
               if (phone != null)
                 IconButton(
-                  onPressed: () => launchUrl(Uri.parse("tel:$phone")),
-                  icon:  Icon(Icons.phone, color: AppColors.mainColor),
+                  onPressed: () async {
+                    final url = Uri.parse("tel:$phone");
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                    }
+                  },
+                  icon: Icon(Icons.phone, color: AppColors.mainColor),
                 ),
               const Spacer(),
               ElevatedButton.icon(
@@ -200,6 +206,50 @@ class _DeliveryOrderDetailPageState extends State<DeliveryOrderDetailPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPaymentBreakdown(DeliveryOrderModel order) {
+    if (order.total == null) return const SizedBox();
+    
+    final bool isCash = order.paymentMethod == null ||
+        order.paymentMethod == 'cash_on_delivery' ||
+        order.paymentMethod == 'cash';
+        
+    final double discount = order.discountAmount ?? 0.0;
+    // El total del backend ya tiene el descuento aplicado.
+    final double originalTotal = order.total! + discount;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 15),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildBreakdownRow("Subtotal + Envío", originalTotal, isTotal: false),
+          if (discount > 0) ...[
+            const SizedBox(height: 8),
+            _buildBreakdownRow("Descuento Cupón", -discount, isTotal: false, color: Colors.green),
+          ],
+          const Divider(height: 24),
+          _buildBreakdownRow(isCash ? "TOTAL A COBRAR" : "TOTAL PAGADO", order.total!, isTotal: true, color: AppColors.mainColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBreakdownRow(String label, double amount, {bool isTotal = false, Color? color}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: isTotal ? 16 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.w500, color: isTotal ? Colors.black87 : Colors.grey.shade600)),
+        Text(amount < 0 ? '-\$${amount.abs().toStringAsFixed(2)}' : '\$${amount.toStringAsFixed(2)}', style: TextStyle(fontSize: isTotal ? 18 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.w500, color: color ?? Colors.black87)),
+      ],
     );
   }
 

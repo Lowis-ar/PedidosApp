@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../data/api/api_client.dart';
 import '../data/repository/delivery_auth_repo.dart';
 import '../models/deliveryman_model.dart';
@@ -83,6 +86,7 @@ class DeliveryAuthController extends GetxController {
   String get token => _token;
 
   final _storage = GetStorage();
+  final _secureStorage = const FlutterSecureStorage();
 
   bool get isLoggedIn => _token.isNotEmpty;
 
@@ -92,28 +96,34 @@ class DeliveryAuthController extends GetxController {
     _loadSession();
   }
 
-  void _loadSession() {
-    final savedToken = _storage.read<String>(AppConstants.DELIVERY_TOKEN);
+  Future<void> _loadSession() async {
+    final savedToken = await _secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
     if (savedToken != null && savedToken.isNotEmpty) {
       _token = savedToken;
       // Inyectar el token antes de cualquier petición
       Get.find<ApiClient>().updateToken(_token);
-      final userData = _storage.read(AppConstants.DELIVERY_USER_KEY);
-      if (userData != null) {
-        _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(userData));
+      final userDataStr = await _secureStorage.read(key: AppConstants.DELIVERY_USER_KEY);
+      if (userDataStr != null) {
+        try {
+          final userData = jsonDecode(userDataStr);
+          _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(userData));
+        } catch (e) {
+          debugPrint('Error decoding delivery user: $e');
+        }
       }
       // Token ya inyectado: iniciar polling para sesión restaurada
       if (Get.isRegistered<DeliveryOrderController>()) {
         Get.find<DeliveryOrderController>().startPolling();
       }
+      update();
     }
   }
 
-  void _saveSession(String token, DeliverymanModel deliveryman) {
+  Future<void> _saveSession(String token, DeliverymanModel deliveryman) async {
     _token = token;
     _deliveryman = deliveryman;
-    _storage.write(AppConstants.DELIVERY_TOKEN, token);
-    _storage.write(AppConstants.DELIVERY_USER_KEY, deliveryman.toJson());
+    await _secureStorage.write(key: AppConstants.DELIVERY_TOKEN, value: token);
+    await _secureStorage.write(key: AppConstants.DELIVERY_USER_KEY, value: jsonEncode(deliveryman.toJson()));
     Get.find<ApiClient>().updateToken(token);
     update();
     
@@ -124,11 +134,11 @@ class DeliveryAuthController extends GetxController {
     }
   }
 
-  void syncSession(String token, DeliverymanModel deliveryman) {
+  Future<void> syncSession(String token, DeliverymanModel deliveryman) async {
     _token = token;
     _deliveryman = deliveryman;
-    _storage.write(AppConstants.DELIVERY_TOKEN, token);
-    _storage.write(AppConstants.DELIVERY_USER_KEY, deliveryman.toJson());
+    await _secureStorage.write(key: AppConstants.DELIVERY_TOKEN, value: token);
+    await _secureStorage.write(key: AppConstants.DELIVERY_USER_KEY, value: jsonEncode(deliveryman.toJson()));
     Get.find<ApiClient>().updateToken(token);
     update();
     
@@ -181,7 +191,9 @@ class DeliveryAuthController extends GetxController {
         _storage.write(AppConstants.DELIVERY_USER_KEY, _deliveryman?.toJson());
         update();
       } else {
+      if (kDebugMode) {
         debugPrint('Error toggle status: ${response.body}');
+      }
         _handleApiError(response, 'No se pudo cambiar el estado.');
       }
     } catch (e) {
@@ -193,14 +205,16 @@ class DeliveryAuthController extends GetxController {
   Future<void> getProfile() async {
     try {
       Response response = await deliveryAuthRepo.getProfile();
-      debugPrint("Profile API Raw: ${response.body}");
+      if (kDebugMode) {
+        debugPrint("Profile API Raw: ${response.body}");
+      }
       if (response.statusCode == 200) {
         final body = response.body;
         // La API devuelve { success: true, data: { deliveryman: { ... } } }
         final dynamic dmJson = body['data']?['deliveryman'] ?? body['deliveryman'] ?? body['data'] ?? body;
         if (dmJson != null) {
           _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(dmJson));
-          _storage.write(AppConstants.DELIVERY_USER_KEY, _deliveryman?.toJson());
+          await _secureStorage.write(key: AppConstants.DELIVERY_USER_KEY, value: jsonEncode(_deliveryman?.toJson()));
           update();
         }
       }
@@ -232,26 +246,28 @@ class DeliveryAuthController extends GetxController {
     }
   }
 
-  void logout() async {
+  Future<void> logout() async {
     Get.find<ApiClient>().isLoggingOut = true;
     if (Get.isRegistered<DeliveryOrderController>()) {
       Get.find<DeliveryOrderController>().stopPolling();
     }
 
-    await deliveryAuthRepo.logout();
+    try {
+      await deliveryAuthRepo.logout();
+    } catch(e) {
+      debugPrint("Logout error: $e");
+    }
     _token = '';
     _deliveryman = null;
-    _storage.erase();
+    await _secureStorage.deleteAll();
     Get.find<ApiClient>().updateToken('');
     update();
 
     Get.offAllNamed('/delivery-login');
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (Get.isRegistered<ApiClient>()) {
-        Get.find<ApiClient>().isLoggingOut = false;
-      }
-    });
+    if (Get.isRegistered<ApiClient>()) {
+      Get.find<ApiClient>().isLoggingOut = false;
+    }
   }
 
   void _handleApiError(Response response, String fallback) {

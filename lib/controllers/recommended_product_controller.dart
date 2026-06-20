@@ -1,4 +1,5 @@
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -20,7 +21,9 @@ class RecommendedProductController extends GetxController{
     debugPrint("Fetching recommended products...");
     try {
       Response response = await recommendedProductRepo.getRecommendedProductList();
-      debugPrint("Recommended products response: ${response.statusCode} - ${response.body}");
+      if (kDebugMode) {
+        debugPrint("Recommended products response: ${response.statusCode} - ${response.body}");
+      }
       if (response.statusCode == 200) {
         _recommendedProductList = [];
         _recommendedProductList.addAll(Product.fromJson(response.body).products);

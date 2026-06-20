@@ -134,7 +134,7 @@ class CartPage extends StatelessWidget {
                                             int count = item.extras!.where((e) => e == extraId).length;
                                             final extra = item.product!.extras!.firstWhereOrNull((e) => e.id == extraId);
                                             if (extra != null) {
-                                              extrasDescriptions.add("+$count ${extra.name}");
+                                              extrasDescriptions.add("+$count ${extra.name} (\$${extra.price?.toStringAsFixed(2) ?? '0.00'})");
                                             }
                                           }
                                         }

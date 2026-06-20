@@ -130,10 +130,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
     });
     Get.find<ZoneController>().getZoneList();
-    // Clear any previously applied coupon to avoid stale state if cart was modified
-    Get.find<CouponController>().removeCoupon(showSnackbar: false);
-    // Pre-load user coupons for the coupon selector
-    Get.find<CouponController>().getUserCoupons();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Clear any previously applied coupon to avoid stale state if cart was modified
+      Get.find<CouponController>().removeCoupon(showSnackbar: false);
+      // Pre-load user coupons for the coupon selector
+      Get.find<CouponController>().getUserCoupons();
+    });
+
     // Pre-fill contact info from user profile
     final user = Get.find<AuthController>().user;
     _contactNameController.text = user?.name ?? '';
@@ -293,40 +297,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Selector de Zona Dinámico
-            const Text("Zona de Entrega", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: zoneController.isLoaded
-                  ? DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        isExpanded: true,
-                        value: zoneController.selectedZoneId != -1 ? zoneController.selectedZoneId : null,
-                        hint: const Text("Selecciona una zona"),
-                        items: zoneController.zoneList.map((ZoneModel zone) {
-                          return DropdownMenuItem<int>(
-                            value: zone.id,
-                            child: Text(zone.name),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            zoneController.setZoneId(val);
-                            if (orderController.selectedAddress != null) {
-                              orderController.selectedAddress!.zoneId = val;
-                            }
-                          }
-                        },
-                      ),
-                    )
-                  : const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())),
-            ),
+            // 1. Selector de Zona (Removido - La zona ahora se calcula por mapa)
             const SizedBox(height: 20),
 
             // Existing addresses
@@ -661,10 +632,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   '${card.cardType} •••• ${card.lastFour}',
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
-                                Text(
-                                  card.cardHolder ?? '',
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
-                                ),
                               ],
                             ),
                           ),
@@ -836,6 +803,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               _buildCheckoutField(_cardNumberController, 'Número de tarjeta', Icons.credit_card,
                   keyboardType: TextInputType.number,
                   onChanged: _onCardNumberChanged,
+                  suffixIcon: _cardNumberController.text.length == 16 
+                      ? const Icon(Icons.check_circle, color: Colors.green) 
+                      : null,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(16)
@@ -1028,7 +998,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Envío (${_dynamicDeliveryFee != null ? "Mapa" : (selectedZone?.name ?? "Zona")})', style: const TextStyle(fontSize: 14)),
+                      Text('Envío', style: const TextStyle(fontSize: 14)),
                       Text('\$${deliveryFee.toStringAsFixed(2)}', style: const TextStyle(fontSize: 14)),
                     ],
                   ),
@@ -1411,10 +1381,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           return;
         }
       } else {
-        if (Get.find<ZoneController>().selectedZoneId == -1) {
-          AppSnackbar.warning('Zona requerida', 'Selecciona una zona que corresponda a tu dirección');
-          return;
-        }
+        // Validation removed for manual zone selection
         if (_selectedLat == null || _selectedLng == null) {
           AppSnackbar.warning('Ubicación requerida', 'Usa el botón de mapa para seleccionar la ubicación exacta de entrega');
           return;
@@ -1479,12 +1446,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
             return;
           }
 
-          // Save new card to backend
+          // Simulate sending to a secure payment gateway (Stripe/PayPal) and getting a token
+          String rawNumber = _cardNumberController.text.replaceAll(RegExp(r'\s|-'), '');
+          String last4 = rawNumber.length >= 4 ? rawNumber.substring(rawNumber.length - 4) : '';
+          String dummyToken = 'tok_${DateTime.now().millisecondsSinceEpoch}';
+
           PaymentCardModel newCard = PaymentCardModel(
-            cardHolder: _cardHolderController.text,
-            cardNumber: _cardNumberController.text.replaceAll(RegExp(r'\s|-'), ''),
-            expiryDate: _expiryController.text,
+            lastFour: last4,
             cardType: _cardType,
+            providerToken: dummyToken,
           );
 
           bool saveSuccess = await orderController.addPaymentCard(newCard);
@@ -1695,6 +1665,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     bool obscure = false,
     List<TextInputFormatter>? inputFormatters,
     Function(String)? onChanged,
+    Widget? suffixIcon,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -1713,6 +1684,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         },
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: AppColors.mainColor, size: 20),
+          suffixIcon: suffixIcon,
           hintText: hint,
           hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
           border: OutlineInputBorder(
