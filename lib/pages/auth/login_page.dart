@@ -44,6 +44,24 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     super.dispose();
   }
 
+  void _handleLogin() async {
+    final authController = Get.find<AuthController>();
+    if (authController.isLoading) return;
+    
+    HapticFeedback.lightImpact();
+    final email = _emailController.text.trim();
+    final pass = _passwordController.text.trim();
+    if (email.isEmpty || pass.isEmpty) {
+      AppSnackbar.warning('Campos requeridos', 'Ingresa correo y contraseña');
+      return;
+    }
+    if (!GetUtils.isEmail(email)) {
+      AppSnackbar.warning('Correo inválido', 'El formato del correo electrónico no es válido.');
+      return;
+    }
+    await authController.login(email, pass);
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<AuthController>(builder: (authController) {
@@ -156,26 +174,38 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                   );
                 }),
                 SizedBox(height: Dimensions.height20),
-                // Email field
-                _buildTextField(
-                  controller: _emailController,
-                  hint: 'Correo electronico',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                SizedBox(height: Dimensions.height20),
-                // Password field
-                _buildTextField(
-                  controller: _passwordController,
-                  hint: 'Contrasena',
-                  icon: Icons.lock_outline,
-                  obscure: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: AppColors.mainColor,
-                    ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                // Form with Autofill
+                AutofillGroup(
+                  child: Column(
+                    children: [
+                      // Email field
+                      _buildTextField(
+                        controller: _emailController,
+                        hint: 'Correo electronico',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textInputAction: TextInputAction.next,
+                      ),
+                      SizedBox(height: Dimensions.height20),
+                      // Password field
+                      _buildTextField(
+                        controller: _passwordController,
+                        hint: 'Contrasena',
+                        icon: Icons.lock_outline,
+                        obscure: _obscurePassword,
+                        autofillHints: const [AutofillHints.password],
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _handleLogin(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: AppColors.mainColor,
+                          ),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: Dimensions.height10),
@@ -217,23 +247,7 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
                 // Login button
                 GetBuilder<AuthController>(builder: (authController) {
                   return GestureDetector(
-                    onTap: authController.isLoading
-                        ? null
-                        : () async {
-                            HapticFeedback.lightImpact();
-                            final email = _emailController.text.trim();
-                            final pass = _passwordController.text.trim();
-                            if (email.isEmpty || pass.isEmpty) {
-                              AppSnackbar.warning('Campos requeridos', 'Ingresa correo y contraseña');
-                              return;
-                            }
-                            if (!GetUtils.isEmail(email)) {
-                              AppSnackbar.warning('Correo inválido', 'El formato del correo electrónico no es válido.');
-                              return;
-                            }
-                            await authController.login(email, pass);
-                            // La redirección ahora la maneja internamente _saveSession
-                          },
+                    onTap: authController.isLoading ? null : _handleLogin,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       width: Dimensions.screenWidth * 0.5,
@@ -386,6 +400,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
     bool obscure = false,
     Widget? suffixIcon,
     TextInputType keyboardType = TextInputType.text,
+    Iterable<String>? autofillHints,
+    TextInputAction? textInputAction,
+    void Function(String)? onSubmitted,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
@@ -405,6 +422,9 @@ class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMix
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboardType,
+          autofillHints: autofillHints,
+          textInputAction: textInputAction,
+          onSubmitted: onSubmitted,
           style: TextStyle(fontFamily: 'Roboto', fontSize: Dimensions.font16),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.mainColor),

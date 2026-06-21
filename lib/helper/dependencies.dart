@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../utils/secure_storage_web.dart';
 import 'package:pedidosapp/controllers/auth_controller.dart';
 import 'package:pedidosapp/controllers/popular_product_controller.dart';
 import 'package:pedidosapp/controllers/branch_controller.dart';
@@ -30,7 +30,7 @@ import '../utils/app_constants.dart';
 
 Future<void> init() async {
   await GetStorage.init();
-  const secureStorage = FlutterSecureStorage();
+  final secureStorage = SecureStorageWeb();
   
   final String? deliveryToken = await secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
   final String? customerToken = await secureStorage.read(key: AppConstants.TOKEN) ?? await secureStorage.read(key: 'token');

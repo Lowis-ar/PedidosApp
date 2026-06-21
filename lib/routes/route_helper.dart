@@ -18,6 +18,7 @@ import '../pages/delivery/delivery_history.dart';
 import '../pages/delivery/delivery_profile.dart';
 import '../pages/delivery/delivery_order_detail.dart';
 import '../pages/review/review_delivery_page.dart';
+import '../widgets/web_responsive_wrapper.dart';
 
 class RouteHelper {
   static const String initial = "/";
@@ -68,43 +69,43 @@ class RouteHelper {
       name: initial,
       page: () {
         int pageId = Get.parameters['pageId'] != null ? int.parse(Get.parameters['pageId']!) : 0;
-        return HomePage(initialIndex: pageId);
+        return WebResponsiveWrapper(child: HomePage(initialIndex: pageId));
       },
       transition: Transition.fade,
     ),
     GetPage(
       name: login,
-      page: () => const LoginPage(),
+      page: () => const WebResponsiveWrapper(child: LoginPage()),
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: register,
-      page: () => const RegisterPage(),
+      page: () => const WebResponsiveWrapper(child: RegisterPage()),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(
       name: forgotPassword,
-      page: () => const ForgotPasswordPage(),
+      page: () => const WebResponsiveWrapper(child: ForgotPasswordPage()),
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: resetPassword,
       page: () {
         var email = Get.parameters['email'];
-        return ResetPasswordPage(email: email ?? "");
+        return WebResponsiveWrapper(child: ResetPasswordPage(email: email ?? ""));
       },
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: verifyEmail,
-      page: () => const VerifyEmailPage(),
+      page: () => const WebResponsiveWrapper(child: VerifyEmailPage()),
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: popularFood,
       page: () {
         var pageId = Get.parameters['pageId'];
-        return PopularFoodDetail(pageId: int.parse(pageId ?? "0"));
+        return WebResponsiveWrapper(child: PopularFoodDetail(pageId: int.parse(pageId ?? "0")));
       },
       transition: Transition.fadeIn,
     ),
@@ -112,64 +113,64 @@ class RouteHelper {
       name: recommendedFood,
       page: () {
         var pageId = Get.parameters['pageid'];
-        return RecommendedFoodDetail(pageId: int.parse(pageId ?? "0"));
+        return WebResponsiveWrapper(child: RecommendedFoodDetail(pageId: int.parse(pageId ?? "0")));
       },
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: cartPage,
-      page: () => const CartPage(),
+      page: () => const WebResponsiveWrapper(child: CartPage()),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(
       name: checkout,
-      page: () => const CheckoutPage(),
+      page: () => const WebResponsiveWrapper(child: CheckoutPage()),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(
       name: profilePage,
-      page: () => const ProfilePage(),
+      page: () => const WebResponsiveWrapper(child: ProfilePage()),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(
       name: searchPage,
-      page: () => const SearchPage(),
+      page: () => const WebResponsiveWrapper(child: SearchPage()),
       transition: Transition.downToUp,
     ),
     GetPage(
       name: loyalty,
-      page: () => const LoyaltyPage(),
+      page: () => const WebResponsiveWrapper(child: LoyaltyPage()),
       transition: Transition.rightToLeftWithFade,
     ),
     // Delivery Pages
     GetPage(
       name: deliveryLogin,
-      page: () => const DeliveryLoginPage(),
+      page: () => const WebResponsiveWrapper(child: DeliveryLoginPage()),
       transition: Transition.fade,
     ),
     GetPage(
       name: deliveryDashboard,
-      page: () => const DeliveryDashboard(),
+      page: () => const WebResponsiveWrapper(child: DeliveryDashboard()),
       transition: Transition.fade,
     ),
     GetPage(
       name: deliveryHistory,
-      page: () => const DeliveryHistoryPage(),
+      page: () => const WebResponsiveWrapper(child: DeliveryHistoryPage()),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(
       name: deliveryProfile,
-      page: () => const DeliveryProfilePage(),
+      page: () => const WebResponsiveWrapper(child: DeliveryProfilePage()),
       transition: Transition.rightToLeftWithFade,
     ),
     GetPage(
       name: deliveryOrderDetail,
-      page: () => const DeliveryOrderDetailPage(),
+      page: () => const WebResponsiveWrapper(child: DeliveryOrderDetailPage()),
       transition: Transition.fadeIn,
     ),
     GetPage(
       name: reviewDelivery,
-      page: () => const ReviewDeliveryPage(),
+      page: () => const WebResponsiveWrapper(child: ReviewDeliveryPage()),
       transition: Transition.rightToLeftWithFade,
     ),
   ];

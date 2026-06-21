@@ -50,6 +50,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _cardValid = false;
   String _cardType = '';
   String _paymentMethod = 'cash_on_delivery'; // 'cash_on_delivery' or 'card'
+  bool _isProcessingPayment = false;
 
   double? _selectedLat;
   double? _selectedLng;
@@ -203,8 +204,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget build(BuildContext context) {
     return GetBuilder<OrderController>(builder: (orderController) {
       return AppLoadingOverlay(
-        isLoading: orderController.isLoading,
-        label: 'Procesando pedido...',
+        isLoading: orderController.isLoading || _isProcessingPayment,
+        label: _isProcessingPayment ? 'Procesando pago...' : 'Procesando pedido...',
         child: Scaffold(
           backgroundColor: Colors.grey.shade50,
           appBar: AppBar(
@@ -1473,6 +1474,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _placeOrder() async {
+    if (_isProcessingPayment) return;
     final orderController = Get.find<OrderController>();
     final cartController = Get.find<CartController>();
 
@@ -1518,6 +1520,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // Get coupon code if applied
     final couponCode = Get.find<CouponController>().appliedCouponCode;
 
+    setState(() {
+      _isProcessingPayment = true;
+    });
+
+    // Simulamos un retraso de procesamiento para una UX más realista en el evento
+    await Future.delayed(const Duration(seconds: 2));
+
     bool success = await orderController.placeOrder(
       cartItems: cartController.getItems,
       addressId: finalAddressId,
@@ -1528,9 +1537,97 @@ class _CheckoutPageState extends State<CheckoutPage> {
       couponCode: couponCode,
     );
 
+    setState(() {
+      _isProcessingPayment = false;
+    });
+
     if (success) {
+      await _showPaymentSuccessDialog();
       _showOtpConfirmation(orderController.lastOtp ?? '');
     }
+  }
+
+  Future<void> _showPaymentSuccessDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 400),
+            padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween<double>(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.elasticOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: const BoxDecoration(
+                          color: Colors.green,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  '¡Pago Aprobado!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _paymentMethod == 'card' 
+                      ? 'El cobro a tu tarjeta se realizó de manera segura.' 
+                      : 'Tu pedido se registrará como pago contra entrega.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Ver Código de Entrega',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showOtpConfirmation(String otp) {

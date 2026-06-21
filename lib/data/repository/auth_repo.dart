@@ -17,7 +17,7 @@ class AuthRepo extends GetxService {
     return await apiClient.postData('/api/v1/auth/logout', {});
   }
 
-  Future<Response> googleLogin(String idToken, {String? phone}) async {
+  Future<Response> googleLogin(String? idToken, {String? accessToken, String? phone}) async {
     String? formattedPhone;
     if (phone != null) {
       formattedPhone = phone.replaceAll(RegExp(r'\s+'), '');
@@ -25,9 +25,13 @@ class AuthRepo extends GetxService {
         formattedPhone = '+503$formattedPhone';
       }
     }
-    final Map<String, dynamic> body = {
-      'id_token': idToken,
-    };
+    final Map<String, dynamic> body = {};
+    if (idToken != null) {
+      body['id_token'] = idToken;
+    }
+    if (accessToken != null) {
+      body['access_token'] = accessToken;
+    }
     if (formattedPhone != null) {
       body['phone'] = formattedPhone;
     }

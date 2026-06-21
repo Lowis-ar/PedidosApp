@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -41,12 +42,19 @@ class DeliveryProfilePage extends StatelessWidget {
                     backgroundColor: AppColors.mainColor.withValues(alpha: 0.1),
                     child: ClipOval(
                       child: auth.pickedImage != null
-                          ? Image.file(
-                              File(auth.pickedImage!.path),
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            )
+                          ? (kIsWeb
+                              ? Image.network(
+                                  auth.pickedImage!.path,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.file(
+                                  File(auth.pickedImage!.path),
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ))
                           : (dm.image != null && dm.image!.isNotEmpty)
                               ? Image.network(
                                   dm.image!,

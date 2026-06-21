@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -65,12 +66,19 @@ class ProfilePage extends StatelessWidget {
                       ),
                       child: ClipOval(
                         child: authController.pickedImage != null
-                            ? Image.file(
-                                File(authController.pickedImage!.path),
-                                width: Dimensions.screenHeight * 0.15,
-                                height: Dimensions.screenHeight * 0.15,
-                                fit: BoxFit.cover,
-                              )
+                            ? (kIsWeb
+                                ? Image.network(
+                                    authController.pickedImage!.path,
+                                    width: Dimensions.screenHeight * 0.15,
+                                    height: Dimensions.screenHeight * 0.15,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(authController.pickedImage!.path),
+                                    width: Dimensions.screenHeight * 0.15,
+                                    height: Dimensions.screenHeight * 0.15,
+                                    fit: BoxFit.cover,
+                                  ))
                             : (user.image != null && user.image!.isNotEmpty)
                                 ? Image.network(
                                     user.image!,

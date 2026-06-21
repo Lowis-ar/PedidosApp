@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pedidosapp/utils/colors.dart';
 
-/// Página fullscreen para escanear un código QR.
-/// Devuelve el valor escaneado (String) al hacer pop, o null si se canceló.
+/// Página fullscreen para escanear un código QR o ingresar OTP manualmente en Web.
+/// Devuelve el valor escaneado o ingresado (String) al hacer pop, o null si se canceló.
 class QRScannerPage extends StatefulWidget {
   const QRScannerPage({super.key});
 
@@ -13,14 +14,24 @@ class QRScannerPage extends StatefulWidget {
 }
 
 class _QRScannerPageState extends State<QRScannerPage> {
-  final MobileScannerController _scannerController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.noDuplicates,
-  );
+  MobileScannerController? _scannerController;
   bool _scanned = false;
+  final TextEditingController _otpController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      _scannerController = MobileScannerController(
+        detectionSpeed: DetectionSpeed.noDuplicates,
+      );
+    }
+  }
 
   @override
   void dispose() {
-    _scannerController.dispose();
+    _scannerController?.dispose();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -30,13 +41,119 @@ class _QRScannerPageState extends State<QRScannerPage> {
     final value = barcode?.rawValue;
     if (value != null && value.isNotEmpty) {
       _scanned = true;
-      _scannerController.stop();
+      _scannerController?.stop();
       Get.back(result: value);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return Scaffold(
+        backgroundColor: Colors.grey.shade100,
+        appBar: AppBar(
+          backgroundColor: AppColors.mainColor,
+          foregroundColor: Colors.white,
+          title: const Text(
+            'Confirmación de Entrega',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            onPressed: () => Get.back(),
+          ),
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.vpn_key_rounded, size: 64, color: AppColors.mainColor),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Código de Entrega',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Por favor, ingrese el código de entrega proporcionado por el cliente para completar el pedido.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.4),
+                      ),
+                      const SizedBox(height: 24),
+                      TextField(
+                        controller: _otpController,
+                        keyboardType: TextInputType.text,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4),
+                        decoration: InputDecoration(
+                          hintText: 'Código OTP',
+                          hintStyle: TextStyle(color: Colors.grey.shade400, letterSpacing: 0, fontSize: 18),
+                          filled: true,
+                          fillColor: Colors.grey.shade50,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppColors.mainColor, width: 2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            final code = _otpController.text.trim();
+                            if (code.isNotEmpty) {
+                              Get.back(result: code);
+                            } else {
+                              Get.snackbar(
+                                'Aviso', 
+                                'Por favor, ingrese el código de entrega.',
+                                backgroundColor: Colors.orange.shade50,
+                                colorText: Colors.black87,
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.mainColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Confirmar Entrega',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -53,7 +170,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.flashlight_on, color: Colors.white),
-            onPressed: () => _scannerController.toggleTorch(),
+            onPressed: () => _scannerController?.toggleTorch(),
             tooltip: 'Linterna',
           ),
         ],
@@ -61,10 +178,11 @@ class _QRScannerPageState extends State<QRScannerPage> {
       body: Stack(
         children: [
           // Vista de cámara
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onDetect,
-          ),
+          if (_scannerController != null)
+            MobileScanner(
+              controller: _scannerController!,
+              onDetect: _onDetect,
+            ),
           // Overlay con guía visual
           Center(
             child: Column(

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../utils/secure_storage_web.dart';
 import '../../../utils/app_constants.dart';
 import '../../../utils/app_snackbar.dart';
 
@@ -36,7 +37,7 @@ class ApiClient extends GetConnect implements GetxService {
       if (token.isEmpty) return; // Ya estaba deslogueado
       isLoggingOut = true;
 
-      const secureStorage = FlutterSecureStorage();
+      final secureStorage = SecureStorageWeb();
       final String? deliveryTokenStr = await secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
       final bool isDeliveryToken = deliveryTokenStr != null && deliveryTokenStr.isNotEmpty;
 
@@ -71,7 +72,9 @@ class ApiClient extends GetConnect implements GetxService {
       _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
-      debugPrint('[ApiClient] GET error $uri: $e');
+      if (!kReleaseMode) {
+        debugPrint('[ApiClient] GET error $uri: $e');
+      }
       return Response(statusCode: 1, statusText: e.toString());
     }
   }
@@ -86,7 +89,9 @@ class ApiClient extends GetConnect implements GetxService {
       _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
-      debugPrint('[ApiClient] POST error $uri: $e');
+      if (!kReleaseMode) {
+        debugPrint('[ApiClient] POST error $uri: $e');
+      }
       return Response(statusCode: 1, statusText: e.toString());
     }
   }
@@ -101,7 +106,9 @@ class ApiClient extends GetConnect implements GetxService {
       _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
-      debugPrint('[ApiClient] PUT error $uri: $e');
+      if (!kReleaseMode) {
+        debugPrint('[ApiClient] PUT error $uri: $e');
+      }
       return Response(statusCode: 1, statusText: e.toString());
     }
   }
@@ -112,7 +119,9 @@ class ApiClient extends GetConnect implements GetxService {
       _handleHttpError(response, handleError: handleError);
       return response;
     } catch (e) {
-      debugPrint('[ApiClient] DELETE error $uri: $e');
+      if (!kReleaseMode) {
+        debugPrint('[ApiClient] DELETE error $uri: $e');
+      }
       return Response(statusCode: 1, statusText: e.toString());
     }
   }

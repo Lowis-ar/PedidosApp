@@ -26,9 +26,42 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
 
+  double _passwordStrength = 0.0;
+  String _strengthText = '';
+  Color _strengthColor = Colors.grey;
+
+  void _updatePasswordStrength() {
+    final text = _passwordController.text;
+    double strength = 0.0;
+    if (text.isNotEmpty) {
+      if (text.length >= 8) strength += 0.25;
+      if (text.contains(RegExp(r'[a-z]'))) strength += 0.25;
+      if (text.contains(RegExp(r'[A-Z]'))) strength += 0.25;
+      if (text.contains(RegExp(r'[0-9]')) || text.contains(RegExp(r'[!@#\$&*~]'))) strength += 0.25;
+    }
+    
+    setState(() {
+      _passwordStrength = strength;
+      if (strength <= 0.25) {
+        _strengthText = 'Débil';
+        _strengthColor = Colors.red;
+      } else if (strength <= 0.5) {
+        _strengthText = 'Media';
+        _strengthColor = Colors.orange;
+      } else if (strength <= 0.75) {
+        _strengthText = 'Buena';
+        _strengthColor = Colors.blue;
+      } else {
+        _strengthText = 'Fuerte';
+        _strengthColor = Colors.green;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _passwordController.addListener(_updatePasswordStrength);
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -41,12 +74,53 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _passwordController.removeListener(_updatePasswordStrength);
     _emailController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
     _nameController.dispose();
     _animController.dispose();
     super.dispose();
+  }
+
+  void _handleRegister() async {
+    final authController = Get.find<AuthController>();
+    if (authController.isLoading) return;
+
+    HapticFeedback.lightImpact();
+    final email = _emailController.text.trim();
+    final pass = _passwordController.text.trim();
+    final rawPhone = _phoneController.text.replaceAll(' ', '').trim();
+    if (!RegExp(r'^[2567]\d{7}$').hasMatch(rawPhone)) {
+      AppSnackbar.warning('Teléfono inválido',
+          'Debe iniciar por 2, 5, 6 o 7 y tener exactamente 8 dígitos.');
+      return;
+    }
+    String phone = '+503$rawPhone';
+    final name = _nameController.text.trim();
+    
+    if (RegExp(r'[0-9]').hasMatch(name)) {
+      AppSnackbar.warning('Nombre inválido', 'El nombre no debe contener números.');
+      return;
+    }
+    
+    if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
+      AppSnackbar.warning('Campos requeridos', 'Todos los campos son obligatorios');
+      return;
+    }
+    if (!GetUtils.isEmail(email)) {
+      AppSnackbar.warning('Correo inválido', 'Ingresa un correo electrónico válido.');
+      return;
+    }
+    if (pass.length < 8 || !pass.contains(RegExp(r'[0-9]'))) {
+      AppSnackbar.warning('Contraseña inválida',
+          'Debe tener al menos 8 caracteres y un número.');
+      return;
+    }
+    bool success = await authController.register(name, phone, email, pass);
+    if (success) {
+      Get.offAllNamed(RouteHelper.getVerifyEmail(), arguments: {'email': email});
+    }
   }
 
   @override
@@ -72,80 +146,94 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
                   child: Image.asset('assets/image/logo.png', fit: BoxFit.contain),
                 ),
                 SizedBox(height: Dimensions.height20),
-                // Email
-                _buildTextField(
-                  controller: _emailController,
-                  hint: 'Correo electrónico',
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                SizedBox(height: Dimensions.height15),
-                // Password
-                _buildTextField(
-                  controller: _passwordController,
-                  hint: 'Contraseña',
-                  icon: Icons.lock_outline,
-                  obscure: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                      color: AppColors.mainColor,
-                    ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                AutofillGroup(
+                  child: Column(
+                    children: [
+                      // Email
+                      _buildTextField(
+                        controller: _emailController,
+                        hint: 'Correo electrónico',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.email],
+                        textInputAction: TextInputAction.next,
+                      ),
+                      SizedBox(height: Dimensions.height15),
+                      // Password
+                      _buildTextField(
+                        controller: _passwordController,
+                        hint: 'Contraseña',
+                        icon: Icons.lock_outline,
+                        obscure: _obscurePassword,
+                        autofillHints: const [AutofillHints.newPassword],
+                        textInputAction: TextInputAction.next,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                            color: AppColors.mainColor,
+                          ),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                      if (_passwordController.text.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: Dimensions.width30),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: LinearProgressIndicator(
+                                      value: _passwordStrength,
+                                      backgroundColor: Colors.grey.shade200,
+                                      valueColor: AlwaysStoppedAnimation<Color>(_strengthColor),
+                                      minHeight: 6,
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    _strengthText,
+                                    style: TextStyle(
+                                      color: _strengthColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Mínimo 8 caracteres, números, mayúsculas y minúsculas.',
+                                style: TextStyle(color: Colors.grey, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: Dimensions.height15),
+                      // Phone
+                      _buildPhoneField(),
+                      SizedBox(height: Dimensions.height15),
+                      // Name
+                      _buildTextField(
+                        controller: _nameController,
+                        hint: 'Nombre',
+                        icon: Icons.person_outline,
+                        autofillHints: const [AutofillHints.name],
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _handleRegister(),
+                      ),
+                    ],
                   ),
-                ),
-                SizedBox(height: Dimensions.height15),
-                // Phone
-                _buildPhoneField(),
-                SizedBox(height: Dimensions.height15),
-                // Name
-                _buildTextField(
-                  controller: _nameController,
-                  hint: 'Nombre',
-                  icon: Icons.person_outline,
                 ),
                 SizedBox(height: Dimensions.height30 * 1.2),
                 // Register button
                 GetBuilder<AuthController>(builder: (authController) {
                   return GestureDetector(
-                    onTap: authController.isLoading
-                        ? null
-                        : () async {
-                            HapticFeedback.lightImpact();
-                            final email = _emailController.text.trim();
-                            final pass = _passwordController.text.trim();
-                            final rawPhone = _phoneController.text.replaceAll(' ', '').trim();
-                            if (!RegExp(r'^[2567]\d{7}$').hasMatch(rawPhone)) {
-                              AppSnackbar.warning('Teléfono inválido',
-                                  'Debe iniciar por 2, 5, 6 o 7 y tener exactamente 8 dígitos.');
-                              return;
-                            }
-                            String phone = '+503$rawPhone';
-                            final name = _nameController.text.trim();
-                            
-                            if (RegExp(r'[0-9]').hasMatch(name)) {
-                              AppSnackbar.warning('Nombre inválido', 'El nombre no debe contener números.');
-                              return;
-                            }
-                            
-                            if (email.isEmpty || pass.isEmpty || phone.isEmpty || name.isEmpty) {
-                              AppSnackbar.warning('Campos requeridos', 'Todos los campos son obligatorios');
-                              return;
-                            }
-                            if (!GetUtils.isEmail(email)) {
-                              AppSnackbar.warning('Correo inválido', 'Ingresa un correo electrónico válido.');
-                              return;
-                            }
-                            if (pass.length < 8 || !pass.contains(RegExp(r'[0-9]'))) {
-                              AppSnackbar.warning('Contraseña inválida',
-                                  'Debe tener al menos 8 caracteres y un número.');
-                              return;
-                            }
-                            bool success = await authController.register(name, phone, email, pass);
-                            if (success) {
-                              Get.offAllNamed(RouteHelper.getVerifyEmail(), arguments: {'email': email});
-                            }
-                          },
+                    onTap: authController.isLoading ? null : _handleRegister,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
                       width: Dimensions.screenWidth * 0.5,
@@ -289,6 +377,9 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
     bool obscure = false,
     Widget? suffixIcon,
     TextInputType keyboardType = TextInputType.text,
+    Iterable<String>? autofillHints,
+    TextInputAction? textInputAction,
+    void Function(String)? onSubmitted,
   }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: Dimensions.width20),
@@ -308,6 +399,9 @@ class _RegisterPageState extends State<RegisterPage> with SingleTickerProviderSt
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboardType,
+          autofillHints: autofillHints,
+          textInputAction: textInputAction,
+          onSubmitted: onSubmitted,
           style: TextStyle(fontFamily: 'Roboto', fontSize: Dimensions.font16),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: AppColors.mainColor),

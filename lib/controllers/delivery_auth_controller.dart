@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../utils/secure_storage_web.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../data/api/api_client.dart';
@@ -51,6 +51,9 @@ class DeliveryAuthController extends GetxController {
   }
 
   Future<XFile?> _cropImage(String path) async {
+    if (kIsWeb) {
+      return XFile(path);
+    }
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: path,
       uiSettings: [
@@ -86,7 +89,7 @@ class DeliveryAuthController extends GetxController {
   String get token => _token;
 
   final _storage = GetStorage();
-  final _secureStorage = const FlutterSecureStorage();
+  final _secureStorage = SecureStorageWeb();
 
   bool get isLoggedIn => _token.isNotEmpty;
 

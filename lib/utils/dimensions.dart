@@ -1,8 +1,22 @@
 import 'package:get/get.dart';
 
 class Dimensions {
+  static double get maxContentWidth => 500.0;
+  static double get mobileBreakpoint => 600.0;
+  static double get tabletBreakpoint => 900.0;
+
+  static bool get isMobile => Get.context != null ? Get.context!.width < mobileBreakpoint : true;
+  static bool get isTablet => Get.context != null ? (Get.context!.width >= mobileBreakpoint && Get.context!.width < tabletBreakpoint) : false;
+  static bool get isDesktop => Get.context != null ? Get.context!.width >= tabletBreakpoint : false;
+
   static double get screenHeight => Get.context != null && Get.context!.height > 0 ? Get.context!.height : 844.0;
-  static double get screenWidth => Get.context != null && Get.context!.width > 0 ? Get.context!.width : 390.0;
+  static double get screenWidth {
+    if (Get.context != null && Get.context!.width > 0) {
+      double w = Get.context!.width;
+      return w > maxContentWidth ? maxContentWidth : w;
+    }
+    return 390.0;
+  }
 
   static double get pageViewContainer => screenHeight / 3.84;
   static double get pageViewTextContainer => screenHeight / 7.03;

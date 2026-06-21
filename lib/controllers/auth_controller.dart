@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../utils/secure_storage_web.dart';
 import 'dart:convert';
 import '../data/api/api_client.dart';
 import '../data/repository/auth_repo.dart';
@@ -20,15 +20,23 @@ import 'package:pedidosapp/helper/dependencies.dart' as dep;
 import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 class AuthController extends GetxController {
   final AuthRepo authRepo;
   AuthController({required this.authRepo});
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId: '256020390313-sfud3k6e9f6dv7s9cot784u917c37i0l.apps.googleusercontent.com',
-    scopes: ['email'],
-  );
+  static const String _webClientId = '256020390313-sfud3k6e9f6dv7s9cot784u917c37i0l.apps.googleusercontent.com';
+
+  final GoogleSignIn _googleSignIn = kIsWeb
+      ? GoogleSignIn(
+          clientId: _webClientId,
+          scopes: ['email', 'openid', 'profile'],
+        )
+      : GoogleSignIn(
+          serverClientId: _webClientId,
+          scopes: ['email', 'openid', 'profile'],
+        );
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -62,6 +70,9 @@ class AuthController extends GetxController {
   }
 
   Future<XFile?> _cropImage(String path) async {
+    if (kIsWeb) {
+      return XFile(path);
+    }
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: path,
       uiSettings: [
@@ -100,7 +111,7 @@ class AuthController extends GetxController {
   String get userType => _userType;
 
   final _storage = GetStorage();
-  final _secureStorage = const FlutterSecureStorage();
+  final _secureStorage = SecureStorageWeb();
 
   bool get isLoggedIn => _token.isNotEmpty;
 
@@ -253,25 +264,30 @@ class AuthController extends GetxController {
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
+      final String? accessToken = googleAuth.accessToken;
 
-      if (idToken == null) {
+      debugPrint("[GoogleSignIn] idToken: ${idToken != null ? '${idToken.substring(0, 20)}...' : 'NULL'}");
+      debugPrint("[GoogleSignIn] accessToken: ${accessToken != null ? '${accessToken.substring(0, 20)}...' : 'NULL'}");
+
+      if (idToken == null && accessToken == null) {
         _isLoading = false;
         update();
-        _showError('No se pudo obtener el ID Token de Google.');
+        _showError('No se pudo obtener credenciales de Google.');
         return;
       }
 
-      Response response = await authRepo.googleLogin(idToken);
-      await _handleGoogleLoginResponse(response, idToken);
+      // Enviar idToken si está disponible, sino usar accessToken como fallback
+      Response response = await authRepo.googleLogin(idToken, accessToken: accessToken);
+      await _handleGoogleLoginResponse(response, idToken, accessToken);
     } catch (e) {
       debugPrint("Error signing in with Google: $e");
-      _showError('Ocurrió un error al iniciar sesión con Google.');
+      _showError('Ocurrió un error al iniciar sesión con Google: $e');
       _isLoading = false;
       update();
     }
   }
 
-  Future<void> _handleGoogleLoginResponse(Response response, String idToken) async {
+  Future<void> _handleGoogleLoginResponse(Response response, String? idToken, String? accessToken) async {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final body = response.body;
       if (body != null) {
@@ -280,7 +296,7 @@ class AuthController extends GetxController {
           _isLoading = false;
           update();
           // Abrir cuadro de diálogo premium para registrar teléfono
-          _showPhonePickerDialog(idToken);
+          _showPhonePickerDialog(idToken, accessToken);
         } else {
           final String? token = body['data']?['token'] ?? body['token'] ?? body['access_token'];
           final dynamic userJson = body['user'] ?? body['data']?['user'] ?? body['data'];
@@ -301,7 +317,7 @@ class AuthController extends GetxController {
     }
   }
 
-  void _showPhonePickerDialog(String idToken) {
+  void _showPhonePickerDialog(String? idToken, String? accessToken) {
     final TextEditingController phoneController = TextEditingController();
     Get.dialog(
       Dialog(
@@ -434,8 +450,8 @@ class AuthController extends GetxController {
                           update();
 
                           try {
-                            Response response = await authRepo.googleLogin(idToken, phone: cleanPhone);
-                            await _handleGoogleLoginResponse(response, idToken);
+                            Response response = await authRepo.googleLogin(idToken, accessToken: accessToken, phone: cleanPhone);
+                            await _handleGoogleLoginResponse(response, idToken, accessToken);
                           } catch (e) {
                             _showError('Error al registrar el teléfono.');
                             _isLoading = false;
@@ -500,15 +516,23 @@ class AuthController extends GetxController {
 
       if (_pickedImage != null) {
         debugPrint("[AuthController] Profile update image file path: ${_pickedImage!.path}");
-        final file = File(_pickedImage!.path);
-        if (await file.exists()) {
-          debugPrint("[AuthController] Profile image file exists, size: ${await file.length()} bytes");
+        if (kIsWeb) {
+          final bytes = await _pickedImage!.readAsBytes();
           data['image'] = MultipartFile(
-            file,
+            bytes,
             filename: _pickedImage!.name,
           );
         } else {
-          debugPrint("[AuthController] Warning: Profile image file does not exist at path!");
+          final file = File(_pickedImage!.path);
+          if (await file.exists()) {
+            debugPrint("[AuthController] Profile image file exists, size: ${await file.length()} bytes");
+            data['image'] = MultipartFile(
+              file,
+              filename: _pickedImage!.name,
+            );
+          } else {
+            debugPrint("[AuthController] Warning: Profile image file does not exist at path!");
+          }
         }
       }
 
