@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../data/repository/product_repo.dart';
 import '../models/product_model.dart';
 import 'branch_controller.dart';
 import 'cart_controller.dart';
+import '../utils/app_snackbar.dart';
 
 class SearchProductController extends GetxController {
   final ProductRepo productRepo;
@@ -85,18 +87,33 @@ class SearchProductController extends GetxController {
     update();
 
     try {
+      int? branchId;
+      try {
+        if (Get.isRegistered<BranchController>()) {
+          final controller = Get.find<BranchController>();
+          branchId = controller.isLoaded ? controller.branchId : 2;
+        }
+      } catch (_) {}
+
       Response response = await productRepo.getProductList(
+        branchId: branchId,
         categoryId: _selectedCategoryId,
         search: _searchQuery,
         sortBy: _sortBy,
       );
 
+      debugPrint("[SearchProductController] getProductList response status: ${response.statusCode}");
+
       if (response.statusCode == 200) {
         _productList = [];
         _productList.addAll(Product.fromJson(response.body).products);
+      } else {
+        debugPrint("[SearchProductController] Failed to load filtered products: ${response.statusCode} - ${response.statusText}");
+        AppSnackbar.error('Error', 'No se pudieron cargar los productos del buscador');
       }
     } catch (e) {
-      // Silently handle errors
+      debugPrint("[SearchProductController] Exception in getFilteredProducts: $e");
+      AppSnackbar.error('Error', 'Ocurrió un error al filtrar los productos');
     } finally {
       _isLoaded = true;
       update();
