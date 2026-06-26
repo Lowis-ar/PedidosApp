@@ -282,7 +282,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                     final unitPrice =
                         double.tryParse(detail.price ?? '0') ?? 0.0;
                     final qty = detail.quantity ?? 1;
-                    final lineTotal = unitPrice * qty;
+                    final lineTotal = double.tryParse(detail.totalPrice ?? '') ?? (unitPrice * qty);
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -351,10 +351,14 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                                 if (detail.extras != null && detail.extras!.isNotEmpty)
                                   ...detail.extras!.map((extra) {
                                     final extraQty = extra.quantity ?? 1;
+                                    final extraPriceVal = double.tryParse(extra.price ?? '') ?? 0.0;
+                                    final priceInfo = extraPriceVal > 0 
+                                        ? ' (+\$${extraPriceVal.toStringAsFixed(2)} c/u)' 
+                                        : '';
                                     return Padding(
                                       padding: const EdgeInsets.only(top: 2),
                                       child: Text(
-                                        '+$extraQty ${extra.name ?? ''}',
+                                        '+$extraQty ${extra.name ?? ''}$priceInfo',
                                         style: TextStyle(
                                             fontSize: 11,
                                             color: Colors.grey.shade500),
@@ -374,11 +378,12 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
 
                   // Subtotal de productos, Envío, Total
                   Builder(builder: (_) {
-                    final productsSubtotal = order.details!.fold(0.0,
-                        (sum, d) =>
-                            sum +
-                            (double.tryParse(d.price ?? '0') ?? 0.0) *
-                                (d.quantity ?? 1));
+                    final double productsSubtotal = double.tryParse(order.subtotal ?? '') ?? 
+                        order.details!.fold<double>(0.0,
+                            (double sum, d) =>
+                                sum +
+                                (double.tryParse(d.totalPrice ?? '') ??
+                                    ((double.tryParse(d.price ?? '0') ?? 0.0) * (d.quantity ?? 1))));
                     
                     double deliveryFeeVal =
                         double.tryParse(order.deliveryFee ?? '') ?? 0.0;

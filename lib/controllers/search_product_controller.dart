@@ -85,7 +85,16 @@ class SearchProductController extends GetxController {
     update();
 
     try {
+      int? branchId;
+      try {
+        if (Get.isRegistered<BranchController>()) {
+          final controller = Get.find<BranchController>();
+          branchId = controller.isLoaded ? controller.branchId : 2;
+        }
+      } catch (_) {}
+
       Response response = await productRepo.getProductList(
+        branchId: branchId,
         categoryId: _selectedCategoryId,
         search: _searchQuery,
         sortBy: _sortBy,

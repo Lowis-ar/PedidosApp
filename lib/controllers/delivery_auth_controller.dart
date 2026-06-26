@@ -13,7 +13,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:pedidosapp/utils/colors.dart';
 import 'package:pedidosapp/utils/app_snackbar.dart';
-import 'dart:io';
 
 class DeliveryAuthController extends GetxController {
   final DeliveryAuthRepo deliveryAuthRepo;
@@ -28,19 +27,33 @@ class DeliveryAuthController extends GetxController {
   Future<void> pickImage() async {
     final ImagePicker picker = ImagePicker();
     debugPrint("[DeliveryAuthController] Launching ImagePicker...");
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
     if (image != null) {
-      debugPrint("[DeliveryAuthController] Image picked: ${image.path}, launching image cropper...");
+      debugPrint(
+        "[DeliveryAuthController] Image picked: ${image.path}, launching image cropper...",
+      );
       final XFile? cropped = await _cropImage(image.path);
       if (cropped != null) {
-        debugPrint("[DeliveryAuthController] Image crop completed: ${cropped.path}");
+        debugPrint(
+          "[DeliveryAuthController] Image crop completed: ${cropped.path}",
+        );
         _pickedImage = cropped;
         update();
         if (_deliveryman != null) {
-          debugPrint("[DeliveryAuthController] Triggering updateProfile automatic upload...");
-          await updateProfile(_deliveryman!.name ?? '', _deliveryman!.phone ?? '');
+          debugPrint(
+            "[DeliveryAuthController] Triggering updateProfile automatic upload...",
+          );
+          await updateProfile(
+            _deliveryman!.name ?? '',
+            _deliveryman!.phone ?? '',
+          );
         } else {
-          debugPrint("[DeliveryAuthController] Deliveryman is null, cannot upload profile picture.");
+          debugPrint(
+            "[DeliveryAuthController] Deliveryman is null, cannot upload profile picture.",
+          );
         }
       } else {
         debugPrint("[DeliveryAuthController] Image crop cancelled by user.");
@@ -63,16 +76,12 @@ class DeliveryAuthController extends GetxController {
           toolbarWidgetColor: Colors.white,
           initAspectRatio: CropAspectRatioPreset.square,
           lockAspectRatio: true,
-          aspectRatioPresets: [
-            CropAspectRatioPreset.square,
-          ],
+          aspectRatioPresets: [CropAspectRatioPreset.square],
         ),
         IOSUiSettings(
           title: 'Recortar Imagen',
           aspectRatioLockEnabled: true,
-          aspectRatioPresets: [
-            CropAspectRatioPreset.square,
-          ],
+          aspectRatioPresets: [CropAspectRatioPreset.square],
         ),
       ],
     );
@@ -100,16 +109,22 @@ class DeliveryAuthController extends GetxController {
   }
 
   Future<void> _loadSession() async {
-    final savedToken = await _secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
+    final savedToken = await _secureStorage.read(
+      key: AppConstants.DELIVERY_TOKEN,
+    );
     if (savedToken != null && savedToken.isNotEmpty) {
       _token = savedToken;
       // Inyectar el token antes de cualquier petición
       Get.find<ApiClient>().updateToken(_token);
-      final userDataStr = await _secureStorage.read(key: AppConstants.DELIVERY_USER_KEY);
+      final userDataStr = await _secureStorage.read(
+        key: AppConstants.DELIVERY_USER_KEY,
+      );
       if (userDataStr != null) {
         try {
           final userData = jsonDecode(userDataStr);
-          _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(userData));
+          _deliveryman = DeliverymanModel.fromJson(
+            Map<String, dynamic>.from(userData),
+          );
         } catch (e) {
           debugPrint('Error decoding delivery user: $e');
         }
@@ -126,10 +141,13 @@ class DeliveryAuthController extends GetxController {
     _token = token;
     _deliveryman = deliveryman;
     await _secureStorage.write(key: AppConstants.DELIVERY_TOKEN, value: token);
-    await _secureStorage.write(key: AppConstants.DELIVERY_USER_KEY, value: jsonEncode(deliveryman.toJson()));
+    await _secureStorage.write(
+      key: AppConstants.DELIVERY_USER_KEY,
+      value: jsonEncode(deliveryman.toJson()),
+    );
     Get.find<ApiClient>().updateToken(token);
     update();
-    
+
     // El token ya está inyectado: es seguro iniciar el polling y cargar pedidos
     if (Get.isRegistered<DeliveryOrderController>()) {
       Get.find<DeliveryOrderController>().startPolling();
@@ -141,10 +159,13 @@ class DeliveryAuthController extends GetxController {
     _token = token;
     _deliveryman = deliveryman;
     await _secureStorage.write(key: AppConstants.DELIVERY_TOKEN, value: token);
-    await _secureStorage.write(key: AppConstants.DELIVERY_USER_KEY, value: jsonEncode(deliveryman.toJson()));
+    await _secureStorage.write(
+      key: AppConstants.DELIVERY_USER_KEY,
+      value: jsonEncode(deliveryman.toJson()),
+    );
     Get.find<ApiClient>().updateToken(token);
     update();
-    
+
     // El token ya está inyectado: es seguro iniciar el polling y cargar pedidos
     Get.find<DeliveryOrderController>().startPolling();
     Get.find<DeliveryOrderController>().getOrders();
@@ -164,7 +185,9 @@ class DeliveryAuthController extends GetxController {
           final dynamic dmJson = body['data']['deliveryman'];
 
           if (token != null && dmJson != null) {
-            final deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(dmJson));
+            final deliveryman = DeliverymanModel.fromJson(
+              Map<String, dynamic>.from(dmJson),
+            );
             _saveSession(token, deliveryman);
           } else {
             _showError('No se recibieron credenciales válidas');
@@ -187,16 +210,16 @@ class DeliveryAuthController extends GetxController {
         'is_available': available ? 1 : 0,
         'is_active': available ? 1 : 0,
       };
-      
+
       Response response = await deliveryAuthRepo.updateProfile(data);
       if (response.statusCode == 200) {
         _deliveryman?.isAvailable = available;
         _storage.write(AppConstants.DELIVERY_USER_KEY, _deliveryman?.toJson());
         update();
       } else {
-      if (kDebugMode) {
-        debugPrint('Error toggle status: ${response.body}');
-      }
+        if (kDebugMode) {
+          debugPrint('Error toggle status: ${response.body}');
+        }
         _handleApiError(response, 'No se pudo cambiar el estado.');
       }
     } catch (e) {
@@ -214,10 +237,19 @@ class DeliveryAuthController extends GetxController {
       if (response.statusCode == 200) {
         final body = response.body;
         // La API devuelve { success: true, data: { deliveryman: { ... } } }
-        final dynamic dmJson = body['data']?['deliveryman'] ?? body['deliveryman'] ?? body['data'] ?? body;
+        final dynamic dmJson =
+            body['data']?['deliveryman'] ??
+            body['deliveryman'] ??
+            body['data'] ??
+            body;
         if (dmJson != null) {
-          _deliveryman = DeliverymanModel.fromJson(Map<String, dynamic>.from(dmJson));
-          await _secureStorage.write(key: AppConstants.DELIVERY_USER_KEY, value: jsonEncode(_deliveryman?.toJson()));
+          _deliveryman = DeliverymanModel.fromJson(
+            Map<String, dynamic>.from(dmJson),
+          );
+          await _secureStorage.write(
+            key: AppConstants.DELIVERY_USER_KEY,
+            value: jsonEncode(_deliveryman?.toJson()),
+          );
           update();
         }
       }
@@ -257,7 +289,7 @@ class DeliveryAuthController extends GetxController {
 
     try {
       await deliveryAuthRepo.logout();
-    } catch(e) {
+    } catch (e) {
       debugPrint("Logout error: $e");
     }
     _token = '';
@@ -284,10 +316,10 @@ class DeliveryAuthController extends GetxController {
     }
 
     String lowerMsg = message.toLowerCase();
-    if (lowerMsg.contains('exception') || 
-        lowerMsg.contains('sql') || 
-        lowerMsg.contains('server') || 
-        lowerMsg.contains('connection') || 
+    if (lowerMsg.contains('exception') ||
+        lowerMsg.contains('sql') ||
+        lowerMsg.contains('server') ||
+        lowerMsg.contains('connection') ||
         lowerMsg.contains('timeout') ||
         lowerMsg.contains('error') && message.contains('errno')) {
       message = 'Ocurrió un error inesperado, intenta nuevamente.';

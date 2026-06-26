@@ -24,7 +24,7 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
   late Map<int, Map<String, dynamic>> _productRatings;
 
   // Deliveryman rating
-  int _deliveryRating = 0;
+  final int _deliveryRating = 0;
   final _deliveryCommentCtrl = TextEditingController();
 
   late final ReviewController _ctrl;
@@ -53,10 +53,7 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
     if (widget.order.deliveryman != null) {
       Get.offNamed(
         RouteHelper.getReviewDelivery(),
-        arguments: {
-          'order': widget.order,
-          'productRatings': _productRatings,
-        },
+        arguments: {'order': widget.order, 'productRatings': _productRatings},
       );
     } else {
       final success = await _ctrl.submitReview(
@@ -138,22 +135,24 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                 if (details.isNotEmpty) ...[
                   _sectionTitle('Productos'),
                   const SizedBox(height: 10),
-                  ...details.map((detail) => _ProductReviewCard(
-                        detail: detail,
-                        onRatingChanged: (r) {
-                          if (detail.productId != null) {
-                            setState(() {
-                              _productRatings[detail.productId!]!['rating'] = r;
-                            });
-                          }
-                        },
-                        onCommentChanged: (c) {
-                          if (detail.productId != null) {
-                            _productRatings[detail.productId!]!['comment'] =
-                                c.trim().isEmpty ? null : c.trim();
-                          }
-                        },
-                      )),
+                  ...details.map(
+                    (detail) => _ProductReviewCard(
+                      detail: detail,
+                      onRatingChanged: (r) {
+                        if (detail.productId != null) {
+                          setState(() {
+                            _productRatings[detail.productId!]!['rating'] = r;
+                          });
+                        }
+                      },
+                      onCommentChanged: (c) {
+                        if (detail.productId != null) {
+                          _productRatings[detail.productId!]!['comment'] =
+                              c.trim().isEmpty ? null : c.trim();
+                        }
+                      },
+                    ),
+                  ),
                   const SizedBox(height: 20),
                 ],
                 const SizedBox(height: 10),
@@ -190,7 +189,8 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                           RouteHelper.getReviewDelivery(),
                           arguments: {
                             'order': widget.order,
-                            'productRatings': <int, Map<String, dynamic>>{}, // empty ratings
+                            'productRatings':
+                                <int, Map<String, dynamic>>{}, // empty ratings
                           },
                         );
                       } else {
@@ -207,8 +207,9 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                     child: Text(
                       'Omitir',
                       style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w600),
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -232,14 +233,19 @@ class _ReviewOrderPageState extends State<ReviewOrderPage> {
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2),
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
                             )
                           : Text(
-                              deliveryman != null ? 'Siguiente' : 'Enviar reseñas',
+                              deliveryman != null
+                                  ? 'Siguiente'
+                                  : 'Enviar reseñas',
                               style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15),
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                     ),
                   ),
@@ -315,7 +321,9 @@ class _ProductReviewCardState extends State<_ProductReviewCard> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _rating > 0 ? AppColors.mainColor.withValues(alpha: 0.4) : Colors.grey.shade200,
+          color: _rating > 0
+              ? AppColors.mainColor.withValues(alpha: 0.4)
+              : Colors.grey.shade200,
           width: 1.5,
         ),
         boxShadow: [
@@ -364,7 +372,9 @@ class _ProductReviewCardState extends State<_ProductReviewCard> {
                       Text(
                         'x${widget.detail.quantity ?? 1}',
                         style: TextStyle(
-                            color: Colors.grey.shade500, fontSize: 13),
+                          color: Colors.grey.shade500,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ),
@@ -406,7 +416,9 @@ class _ProductReviewCardState extends State<_ProductReviewCard> {
                     hintText: 'Escribe un comentario (opcional)...',
                     hintStyle: TextStyle(color: Colors.grey.shade400),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     filled: true,
                     fillColor: Colors.grey.shade50,
                     border: OutlineInputBorder(
@@ -419,8 +431,10 @@ class _ProductReviewCardState extends State<_ProductReviewCard> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: AppColors.mainColor, width: 1.5),
+                      borderSide: BorderSide(
+                        color: AppColors.mainColor,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
@@ -437,8 +451,7 @@ class _ProductReviewCardState extends State<_ProductReviewCard> {
       width: 60,
       height: 60,
       color: AppColors.mainColor.withValues(alpha: 0.1),
-      child: Icon(Icons.fastfood_rounded,
-          color: AppColors.mainColor, size: 30),
+      child: Icon(Icons.fastfood_rounded, color: AppColors.mainColor, size: 30),
     );
   }
 }
@@ -466,7 +479,9 @@ class _DeliverymanReviewCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: rating > 0 ? AppColors.mainColor.withValues(alpha: 0.4) : Colors.grey.shade200,
+          color: rating > 0
+              ? AppColors.mainColor.withValues(alpha: 0.4)
+              : Colors.grey.shade200,
           width: 1.5,
         ),
         boxShadow: [
@@ -489,8 +504,11 @@ class _DeliverymanReviewCard extends StatelessWidget {
                     ? NetworkImage(deliveryman.photo!)
                     : null,
                 child: deliveryman.photo == null
-                    ? Icon(Icons.delivery_dining,
-                        color: AppColors.mainColor, size: 30)
+                    ? Icon(
+                        Icons.delivery_dining,
+                        color: AppColors.mainColor,
+                        size: 30,
+                      )
                     : null,
               ),
               const SizedBox(width: 14),
@@ -510,7 +528,9 @@ class _DeliverymanReviewCard extends StatelessWidget {
                     Text(
                       'Tu repartidor',
                       style: TextStyle(
-                          color: Colors.grey.shade500, fontSize: 13),
+                        color: Colors.grey.shade500,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -535,8 +555,10 @@ class _DeliverymanReviewCard extends StatelessWidget {
             decoration: InputDecoration(
               hintText: '¿Algo que destacar del repartidor? (opcional)',
               hintStyle: TextStyle(color: Colors.grey.shade400),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
               filled: true,
               fillColor: Colors.grey.shade50,
               border: OutlineInputBorder(
@@ -549,8 +571,7 @@ class _DeliverymanReviewCard extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    BorderSide(color: AppColors.mainColor, width: 1.5),
+                borderSide: BorderSide(color: AppColors.mainColor, width: 1.5),
               ),
             ),
           ),

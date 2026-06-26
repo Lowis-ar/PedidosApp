@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:get/get.dart';
 import '../../controllers/search_product_controller.dart';
 import '../../controllers/branch_controller.dart';
@@ -144,9 +145,37 @@ class _SearchPageState extends State<SearchPage> {
                               boxShadow: [
                                 BoxShadow(color: Colors.grey.shade200, blurRadius: 5, offset: const Offset(0, 2))
                               ],
-                              image: DecorationImage(
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(Dimensions.radius20),
+                              child: CachedNetworkImage(
+                                imageUrl: product.img ?? "",
+                                width: 110,
+                                height: 110,
                                 fit: BoxFit.cover,
-                                image: NetworkImage(product.img ?? ""),
+                                memCacheWidth: 300,
+                                placeholder: (context, url) => Container(
+                                  width: 110,
+                                  height: 110,
+                                  color: Colors.grey.shade100,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.mainColor,
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  width: 110,
+                                  height: 110,
+                                  color: Colors.grey.shade100,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),

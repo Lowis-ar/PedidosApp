@@ -1,12 +1,10 @@
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../data/repository/recommended_product_repo.dart';
 import '../models/product_model.dart';
 
-class RecommendedProductController extends GetxController{
+class RecommendedProductController extends GetxController {
   final RecommendedProductRepo recommendedProductRepo;
   RecommendedProductController({required this.recommendedProductRepo});
   List<ProductModel> _recommendedProductList = [];
@@ -15,20 +13,25 @@ class RecommendedProductController extends GetxController{
   bool _isLoaded = false;
   bool get isLoaded => _isLoaded;
 
-
-
   Future<void> getRecommendedProductList() async {
     debugPrint("Fetching recommended products...");
     try {
-      Response response = await recommendedProductRepo.getRecommendedProductList();
+      Response response = await recommendedProductRepo
+          .getRecommendedProductList();
       if (kDebugMode) {
-        debugPrint("Recommended products response: ${response.statusCode} - ${response.body}");
+        debugPrint(
+          "Recommended products response: ${response.statusCode} - ${response.body}",
+        );
       }
       if (response.statusCode == 200) {
         _recommendedProductList = [];
-        _recommendedProductList.addAll(Product.fromJson(response.body).products);
+        _recommendedProductList.addAll(
+          Product.fromJson(response.body).products,
+        );
       } else {
-        debugPrint("Failed to load recommended products: ${response.statusCode}");
+        debugPrint(
+          "Failed to load recommended products: ${response.statusCode}",
+        );
       }
     } catch (e) {
       debugPrint("Exception loading recommended products: $e");

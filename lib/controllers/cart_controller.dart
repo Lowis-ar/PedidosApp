@@ -1,13 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/models/product_model.dart';
 
 import '../data/repository/cart_repo.dart';
 import '../models/cart_model.dart';
-import '../utils/colors.dart';
 import '../utils/app_snackbar.dart';
 
-class CartController extends GetxController{
+class CartController extends GetxController {
   final CartRepo cartRepo;
   CartController({required this.cartRepo});
   final Map<String, CartModel> _items = {};
@@ -36,12 +34,15 @@ class CartController extends GetxController{
   set setCart(List<CartModel> items) {
     _items.clear();
     for (int i = 0; i < items.length; i++) {
-      String key = _generateKey(items[i].product!, items[i].variantId, items[i].extras);
+      String key = _generateKey(
+        items[i].product!,
+        items[i].variantId,
+        items[i].extras,
+      );
       _items.putIfAbsent(key, () => items[i]);
     }
     Future.microtask(() => update());
   }
-
 
   void addItem(
     ProductModel product,
@@ -106,7 +107,7 @@ class CartController extends GetxController{
     update();
   }
 
-  bool existInCart(ProductModel product){
+  bool existInCart(ProductModel product) {
     bool exists = false;
     _items.forEach((key, value) {
       if (value.product!.id == product.id) {
@@ -116,7 +117,7 @@ class CartController extends GetxController{
     return exists;
   }
 
-  int getQuantity(ProductModel product){
+  int getQuantity(ProductModel product) {
     var quantity = 0;
     _items.forEach((key, value) {
       if (value.product!.id == product.id) {
@@ -126,7 +127,7 @@ class CartController extends GetxController{
     return quantity;
   }
 
-  int get totalItems{
+  int get totalItems {
     var totalQuantity = 0;
     _items.forEach((key, value) {
       totalQuantity += value.quantity!;
@@ -134,9 +135,8 @@ class CartController extends GetxController{
     return totalQuantity;
   }
 
-
-  List<CartModel> get getItems{
-   return _items.entries.map((e){
+  List<CartModel> get getItems {
+    return _items.entries.map((e) {
       return e.value;
     }).toList();
   }

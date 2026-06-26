@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -38,8 +37,11 @@ class ApiClient extends GetConnect implements GetxService {
       isLoggingOut = true;
 
       final secureStorage = SecureStorageWeb();
-      final String? deliveryTokenStr = await secureStorage.read(key: AppConstants.DELIVERY_TOKEN);
-      final bool isDeliveryToken = deliveryTokenStr != null && deliveryTokenStr.isNotEmpty;
+      final String? deliveryTokenStr = await secureStorage.read(
+        key: AppConstants.DELIVERY_TOKEN,
+      );
+      final bool isDeliveryToken =
+          deliveryTokenStr != null && deliveryTokenStr.isNotEmpty;
 
       // Limpiar tokens
       await secureStorage.delete(key: AppConstants.DELIVERY_TOKEN);
@@ -47,8 +49,11 @@ class ApiClient extends GetConnect implements GetxService {
       await secureStorage.delete(key: 'token');
       token = '';
 
-      AppSnackbar.error('Sesión expirada', 'Por favor vuelve a iniciar sesión',
-          duration: const Duration(seconds: 3));
+      AppSnackbar.error(
+        'Sesión expirada',
+        'Por favor vuelve a iniciar sesión',
+        duration: const Duration(seconds: 3),
+      );
 
       Future.delayed(const Duration(milliseconds: 500), () {
         if (isDeliveryToken) {
@@ -58,16 +63,22 @@ class ApiClient extends GetConnect implements GetxService {
         }
         isLoggingOut = false; // Reset para futuras sesiones
       });
-    } else if ((response.statusCode == 500 || response.statusCode == 503) && handleError) {
-      AppSnackbar.error('Error del servidor', 'Ocurrió un error inesperado. Intenta de nuevo.');
+    } else if ((response.statusCode == 500 || response.statusCode == 503) &&
+        handleError) {
+      AppSnackbar.error(
+        'Error del servidor',
+        'Ocurrió un error inesperado. Intenta de nuevo.',
+      );
     }
   }
 
   Future<Response> getData(String uri, {bool handleError = true}) async {
     try {
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final String cacheBustUri = uri.contains('?') ? '$uri&_t=$timestamp' : '$uri?_t=$timestamp';
-      
+      final String cacheBustUri = uri.contains('?')
+          ? '$uri&_t=$timestamp'
+          : '$uri?_t=$timestamp';
+
       final Response response = await get(cacheBustUri, headers: _mainHeaders);
       _handleHttpError(response, handleError: handleError);
       return response;
@@ -79,9 +90,15 @@ class ApiClient extends GetConnect implements GetxService {
     }
   }
 
-  Future<Response> postData(String uri, dynamic body, {bool handleError = true}) async {
+  Future<Response> postData(
+    String uri,
+    dynamic body, {
+    bool handleError = true,
+  }) async {
     try {
-      final Map<String, String> headers = Map<String, String>.from(_mainHeaders);
+      final Map<String, String> headers = Map<String, String>.from(
+        _mainHeaders,
+      );
       if (body is FormData) {
         headers.remove('Content-Type');
       }
@@ -96,9 +113,15 @@ class ApiClient extends GetConnect implements GetxService {
     }
   }
 
-  Future<Response> putData(String uri, dynamic body, {bool handleError = true}) async {
+  Future<Response> putData(
+    String uri,
+    dynamic body, {
+    bool handleError = true,
+  }) async {
     try {
-      final Map<String, String> headers = Map<String, String>.from(_mainHeaders);
+      final Map<String, String> headers = Map<String, String>.from(
+        _mainHeaders,
+      );
       if (body is FormData) {
         headers.remove('Content-Type');
       }

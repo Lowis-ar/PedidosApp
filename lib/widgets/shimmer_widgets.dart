@@ -30,9 +30,10 @@ class _ShimmerBoxState extends State<_ShimmerBox>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat();
-    _anim = Tween<double>(begin: -1.5, end: 1.5).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: -1.5,
+      end: 1.5,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -45,13 +46,12 @@ class _ShimmerBoxState extends State<_ShimmerBox>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) {
+      builder: (_, _) {
         return Container(
           width: widget.width,
           height: widget.height,
           decoration: BoxDecoration(
-            borderRadius:
-                widget.borderRadius ?? BorderRadius.circular(8),
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
             gradient: LinearGradient(
               begin: Alignment(_anim.value - 0.5, 0),
               end: Alignment(_anim.value + 0.5, 0),
@@ -165,11 +165,7 @@ class RecommendedProductSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     return Container(
-      margin: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        bottom: 12,
-      ),
+      margin: EdgeInsets.only(left: 20, right: 20, bottom: 12),
       child: Row(
         children: [
           ShimmerBlock(
@@ -345,7 +341,9 @@ class AppLoadingOverlay extends StatelessWidget {
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 24),
+                    horizontal: 32,
+                    vertical: 24,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
