@@ -94,7 +94,7 @@ class CouponController extends GetxController {
     update();
 
     try {
-      Response response = await couponRepo.getLoyaltyProfile();
+      Response response = await couponRepo.getLoyaltyProfile().timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final body = response.body;
         final data = body['data'] ?? body;
@@ -110,7 +110,7 @@ class CouponController extends GetxController {
 
   Future<void> getLoyaltyTransactions() async {
     try {
-      Response response = await couponRepo.getLoyaltyTransactions();
+      Response response = await couponRepo.getLoyaltyTransactions().timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         _transactions = [];
         final body = response.body;
@@ -139,7 +139,7 @@ class CouponController extends GetxController {
     update();
 
     try {
-      Response response = await couponRepo.getUserCoupons();
+      Response response = await couponRepo.getUserCoupons().timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         _userCoupons = [];
         final body = response.body;

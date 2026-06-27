@@ -150,7 +150,7 @@ class OrderDetail {
     orderId = json['order_id'];
     productId = json['product_id'] ?? json['food_id'];
     price = json['unit_price']?.toString() ?? json['price']?.toString();
-    totalPrice = json['total_price']?.toString() ?? json['line_total']?.toString();
+    totalPrice = json['total_price']?.toString() ?? json['line_total']?.toString() ?? json['subtotal']?.toString();
     quantity = json['quantity'];
     name = json['product_name'] ?? json['name'];
     img = json['product_image'] ?? json['img'];

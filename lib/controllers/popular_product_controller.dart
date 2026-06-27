@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pedidosapp/controllers/cart_controller.dart';
 
 import '../data/repository/popular_product_repo.dart';
 import '../models/cart_model.dart';
 import '../models/product_model.dart';
-import '../utils/colors.dart';
 import '../utils/app_snackbar.dart';
 
 class PopularProductController extends GetxController {
@@ -92,7 +90,9 @@ class PopularProductController extends GetxController {
     try {
       Response response = await popularProductRepo.getPopularProductList();
       if (kDebugMode) {
-        debugPrint("Popular products response: ${response.statusCode} - ${response.body}");
+        debugPrint(
+          "Popular products response: ${response.statusCode} - ${response.body}",
+        );
       }
       if (response.statusCode == 200) {
         _popularProductList = [];

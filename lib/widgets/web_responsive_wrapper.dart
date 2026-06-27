@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:pedidosapp/utils/dimensions.dart';
 
 class WebResponsiveWrapper extends StatelessWidget {
@@ -11,7 +10,7 @@ class WebResponsiveWrapper extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         double screenWidth = constraints.maxWidth;
-        
+
         // Si no estamos en la web o la pantalla es angosta, renderizar el contenido normalmente
         if (screenWidth <= Dimensions.maxContentWidth) {
           return child;
@@ -19,7 +18,9 @@ class WebResponsiveWrapper extends StatelessWidget {
 
         // Si es escritorio o tablet (ancho > 500)
         return Container(
-          color: const Color(0xFFF4FAF9), // Fondo sutil con toque de color de marca
+          color: const Color(
+            0xFFF4FAF9,
+          ), // Fondo sutil con toque de color de marca
           child: Center(
             child: Container(
               width: Dimensions.maxContentWidth,
@@ -34,15 +35,10 @@ class WebResponsiveWrapper extends StatelessWidget {
                   ),
                 ],
                 border: Border.symmetric(
-                  vertical: BorderSide(
-                    color: Colors.grey.shade200,
-                    width: 1,
-                  ),
+                  vertical: BorderSide(color: Colors.grey.shade200, width: 1),
                 ),
               ),
-              child: ClipRect(
-                child: child,
-              ),
+              child: ClipRect(child: child),
             ),
           ),
         );

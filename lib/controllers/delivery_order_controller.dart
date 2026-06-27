@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:flutter/foundation.dart';
 
@@ -33,14 +32,18 @@ class DeliveryOrderController extends GetxController {
   bool get historyError => _historyError;
 
   List<DeliveryOrderModel> _availableOrders = [];
-  List<DeliveryOrderModel> get availableOrders => _availableOrders.where((o) => o.orderStatus == 'ready_to_go' || o.orderStatus == 'pending').toList();
+  List<DeliveryOrderModel> get availableOrders => _availableOrders
+      .where(
+        (o) => o.orderStatus == 'ready_to_go' || o.orderStatus == 'pending',
+      )
+      .toList();
 
   List<DeliveryOrderModel> _historyOrders = [];
   List<DeliveryOrderModel> get historyOrders => _historyOrders;
 
   List<DeliveryOrderModel> _activeOrdersList = [];
   List<DeliveryOrderModel> get activeOrdersList => _activeOrdersList;
-  
+
   DeliveryOrderModel? _activeOrder;
   DeliveryOrderModel? get activeOrder => _activeOrder;
 
@@ -59,7 +62,8 @@ class DeliveryOrderController extends GetxController {
   void startPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (Get.isRegistered<DeliveryAuthController>() && Get.find<DeliveryAuthController>().isLoggedIn) {
+      if (Get.isRegistered<DeliveryAuthController>() &&
+          Get.find<DeliveryAuthController>().isLoggedIn) {
         getOrders(showLoading: false);
       } else {
         stopPolling();
@@ -92,8 +96,12 @@ class DeliveryOrderController extends GetxController {
     _hasError = false;
     update();
 
-    final List<int> oldAvailableIds = _availableOrders.map((o) => o.id ?? 0).toList();
-    final List<int> oldActiveIds = _activeOrdersList.map((o) => o.id ?? 0).toList();
+    final List<int> oldAvailableIds = _availableOrders
+        .map((o) => o.id ?? 0)
+        .toList();
+    final List<int> oldActiveIds = _activeOrdersList
+        .map((o) => o.id ?? 0)
+        .toList();
 
     try {
       debugPrint("=== INICIO CARGA DE PEDIDOS ===");
@@ -115,7 +123,8 @@ class DeliveryOrderController extends GetxController {
         _availableOrdersError = false;
       } else if (respAvail.statusCode == 403) {
         _availableOrders = [];
-        _availableOrdersError = false; // 403 es un estado de negocio válido (sin disponibilidad)
+        _availableOrdersError =
+            false; // 403 es un estado de negocio válido (sin disponibilidad)
         if (showLoading) {
           final msg = respAvail.body is Map
               ? (respAvail.body['message'] ?? 'No tienes disponibilidad activa')
@@ -138,39 +147,53 @@ class DeliveryOrderController extends GetxController {
       if (respHistory.statusCode == 200) {
         final body = respHistory.body;
         bool historyParsed = false;
-        
+
         // Estructura 1: { success:true, data: { total_earnings, today_earnings, orders:[] } }
         if (body is Map && body['success'] == true && body['data'] is Map) {
           final data = body['data'] as Map;
-          _totalEarnings = data['total_earnings'] != null ? double.tryParse(data['total_earnings'].toString()) ?? 0.0 : 0.0;
-          _todayEarnings = data['today_earnings'] != null ? double.tryParse(data['today_earnings'].toString()) ?? 0.0 : 0.0;
+          _totalEarnings = data['total_earnings'] != null
+              ? double.tryParse(data['total_earnings'].toString()) ?? 0.0
+              : 0.0;
+          _todayEarnings = data['today_earnings'] != null
+              ? double.tryParse(data['today_earnings'].toString()) ?? 0.0
+              : 0.0;
           var rawOrders = data['orders'];
           if (rawOrders is List) {
-            _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
+            _historyOrders = rawOrders
+                .map((o) => DeliveryOrderModel.fromJson(o))
+                .toList();
           }
           historyParsed = true;
         }
         // Estructura 2: { success:true, data: [] } — lista plana
         else if (body is Map && body['data'] is List) {
           final rawOrders = body['data'] as List;
-          _historyOrders = rawOrders.map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          _historyOrders = rawOrders
+              .map((o) => DeliveryOrderModel.fromJson(o))
+              .toList();
           historyParsed = true;
         }
         // Estructura 3: lista plana directa
         else if (body is List) {
-          _historyOrders = (body as List).map((o) => DeliveryOrderModel.fromJson(o)).toList();
+          _historyOrders = (body)
+              .map((o) => DeliveryOrderModel.fromJson(o))
+              .toList();
           historyParsed = true;
         }
-        
+
         _historyError = !historyParsed;
         if (!historyParsed) {
           if (kDebugMode) {
-            debugPrint('[History] Formato desconocido: ${body.runtimeType} keys=${body is Map ? body.keys.toList() : 'list'}');
+            debugPrint(
+              '[History] Formato desconocido: ${body.runtimeType} keys=${body is Map ? body.keys.toList() : 'list'}',
+            );
           }
         }
       } else {
         _historyError = true;
-        debugPrint('[History] Error HTTP ${respHistory.statusCode} — historial no disponible (no crítico)');
+        debugPrint(
+          '[History] Error HTTP ${respHistory.statusCode} — historial no disponible (no crítico)',
+        );
       }
 
       // Si cualquiera de las dos consultas principales falla por error del servidor/red
@@ -179,15 +202,21 @@ class DeliveryOrderController extends GetxController {
       }
 
       _updateActiveOrderState();
-      
+
       // Feedback visual/háptico sutil e inteligente para actualización en segundo plano
       if (!showLoading) {
-        final List<int> newAvailableIds = _availableOrders.map((o) => o.id ?? 0).toList();
-        final List<int> newActiveIds = _activeOrdersList.map((o) => o.id ?? 0).toList();
+        final List<int> newAvailableIds = _availableOrders
+            .map((o) => o.id ?? 0)
+            .toList();
+        final List<int> newActiveIds = _activeOrdersList
+            .map((o) => o.id ?? 0)
+            .toList();
 
-        bool availableChanged = newAvailableIds.length != oldAvailableIds.length ||
+        bool availableChanged =
+            newAvailableIds.length != oldAvailableIds.length ||
             !newAvailableIds.every((id) => oldAvailableIds.contains(id));
-        bool activeChanged = newActiveIds.length != oldActiveIds.length ||
+        bool activeChanged =
+            newActiveIds.length != oldActiveIds.length ||
             !newActiveIds.every((id) => oldActiveIds.contains(id));
         bool listsChanged = availableChanged || activeChanged;
 
@@ -202,7 +231,9 @@ class DeliveryOrderController extends GetxController {
         }
       }
 
-      debugPrint("=== FIN CARGA DE PEDIDOS === dispCount=${_availableOrders.length} actCount=${_activeOrdersList.length} availErr=$_availableOrdersError actErr=$_activeOrdersError histErr=$_historyError");
+      debugPrint(
+        "=== FIN CARGA DE PEDIDOS === dispCount=${_availableOrders.length} actCount=${_activeOrdersList.length} availErr=$_availableOrdersError actErr=$_activeOrdersError histErr=$_historyError",
+      );
     } catch (e, stack) {
       debugPrint("Error en getOrders: $e\n$stack");
       _availableOrdersError = true;
@@ -210,7 +241,10 @@ class DeliveryOrderController extends GetxController {
       _historyError = true;
       _hasError = true;
       if (showLoading) {
-        AppSnackbar.error('Error de conexión', 'No se pudo cargar los pedidos. Verifica tu conexión.');
+        AppSnackbar.error(
+          'Error de conexión',
+          'No se pudo cargar los pedidos. Verifica tu conexión.',
+        );
       }
     } finally {
       _isLoading = false;
@@ -226,9 +260,15 @@ class DeliveryOrderController extends GetxController {
       } else if (body is List) {
         rawOrders = body;
       }
-      debugPrint("[Parse] rawOrders=${rawOrders?.length} keys=${body is Map ? body.keys.toList() : 'list'}");
+      debugPrint(
+        "[Parse] rawOrders=${rawOrders?.length} keys=${body is Map ? body.keys.toList() : 'list'}",
+      );
       if (rawOrders != null) {
-        return rawOrders.map((o) => DeliveryOrderModel.fromJson(Map<String, dynamic>.from(o))).toList();
+        return rawOrders
+            .map(
+              (o) => DeliveryOrderModel.fromJson(Map<String, dynamic>.from(o)),
+            )
+            .toList();
       }
     } catch (e, stack) {
       debugPrint("Error parsing order list: $e\n$stack");
@@ -238,9 +278,15 @@ class DeliveryOrderController extends GetxController {
 
   void _updateActiveOrderState() {
     if (_activeOrdersList.isNotEmpty) {
-      _activeOrder = _activeOrdersList.firstWhereOrNull(
-        (o) => o.orderStatus == 'assigned' || o.orderStatus == 'on_way' || o.orderStatus == 'picked_up' || o.orderStatus == 'accepted'
-      ) ?? _activeOrdersList.first;
+      _activeOrder =
+          _activeOrdersList.firstWhereOrNull(
+            (o) =>
+                o.orderStatus == 'assigned' ||
+                o.orderStatus == 'on_way' ||
+                o.orderStatus == 'picked_up' ||
+                o.orderStatus == 'accepted',
+          ) ??
+          _activeOrdersList.first;
     } else {
       _activeOrder = null;
     }
@@ -253,11 +299,15 @@ class DeliveryOrderController extends GetxController {
       if (response.statusCode == 200) {
         final body = response.body;
         bool historyParsed = false;
-        
+
         if (body is Map && body['success'] == true && body['data'] is Map) {
           final data = body['data'] as Map;
-          _totalEarnings = data['total_earnings'] != null ? double.tryParse(data['total_earnings'].toString()) ?? 0.0 : 0.0;
-          _todayEarnings = data['today_earnings'] != null ? double.tryParse(data['today_earnings'].toString()) ?? 0.0 : 0.0;
+          _totalEarnings = data['total_earnings'] != null
+              ? double.tryParse(data['total_earnings'].toString()) ?? 0.0
+              : 0.0;
+          _todayEarnings = data['today_earnings'] != null
+              ? double.tryParse(data['today_earnings'].toString()) ?? 0.0
+              : 0.0;
           var rawOrders = data['orders'];
           if (rawOrders is Map && rawOrders.containsKey('data')) {
             rawOrders = rawOrders['data'];
@@ -277,23 +327,33 @@ class DeliveryOrderController extends GetxController {
         } else if (body is Map && body['data'] is List) {
           final List<DeliveryOrderModel> parsedOrders = [];
           for (var o in body['data'] as List) {
-            try { parsedOrders.add(DeliveryOrderModel.fromJson(o)); } catch (e) { debugPrint('Error: $e'); }
+            try {
+              parsedOrders.add(DeliveryOrderModel.fromJson(o));
+            } catch (e) {
+              debugPrint('Error: $e');
+            }
           }
           _historyOrders = parsedOrders;
           historyParsed = true;
         } else if (body is List) {
           final List<DeliveryOrderModel> parsedOrders = [];
           for (var o in body) {
-            try { parsedOrders.add(DeliveryOrderModel.fromJson(o)); } catch (e) { debugPrint('Error: $e'); }
+            try {
+              parsedOrders.add(DeliveryOrderModel.fromJson(o));
+            } catch (e) {
+              debugPrint('Error: $e');
+            }
           }
           _historyOrders = parsedOrders;
           historyParsed = true;
         }
-        
+
         _historyError = !historyParsed;
       } else {
         _historyError = true;
-        debugPrint('[getHistory] HTTP ${response.statusCode} — historial no disponible en el servidor');
+        debugPrint(
+          '[getHistory] HTTP ${response.statusCode} — historial no disponible en el servidor',
+        );
       }
     } catch (e) {
       debugPrint("Error en getHistory: $e");
@@ -315,7 +375,9 @@ class DeliveryOrderController extends GetxController {
 
     // ─── 2. Validación de distancia GPS (informativa, no bloqueante) ───────
     final order = _availableOrders.firstWhereOrNull((o) => o.id == orderId);
-    if (order != null && order.restaurant?.lat != null && order.restaurant?.lng != null) {
+    if (order != null &&
+        order.restaurant?.lat != null &&
+        order.restaurant?.lng != null) {
       try {
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (serviceEnabled) {
@@ -326,8 +388,10 @@ class DeliveryOrderController extends GetxController {
           if (permission != LocationPermission.denied &&
               permission != LocationPermission.deniedForever) {
             Position position = await Geolocator.getCurrentPosition(
-                locationSettings:
-                    const LocationSettings(accuracy: LocationAccuracy.high));
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+              ),
+            );
             double distanceInMeters = Geolocator.distanceBetween(
               position.latitude,
               position.longitude,
@@ -356,15 +420,19 @@ class DeliveryOrderController extends GetxController {
     try {
       Response response = await orderRepo.acceptOrder(orderId);
       if (response.statusCode == 200 || response.statusCode == 201) {
-        AppSnackbar.success('¡Pedido aceptado!', 'El pedido #$orderId fue aceptado exitosamente.',
-            duration: const Duration(seconds: 3));
+        AppSnackbar.success(
+          '¡Pedido aceptado!',
+          'El pedido #$orderId fue aceptado exitosamente.',
+          duration: const Duration(seconds: 3),
+        );
         await getOrders();
       } else {
         // Extraer el mensaje real del servidor
         String serverMessage = 'No se pudo aceptar el pedido.';
         if (response.body != null && response.body is Map) {
           final body = response.body as Map;
-          serverMessage = body['message']?.toString() ??
+          serverMessage =
+              body['message']?.toString() ??
               body['error']?.toString() ??
               serverMessage;
           // Si hay errores de validación con detalle
@@ -372,29 +440,36 @@ class DeliveryOrderController extends GetxController {
             final errors = body['errors'] as Map;
             List<String> msgs = [];
             errors.forEach((k, v) {
-              if (v is List) msgs.addAll(v.map((e) => e.toString()));
-              else msgs.add(v.toString());
+              if (v is List) {
+                msgs.addAll(v.map((e) => e.toString()));
+              } else {
+                msgs.add(v.toString());
+              }
             });
             if (msgs.isNotEmpty) serverMessage = msgs.join(' | ');
           }
-        } else if (response.body is String && (response.body as String).isNotEmpty) {
+        } else if (response.body is String &&
+            (response.body as String).isNotEmpty) {
           serverMessage = response.body as String;
         } else if (response.statusText != null) {
           serverMessage = response.statusText!;
         }
 
         String lowerMsg = serverMessage.toLowerCase();
-        if (lowerMsg.contains('exception') || 
-            lowerMsg.contains('sql') || 
-            lowerMsg.contains('server') || 
-            lowerMsg.contains('connection') || 
+        if (lowerMsg.contains('exception') ||
+            lowerMsg.contains('sql') ||
+            lowerMsg.contains('server') ||
+            lowerMsg.contains('connection') ||
             lowerMsg.contains('timeout') ||
-            lowerMsg.contains('error') && serverMessage.contains('errno') || 
-            response.statusCode == 500 || response.statusCode == 503) {
+            lowerMsg.contains('error') && serverMessage.contains('errno') ||
+            response.statusCode == 500 ||
+            response.statusCode == 503) {
           serverMessage = 'Ocurrió un error inesperado, intenta nuevamente.';
         }
 
-        debugPrint('[acceptOrder] Error ${response.statusCode}: $serverMessage');
+        debugPrint(
+          '[acceptOrder] Error ${response.statusCode}: $serverMessage',
+        );
         AppSnackbar.error(
           'No se pudo aceptar',
           serverMessage,
@@ -403,7 +478,10 @@ class DeliveryOrderController extends GetxController {
       }
     } catch (e) {
       debugPrint('Error en acceptOrder: $e');
-      AppSnackbar.error('Error de conexión', 'No se pudo conectar con el servidor.');
+      AppSnackbar.error(
+        'Error de conexión',
+        'No se pudo conectar con el servidor.',
+      );
     } finally {
       _isLoading = false;
       update();
@@ -425,11 +503,17 @@ class DeliveryOrderController extends GetxController {
             : 'Estado inválido para este pedido';
         AppSnackbar.warning('Error de estado', msg.toString());
       } else {
-        AppSnackbar.error('Error del servidor', 'No se pudo actualizar el estado. Intenta de nuevo.');
+        AppSnackbar.error(
+          'Error del servidor',
+          'No se pudo actualizar el estado. Intenta de nuevo.',
+        );
       }
     } catch (e) {
       debugPrint("Error in markAsOnWay: $e");
-      AppSnackbar.error('Error de conexión', 'No se pudo conectar con el servidor.');
+      AppSnackbar.error(
+        'Error de conexión',
+        'No se pudo conectar con el servidor.',
+      );
     } finally {
       _isLoading = false;
       update();
@@ -452,7 +536,8 @@ class DeliveryOrderController extends GetxController {
         return null; // éxito
       } else if (response.statusCode == 422) {
         final msg = response.body is Map
-            ? (response.body['message'] ?? 'El código proporcionado por el cliente es inválido.')
+            ? (response.body['message'] ??
+                  'El código proporcionado por el cliente es inválido.')
             : 'El código proporcionado por el cliente es inválido.';
         return msg.toString(); // error inline
       } else if (response.statusCode == 403) {
