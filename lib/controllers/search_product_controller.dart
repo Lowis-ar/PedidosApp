@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import '../data/api/api_client.dart';
 import '../data/repository/product_repo.dart';
 import '../models/product_model.dart';
 import 'branch_controller.dart';
@@ -58,6 +59,11 @@ class SearchProductController extends GetxController {
             _categoryList.add(CategoryModel.fromJson(v));
           }
         }
+      } else {
+        // No mostrar error si el usuario está cerrando sesión (el 401 es esperado)
+        if (!(Get.isRegistered<ApiClient>() && Get.find<ApiClient>().isLoggingOut)) {
+          debugPrint("[SearchProductController] getCategories failed: ${response.statusCode} - ${response.statusText}");
+        }
       }
     } catch (e) {
       // Categories are optional, don't crash if they fail
@@ -108,8 +114,11 @@ class SearchProductController extends GetxController {
         _productList = [];
         _productList.addAll(Product.fromJson(response.body).products);
       } else {
-        debugPrint("[SearchProductController] Failed to load filtered products: ${response.statusCode} - ${response.statusText}");
-        AppSnackbar.error('Error', 'No se pudieron cargar los productos del buscador');
+        // No mostrar error si el usuario está cerrando sesión (el 401 es esperado)
+        if (Get.isRegistered<ApiClient>() && Get.find<ApiClient>().isLoggingOut) return;
+        final errorMsg = "Status: ${response.statusCode}\nBody: ${response.body ?? response.statusText}";
+        debugPrint("[SearchProductController] Failed to load filtered products: $errorMsg");
+        AppSnackbar.error('Error al cargar productos', errorMsg, duration: const Duration(seconds: 8));
       }
     } catch (e) {
       debugPrint("[SearchProductController] Exception in getFilteredProducts: $e");

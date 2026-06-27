@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../utils/secure_storage_web.dart';
@@ -35,11 +36,16 @@ class AuthController extends GetxController {
         )
       : GoogleSignIn(
           serverClientId: _webClientId,
-          scopes: ['email', 'openid', 'profile'],
+          scopes: ['email'],
         );
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+
+  // Flag que indica si el proceso de carga de token ha completado.
+  // Usado para evitar race conditions en el arranque.
+  bool _tokenLoaded = false;
+  bool get tokenLoaded => _tokenLoaded;
 
   XFile? _pickedImage;
   XFile? get pickedImage => _pickedImage;
@@ -50,7 +56,7 @@ class AuthController extends GetxController {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (image != null) {
       debugPrint("[AuthController] Image picked: ${image.path}, launching image cropper...");
-      final XFile? cropped = await _cropImage(image.path);
+      final XFile? cropped = kIsWeb ? image : await _cropImage(image.path);
       if (cropped != null) {
         debugPrint("[AuthController] Image crop completed: ${cropped.path}");
         _pickedImage = cropped;
@@ -117,13 +123,31 @@ class AuthController extends GetxController {
 
   bool get isDelivery => _userType == 'delivery' || _user?.role == 'delivery' || _user?.role == 'deliveryman';
 
-  @override
-  void onInit() {
-    super.onInit();
-    _loadToken();
+  /// Carga el token guardado desde almacenamiento seguro y valida contra el servidor.
+  /// Debe ser llamado con `await` desde `main()` antes de construir la app.
+  ///
+  /// Estrategia:
+  ///  1. Leer token del almacenamiento seguro → si no hay, el usuario no ha iniciado sesión.
+  ///  2. Intentar verificar el token contra GET /me:
+  ///     - 200 OK → token válido, actualizar datos del usuario desde la respuesta.
+  ///     - 401 Unauthorized → token expirado/revocado → limpiar sesión.
+  ///     - Error de red / timeout → mantener sesión (modo sin conexión).
+  Future<void> loadToken() async {
+    try {
+      await _loadTokenFromStorage();
+      if (_token.isNotEmpty) {
+        await _validateTokenWithServer();
+      }
+    } catch (e) {
+      debugPrint('[AuthController] loadToken error: $e');
+    } finally {
+      _tokenLoaded = true;
+      update();
+    }
   }
 
-  Future<void> _loadToken() async {
+  /// Lee el token y datos del usuario desde almacenamiento seguro.
+  Future<void> _loadTokenFromStorage() async {
     final saved = await _secureStorage.read(key: 'token') ?? await _secureStorage.read(key: AppConstants.TOKEN);
     if (saved != null && saved.isNotEmpty) {
       _token = saved;
@@ -135,12 +159,77 @@ class AuthController extends GetxController {
           final userData = jsonDecode(userDataStr);
           _user = UserModel.fromJson(Map<String, dynamic>.from(userData));
         } catch (e) {
-          debugPrint('Error decoding user: $e');
+          debugPrint('[AuthController] Error decoding cached user: $e');
         }
       }
       update();
     }
   }
+
+  /// Valida el token actual contra el endpoint /me del servidor.
+  /// - Si es válido (200): actualiza los datos del usuario.
+  /// - Si expiró (401): limpia la sesión localmente.
+  /// - Si hay error de red: conserva la sesión (modo sin conexión).
+  Future<void> _validateTokenWithServer() async {
+    try {
+      debugPrint('[AuthController] Validating token against /me...');
+      // Usamos handleError: false para que el ApiClient NO redirija al login automáticamente.
+      // Nosotros manejamos el 401 aquí de forma controlada.
+      final response = await authRepo.apiClient.getData(
+        AppConstants.CUSTOMER_INFO_URI,
+        handleError: false,
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('[AuthController] Token valid, refreshing user data.');
+        // Actualizar datos del usuario desde la respuesta del servidor
+        final body = response.body;
+        if (body != null) {
+          final dynamic userJson = body['data']?['user'] ?? body['user'] ?? body['data'];
+          if (userJson != null && userJson is Map) {
+            try {
+              _user = UserModel.fromJson(Map<String, dynamic>.from(userJson));
+              // Persistir datos actualizados del usuario
+              await _secureStorage.write(key: 'user', value: jsonEncode(_user!.toJson()));
+              update();
+            } catch (e) {
+              debugPrint('[AuthController] Error parsing /me response: $e');
+            }
+          }
+        }
+      } else if (response.statusCode == 401) {
+        debugPrint('[AuthController] Token expired or revoked (401). Clearing session.');
+        // El token ya no es válido en el servidor → limpiar sesión localmente
+        await _clearSessionLocally();
+      } else if (response.statusCode == 0 || response.statusCode == 1) {
+        // statusCode 0 o 1 → error de red / timeout → conservar sesión
+        debugPrint('[AuthController] Network error during token validation. Keeping session (offline mode).');
+      } else {
+        // Otros errores del servidor (500, etc.) → conservar sesión para no bloquear al usuario
+        debugPrint('[AuthController] Server error ${response.statusCode} during token validation. Keeping session.');
+      }
+    } catch (e) {
+      // Cualquier excepción de red → conservar sesión
+      debugPrint('[AuthController] Exception during token validation: $e. Keeping session.');
+    }
+  }
+
+  /// Limpia el estado de sesión localmente sin llamar al servidor.
+  /// Usar cuando el servidor confirma que el token es inválido (401).
+  Future<void> _clearSessionLocally() async {
+    _token = '';
+    _user = null;
+    _userType = 'customer';
+    Get.find<ApiClient>().updateToken('');
+    await _secureStorage.delete(key: 'token');
+    await _secureStorage.delete(key: AppConstants.TOKEN);
+    await _secureStorage.delete(key: AppConstants.DELIVERY_TOKEN);
+    await _secureStorage.delete(key: 'user');
+    await _secureStorage.delete(key: 'user_type');
+    update();
+  }
+
+
 
   void setUserType(String type) {
     _userType = type;
@@ -367,10 +456,15 @@ class AuthController extends GetxController {
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: Dimensions.height20),
-                // Campo de texto de teléfono premium
+                // Campo de texto de teléfono con restricciones de El Salvador
                 TextField(
                   controller: phoneController,
                   keyboardType: TextInputType.phone,
+                  maxLength: 8,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(8),
+                  ],
                   style: TextStyle(
                     color: AppColors.mainBlackColor,
                     fontSize: Dimensions.font16,
@@ -380,13 +474,22 @@ class AuthController extends GetxController {
                       Icons.phone_rounded,
                       color: AppColors.mainColor,
                     ),
-                    hintText: "71234567",
+                    hintText: "76543210",
                     hintStyle: TextStyle(
                       color: AppColors.textColor,
                     ),
                     labelText: "Número de Teléfono",
+                    helperText: "8 dígitos, inicia con 2, 5, 6 o 7",
+                    helperStyle: TextStyle(
+                      color: AppColors.paraColor,
+                      fontSize: 12.0,
+                    ),
                     labelStyle: TextStyle(
                       color: AppColors.paraColor,
+                    ),
+                    counterStyle: TextStyle(
+                      color: AppColors.paraColor,
+                      fontSize: 12.0,
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(Dimensions.radius15),
@@ -440,8 +543,14 @@ class AuthController extends GetxController {
                             return;
                           }
                           final cleanPhone = phone.replaceAll(RegExp(r'\s+'), '');
-                          if (cleanPhone.length < 8) {
-                            _showError('Por favor ingresa un número de teléfono válido.');
+                          // Validar longitud exacta de 8 dígitos
+                          if (cleanPhone.length != 8) {
+                            _showError('El teléfono debe tener exactamente 8 dígitos.');
+                            return;
+                          }
+                          // Validar que empiece con 2, 5, 6 o 7 (prefijos válidos en El Salvador)
+                          if (!RegExp(r'^[2567]').hasMatch(cleanPhone)) {
+                            _showError('El número debe comenzar con 2, 5, 6 o 7.');
                             return;
                           }
                           Get.back(); // cerrar diálogo

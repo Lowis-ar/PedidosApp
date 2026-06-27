@@ -29,11 +29,21 @@ class ApiClient extends GetConnect implements GetxService {
 
   /// Maneja respuestas con código 401 (token expirado) y 500 (error servidor).
   /// Redirige al login correcto según el tipo de token activo.
+  /// Cuando [handleError] es false, solo limpia el estado local sin redirigir
+  /// (usado durante la validación de token en el arranque de la app).
   void _handleHttpError(Response response, {bool handleError = true}) async {
     if (isLoggingOut) return;
 
     if (response.statusCode == 401) {
       if (token.isEmpty) return; // Ya estaba deslogueado
+
+      // Si handleError es false, el llamador maneja el 401 manualmente.
+      // No redirigir al login ni mostrar snackbar — solo limpiar el token en memoria.
+      if (!handleError) {
+        token = '';
+        return;
+      }
+
       isLoggingOut = true;
 
       final secureStorage = SecureStorageWeb();
@@ -43,10 +53,12 @@ class ApiClient extends GetConnect implements GetxService {
       final bool isDeliveryToken =
           deliveryTokenStr != null && deliveryTokenStr.isNotEmpty;
 
-      // Limpiar tokens
+      // Limpiar TODOS los datos de sesión del almacenamiento seguro
       await secureStorage.delete(key: AppConstants.DELIVERY_TOKEN);
       await secureStorage.delete(key: AppConstants.TOKEN);
       await secureStorage.delete(key: 'token');
+      await secureStorage.delete(key: 'user');
+      await secureStorage.delete(key: 'user_type');
       token = '';
 
       AppSnackbar.error(
@@ -71,6 +83,7 @@ class ApiClient extends GetConnect implements GetxService {
       );
     }
   }
+
 
   Future<Response> getData(String uri, {bool handleError = true}) async {
     try {
