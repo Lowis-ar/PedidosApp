@@ -262,8 +262,22 @@ class _LoyaltyPageState extends State<LoyaltyPage> with SingleTickerProviderStat
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(tx.description ?? (tx.isEarned ? 'Puntos ganados' : 'Puntos usados'),
-                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                      Builder(builder: (context) {
+                        String titleText = tx.description ?? (tx.isEarned ? 'Puntos ganados' : 'Puntos usados');
+                        
+                        // El usuario indicó que el API envía el ID del pedido como el primer ID (tx.id) 
+                        // en la tabla donde se archivan, pero ahora solicita que NO se muestre el ID
+                        // al cliente en ninguna parte.
+                        // Solo mostraremos "Puntos ganados por pedido" si tenemos un orderId asociado.
+                        int? correctOrderId = tx.id ?? tx.orderId;
+                        
+                        if (correctOrderId != null && correctOrderId > 0) {
+                          titleText = '${tx.isEarned ? 'Puntos ganados' : 'Puntos usados'} por pedido';
+                        }
+                        
+                        return Text(titleText,
+                            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14));
+                      }),
                       if (tx.createdAt != null)
                         Text(_formatDate(tx.createdAt!),
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
@@ -287,23 +301,30 @@ class _LoyaltyPageState extends State<LoyaltyPage> with SingleTickerProviderStat
   }
 
   Widget _buildCouponsTab(CouponController controller) {
-    if (controller.isLoadingCoupons) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     if (controller.userCoupons.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.card_giftcard, color: Colors.grey.shade300, size: 64),
-            const SizedBox(height: 12),
-            Text('Sin cupones disponibles',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-            const SizedBox(height: 4),
-            Text('Acumula puntos para desbloquear recompensas',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
-          ],
+      return RefreshIndicator(
+        color: AppColors.mainColor,
+        onRefresh: () => controller.getUserCoupons(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.5,
+            alignment: Alignment.center,
+            child: controller.isLoadingCoupons 
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.card_giftcard, color: Colors.grey.shade300, size: 64),
+                    const SizedBox(height: 12),
+                    Text('Sin cupones disponibles',
+                        style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Text('Acumula puntos para desbloquear recompensas',
+                        style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+                  ],
+                ),
+          ),
         ),
       );
     }

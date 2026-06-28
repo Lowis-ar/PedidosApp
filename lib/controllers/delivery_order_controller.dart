@@ -292,10 +292,10 @@ class DeliveryOrderController extends GetxController {
     }
   }
 
-  Future<void> getHistory() async {
+  Future<void> getHistory({int? month, int? year}) async {
     try {
       // handleError:false para suprimir el snackbar global del 500 del backend
-      Response response = await orderRepo.getOrderHistory(handleError: false);
+      Response response = await orderRepo.getOrderHistory(handleError: false, month: month, year: year);
       if (response.statusCode == 200) {
         final body = response.body;
         bool historyParsed = false;

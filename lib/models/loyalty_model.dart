@@ -55,6 +55,7 @@ class LoyaltyTransaction {
   int? points;
   String? description;
   String? createdAt;
+  int? orderId;
 
   LoyaltyTransaction({
     this.id,
@@ -62,6 +63,7 @@ class LoyaltyTransaction {
     this.points,
     this.description,
     this.createdAt,
+    this.orderId,
   });
 
   LoyaltyTransaction.fromJson(Map<String, dynamic> json) {
@@ -70,7 +72,8 @@ class LoyaltyTransaction {
     points = json['points'];
     description = json['description'];
     createdAt = json['created_at'];
+    orderId = json['order_id'];
   }
 
-  bool get isEarned => type == 'earn' || type == 'refund' || (points != null && points! > 0);
+  bool get isEarned => type == 'earned' || type == 'earn' || type == 'refund' || (points != null && points! > 0);
 }

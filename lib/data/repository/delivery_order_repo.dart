@@ -10,8 +10,12 @@ class DeliveryOrderRepo {
     return await apiClient.getData(AppConstants.DELIVERY_AVAILABLE_ORDERS_URI, handleError: handleError);
   }
 
-  Future<Response> getOrderHistory({bool handleError = true}) async {
-    return await apiClient.getData(AppConstants.DELIVERY_HISTORY_ORDERS_URI, handleError: handleError);
+  Future<Response> getOrderHistory({bool handleError = true, int? month, int? year}) async {
+    String uri = AppConstants.DELIVERY_HISTORY_ORDERS_URI;
+    if (month != null && year != null) {
+      uri += '?month=$month&year=$year';
+    }
+    return await apiClient.getData(uri, handleError: handleError);
   }
 
   Future<Response> getRunningOrders() async {

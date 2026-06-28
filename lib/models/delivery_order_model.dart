@@ -109,7 +109,7 @@ class DeliveryOrderModel {
       addressReferences = null;
     }
 
-    createdAt = json['created_at'] ?? json['delivered_at'];
+    createdAt = json['delivered_at_iso'] ?? json['cancelled_at_iso'] ?? json['created_at'] ?? json['delivered_at'];
     otp = json['otp']?.toString();
 
     // Inyectar coordenadas base si aun están nulas

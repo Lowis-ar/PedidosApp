@@ -5,7 +5,8 @@ class AppConstants {
   static const int APP_VERSION = 1;
 
   // Production API behind Cloudflare tunnel
-  static const String BASE_URL = "https://publication-missed-introduce-communist.trycloudflare.com";
+  static const String BASE_URL =
+      "https://publication-missed-introduce-communist.trycloudflare.com";
 
   // Auth endpoints
   static const String LOGIN_URI = "/api/v1/auth/login";
@@ -17,10 +18,12 @@ class AppConstants {
 
   // Product endpoints
   static const String POPULAR_PRODUCT_URI = "/api/v1/products?popular=true";
-  static const String RECOMMENDED_PRODUCT_URI = "/api/v1/products?recommended=true";
+  static const String RECOMMENDED_PRODUCT_URI =
+      "/api/v1/products?recommended=true";
   static const String ALL_PRODUCTS_URI = "/api/v1/products";
   static const String PRODUCT_DETAIL_URI = "/api/v1/products/";
-  static const String PRODUCT_REVIEWS_URI = "/api/v1/products/"; // append: {id}/reviews
+  static const String PRODUCT_REVIEWS_URI =
+      "/api/v1/products/"; // append: {id}/reviews
 
   // Customer endpoints
   static const String CUSTOMER_INFO_URI = "/api/v1/auth/me";
@@ -49,14 +52,21 @@ class AppConstants {
   static const String DELIVERY_LOGIN_URI = "/api/v1/delivery/auth/login";
   static const String DELIVERY_LOGOUT_URI = "/api/v1/delivery/auth/logout";
   static const String DELIVERY_PROFILE_URI = "/api/v1/delivery/auth/me";
-  static const String DELIVERY_UPDATE_PROFILE_URI = "/api/v1/delivery/auth/update-profile";
-  
-  static const String DELIVERY_AVAILABLE_ORDERS_URI = "/api/v1/delivery/orders/available";
-  static const String DELIVERY_ACCEPT_ORDER_URI = "/api/v1/delivery/orders/"; // {order_id}/accept
-  static const String DELIVERY_ACTIVE_ORDERS_URI = "/api/v1/delivery/orders/active";
-  static const String DELIVERY_ORDER_STATUS_UPDATE_URI = "/api/v1/delivery/orders/"; // {order_id}/status
-  static const String DELIVERY_VERIFY_OTP_URI = "/api/v1/delivery/orders/"; // {order_id}/verify-otp
-  static const String DELIVERY_HISTORY_ORDERS_URI = "/api/v1/delivery/orders/history";
+  static const String DELIVERY_UPDATE_PROFILE_URI =
+      "/api/v1/delivery/auth/update-profile";
+
+  static const String DELIVERY_AVAILABLE_ORDERS_URI =
+      "/api/v1/delivery/orders/available";
+  static const String DELIVERY_ACCEPT_ORDER_URI =
+      "/api/v1/delivery/orders/"; // {order_id}/accept
+  static const String DELIVERY_ACTIVE_ORDERS_URI =
+      "/api/v1/delivery/orders/active";
+  static const String DELIVERY_ORDER_STATUS_UPDATE_URI =
+      "/api/v1/delivery/orders/"; // {order_id}/status
+  static const String DELIVERY_VERIFY_OTP_URI =
+      "/api/v1/delivery/orders/"; // {order_id}/verify-otp
+  static const String DELIVERY_HISTORY_ORDERS_URI =
+      "/api/v1/delivery/orders/history";
   static const String DELIVERY_ORDER_LIST_URI = "/api/v1/delivery/orders";
 
   // Storage keys

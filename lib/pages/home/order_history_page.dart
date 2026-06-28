@@ -218,7 +218,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    BigText(text: "Pedido #${order.id}", size: 16),
+                    BigText(text: "Detalle de Pedido", size: 16),
                     const SizedBox(height: 4),
                     SmallText(
                         text: order.createdAt ?? '',

@@ -17,6 +17,8 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   _Period _selectedPeriod = _Period.week;
+  int _selectedMonth = DateTime.now().month;
+  int _selectedYear = DateTime.now().year;
 
   @override
   void initState() {
@@ -362,49 +364,135 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage>
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: Row(
+      child: Column(
         children: [
-          Icon(Icons.filter_list_rounded,
-              color: AppColors.paraColor, size: 16),
-          const SizedBox(width: 8),
-          ..._Period.values.map((p) {
-            final selected = _selectedPeriod == p;
-            return GestureDetector(
-              onTap: () => setState(() => _selectedPeriod = p),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.mainColor
-                      : AppColors.buttonBackgroundColor,
-                  borderRadius: BorderRadius.circular(50),
-                  border: Border.all(
-                    color: selected
-                        ? AppColors.mainColor
-                        : AppColors.textColor,
+          Row(
+            children: [
+              Icon(Icons.filter_list_rounded, color: AppColors.paraColor, size: 16),
+              const SizedBox(width: 8),
+              ..._Period.values.map((p) {
+                final selected = _selectedPeriod == p;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedPeriod = p);
+                    if (p == _Period.month) {
+                      Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
+                    } else if (p == _Period.all) {
+                      // Optional: Fetch without month/year to get all
+                      Get.find<DeliveryOrderController>().getHistory();
+                    } else {
+                      // For day/week, we could also fetch default history
+                      Get.find<DeliveryOrderController>().getHistory();
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: selected ? AppColors.mainColor : AppColors.buttonBackgroundColor,
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(
+                        color: selected ? AppColors.mainColor : AppColors.textColor,
+                      ),
+                    ),
+                    child: Text(
+                      _periodLabel(p),
+                      style: TextStyle(
+                        color: selected ? Colors.white : AppColors.paraColor,
+                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+          if (_selectedPeriod == _Period.month) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const SizedBox(width: 24),
+                // Mes
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.buttonBackgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.textColor),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _selectedMonth,
+                        isExpanded: true,
+                        icon: Icon(Icons.arrow_drop_down, color: AppColors.paraColor),
+                        items: List.generate(12, (index) {
+                          return DropdownMenuItem(
+                            value: index + 1,
+                            child: Text(
+                              _getMonthName(index + 1),
+                              style: TextStyle(color: AppColors.mainBlackColor, fontSize: 13),
+                            ),
+                          );
+                        }),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedMonth = val);
+                            Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
+                          }
+                        },
+                      ),
+                    ),
                   ),
                 ),
-                child: Text(
-                  _periodLabel(p),
-                  style: TextStyle(
-                    color: selected
-                        ? Colors.white
-                        : AppColors.paraColor,
-                    fontWeight: selected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
-                    fontSize: 12,
+                const SizedBox(width: 10),
+                // Año
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: AppColors.buttonBackgroundColor,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.textColor),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _selectedYear,
+                        isExpanded: true,
+                        icon: Icon(Icons.arrow_drop_down, color: AppColors.paraColor),
+                        items: List.generate(5, (index) {
+                          int y = DateTime.now().year - index;
+                          return DropdownMenuItem(
+                            value: y,
+                            child: Text(
+                              y.toString(),
+                              style: TextStyle(color: AppColors.mainBlackColor, fontSize: 13),
+                            ),
+                          );
+                        }),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedYear = val);
+                            Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
+                          }
+                        },
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            );
-          }),
+              ],
+            ),
+          ]
         ],
       ),
     );
+  }
+
+  String _getMonthName(int month) {
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return months[month - 1];
   }
 
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

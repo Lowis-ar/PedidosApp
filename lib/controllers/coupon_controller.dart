@@ -4,7 +4,6 @@ import 'package:pedidosapp/data/repository/coupon_repo.dart';
 import 'package:pedidosapp/models/coupon_model.dart';
 import 'package:pedidosapp/models/loyalty_model.dart';
 import 'package:pedidosapp/utils/app_snackbar.dart';
-
 class CouponController extends GetxController {
   final CouponRepo couponRepo;
   CouponController({required this.couponRepo});
@@ -47,7 +46,7 @@ class CouponController extends GetxController {
     update();
 
     try {
-      Response response = await couponRepo.validateCoupon(code.trim(), orderAmount, branchId);
+      Response response = await couponRepo.validateCoupon(code.trim(), orderAmount, branchId).timeout(const Duration(seconds: 8));
 
       if (response.statusCode == 200) {
         final body = response.body;
@@ -111,10 +110,13 @@ class CouponController extends GetxController {
   Future<void> getLoyaltyTransactions() async {
     try {
       Response response = await couponRepo.getLoyaltyTransactions().timeout(const Duration(seconds: 8));
+      debugPrint('[LOYALTY_TX] Status: ${response.statusCode}');
+      debugPrint('[LOYALTY_TX] Raw body: ${response.body}');
       if (response.statusCode == 200) {
         _transactions = [];
         final body = response.body;
         final data = body['data'] ?? body;
+        debugPrint('[LOYALTY_TX] data type: ${data.runtimeType}');
         // Paginated response — items may be in 'data' key inside data
         List rawList;
         if (data is Map && data.containsKey('data')) {
@@ -124,9 +126,12 @@ class CouponController extends GetxController {
         } else {
           rawList = [];
         }
+        debugPrint('[LOYALTY_TX] rawList length: ${rawList.length}');
         for (var t in rawList) {
+          debugPrint('[LOYALTY_TX] item: $t');
           _transactions.add(LoyaltyTransaction.fromJson(t));
         }
+        debugPrint('[LOYALTY_TX] parsed transactions: ${_transactions.map((t) => "id=${t.id} orderId=${t.orderId} type=${t.type} desc=${t.description}").toList()}');
       }
     } catch (e) {
       debugPrint('[CouponController] getLoyaltyTransactions error: $e');
@@ -135,11 +140,13 @@ class CouponController extends GetxController {
   }
 
   Future<void> getUserCoupons() async {
+    debugPrint('[COUPONS] getUserCoupons() called, setting _isLoadingCoupons=true');
     _isLoadingCoupons = true;
     update();
 
     try {
       Response response = await couponRepo.getUserCoupons().timeout(const Duration(seconds: 8));
+      debugPrint('[COUPONS] status=${response.statusCode} body=${response.body}');
       if (response.statusCode == 200) {
         _userCoupons = [];
         final body = response.body;
@@ -153,10 +160,12 @@ class CouponController extends GetxController {
         for (var c in rawList) {
           _userCoupons.add(CouponModel.fromJson(c));
         }
+        debugPrint('[COUPONS] parsed ${_userCoupons.length} coupons');
       }
     } catch (e) {
-      debugPrint('[CouponController] getUserCoupons error: $e');
+      debugPrint('[COUPONS] ERROR: $e');
     } finally {
+      debugPrint('[COUPONS] finally: setting _isLoadingCoupons=false');
       _isLoadingCoupons = false;
       update();
     }
