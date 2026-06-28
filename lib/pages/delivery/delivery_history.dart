@@ -123,7 +123,9 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage>
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new,
               color: AppColors.mainBlackColor, size: 20),
-          onPressed: () => Get.back(),
+          onPressed: () {
+            Get.back();
+          },
         ),
         title: Text(
           'Historial de Ganancias',
@@ -138,7 +140,15 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage>
             icon: Icon(Icons.refresh_rounded, color: AppColors.paraColor),
             onPressed: () {
               if (Get.isRegistered<DeliveryOrderController>()) {
-                Get.find<DeliveryOrderController>().getHistory();
+                if (_selectedPeriod == _Period.month) {
+                  setState(() {
+                    _selectedMonth = DateTime.now().month;
+                    _selectedYear = DateTime.now().year;
+                  });
+                  Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
+                } else {
+                  Get.find<DeliveryOrderController>().getHistory();
+                }
               }
             },
           ),
@@ -410,83 +420,135 @@ class _DeliveryHistoryPageState extends State<DeliveryHistoryPage>
             ],
           ),
           if (_selectedPeriod == _Period.month) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const SizedBox(width: 24),
-                // Mes
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.buttonBackgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.textColor),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: _selectedMonth,
-                        isExpanded: true,
-                        icon: Icon(Icons.arrow_drop_down, color: AppColors.paraColor),
-                        items: List.generate(12, (index) {
-                          return DropdownMenuItem(
-                            value: index + 1,
-                            child: Text(
-                              _getMonthName(index + 1),
-                              style: TextStyle(color: AppColors.mainBlackColor, fontSize: 13),
-                            ),
-                          );
-                        }),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedMonth = val);
-                            Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
-                          }
-                        },
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: InkWell(
+                onTap: () => _showMonthYearPicker(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.mainColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.mainColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.calendar_month_rounded, color: AppColors.mainColor, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_getMonthName(_selectedMonth)} $_selectedYear',
+                        style: TextStyle(
+                          color: AppColors.mainColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.arrow_drop_down_rounded, color: AppColors.mainColor),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 10),
-                // Año
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.buttonBackgroundColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.textColor),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: _selectedYear,
-                        isExpanded: true,
-                        icon: Icon(Icons.arrow_drop_down, color: AppColors.paraColor),
-                        items: List.generate(5, (index) {
-                          int y = DateTime.now().year - index;
-                          return DropdownMenuItem(
-                            value: y,
-                            child: Text(
-                              y.toString(),
-                              style: TextStyle(color: AppColors.mainBlackColor, fontSize: 13),
-                            ),
-                          );
-                        }),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedYear = val);
-                            Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ]
         ],
       ),
+    );
+  }
+
+  void _showMonthYearPicker(BuildContext context) {
+    int tempMonth = _selectedMonth;
+    int tempYear = _selectedYear;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Seleccionar Mes y Año', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Selector de Año
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back_ios_rounded, size: 16),
+                        onPressed: () => setDialogState(() => tempYear--),
+                      ),
+                      Text(tempYear.toString(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                        onPressed: () => setDialogState(() => tempYear++),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Cuadrícula de Meses
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: List.generate(12, (index) {
+                      int m = index + 1;
+                      bool isSelected = tempMonth == m;
+                      return InkWell(
+                        onTap: () => setDialogState(() => tempMonth = m),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 60,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.mainColor : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: isSelected ? AppColors.mainColor : Colors.grey.shade300),
+                          ),
+                          child: Center(
+                            child: Text(
+                              _getMonthName(m).substring(0, 3), // Ene, Feb, Mar...
+                              style: TextStyle(
+                                color: isSelected ? Colors.white : Colors.black87,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _selectedMonth = tempMonth;
+                      _selectedYear = tempYear;
+                    });
+                    Get.find<DeliveryOrderController>().getHistory(month: _selectedMonth, year: _selectedYear);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mainColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Aplicar', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 

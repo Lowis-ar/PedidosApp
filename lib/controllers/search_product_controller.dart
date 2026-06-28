@@ -6,6 +6,7 @@ import '../models/product_model.dart';
 import 'branch_controller.dart';
 import 'cart_controller.dart';
 import '../utils/app_snackbar.dart';
+import 'auth_controller.dart';
 
 class SearchProductController extends GetxController {
   final ProductRepo productRepo;
@@ -38,6 +39,12 @@ class SearchProductController extends GetxController {
   }
 
   Future<void> getCategories() async {
+    if (Get.isRegistered<AuthController>() && Get.find<AuthController>().isDelivery) {
+      _isCategoriesLoaded = true;
+      update();
+      return;
+    }
+
     _isCategoriesLoaded = false;
     update();
     try {
@@ -89,6 +96,12 @@ class SearchProductController extends GetxController {
   }
 
   Future<void> getFilteredProducts() async {
+    if (Get.isRegistered<AuthController>() && Get.find<AuthController>().isDelivery) {
+      _isLoaded = true;
+      update();
+      return;
+    }
+
     _isLoaded = false;
     update();
 
@@ -116,13 +129,18 @@ class SearchProductController extends GetxController {
       } else {
         // No mostrar error si el usuario está cerrando sesión (el 401 es esperado)
         if (Get.isRegistered<ApiClient>() && Get.find<ApiClient>().isLoggingOut) return;
+        if (response.statusCode == 403 && Get.isRegistered<AuthController>() && Get.find<AuthController>().isDelivery) return;
+        
         final errorMsg = "Status: ${response.statusCode}\nBody: ${response.body ?? response.statusText}";
         debugPrint("[SearchProductController] Failed to load filtered products: $errorMsg");
         AppSnackbar.error('Error al cargar productos', errorMsg, duration: const Duration(seconds: 8));
       }
     } catch (e) {
       debugPrint("[SearchProductController] Exception in getFilteredProducts: $e");
-      AppSnackbar.error('Error', 'Ocurrió un error al filtrar los productos');
+      // Silently fail if it's a deliveryman
+      if (!(Get.isRegistered<AuthController>() && Get.find<AuthController>().isDelivery)) {
+        AppSnackbar.error('Error', 'Ocurrió un error al filtrar los productos');
+      }
     } finally {
       _isLoaded = true;
       update();

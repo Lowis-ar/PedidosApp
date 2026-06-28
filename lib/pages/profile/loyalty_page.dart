@@ -21,7 +21,11 @@ class _LoyaltyPageState extends State<LoyaltyPage> with SingleTickerProviderStat
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    Get.find<CouponController>().loadLoyaltyData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isRegistered<CouponController>()) {
+        Get.find<CouponController>().loadLoyaltyData();
+      }
+    });
   }
 
   @override
